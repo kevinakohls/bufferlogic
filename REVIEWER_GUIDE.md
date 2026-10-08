@@ -118,7 +118,7 @@ moving or deleting it. The input CSVs are never changed.
 npm.cmd test
 ```
 
-At this milestone, all **58 tests** pass, with none skipped. They cover the
+At this milestone, all **63 tests** pass, with none skipped. They cover the
 examples above, full-precision timing comparisons, resource and dependency
 relationships, invalid inputs/cycles, scenario immutability, stale remaining
 estimates, and the command/export workflows. GitHub Actions runs the suite
@@ -188,5 +188,22 @@ scenario uses its own baseline Critical Chain. The deterministic baseline
 and task timing rows remain separately labeled. The Excel summary includes
 the percentile estimates and assumptions, so the report can be reviewed
 without running two separate percentile commands.
+
+## Accuracy checks for the percentile approximation
+
+The separate [validation report](validation/REPORT.md) benchmarks the
+deterministic estimates using 100,000 simulated trials per example and two
+seeds. Simulation is a development validation tool, not the product calculation.
+On the reviewer resource-change example, project P95 is about 0.7% below the
+benchmark and P99 about 3.3% below. On the broad-estimate stress test, P95 is
+about 8.7% above the full-project benchmark and the controlling chain changes
+in roughly 39% of trials. These findings reinforce the approximation label;
+they are not universal accuracy guarantees.
+
+To reproduce the reviewer check:
+
+```powershell
+npm.cmd run validate-percentiles -- examples/resource-change-what-if.csv --iterations 100000 --seed 20261008
+```
 
 For your own inputs and all command options, see [DEVELOPMENT.md](DEVELOPMENT.md).
