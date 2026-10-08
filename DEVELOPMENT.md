@@ -77,3 +77,22 @@ npm run --silent schedule -- examples/project.json > schedule.json
 Invalid JSON, malformed tasks, missing files, invalid estimates/dependencies,
 or dependency cycles produce an error on stderr and a nonzero exit code.
 Use `npm run --silent schedule -- --help` for usage.
+
+## Compare Current State and What-If
+
+```sh
+npm run compare -- examples/user-project.json examples/user-project-what-if.json
+```
+
+The two paths identify existing JSON files; `current.json` and `what-if.json`
+are placeholder names, not files created automatically. Both inputs must
+contain the same task IDs. Comparison matches by ID, allows changes to
+estimates/resources/dependencies/priorities, and leaves both files unchanged.
+
+Output is JSON with each scenario's P50 and Critical Chain, `impactDays`
+(What-If minus Current State), and `taskChanges` containing start/finish
+differences for tasks with changed timings. Positive impact means later
+completion; negative means earlier completion. Units must be days in both
+inputs for `impactDays` to represent days. Values retain full precision.
+Use `npm run --silent compare -- <current.json> <what-if.json>` for pure JSON
+output or `npm run --silent compare -- --help` for usage.
