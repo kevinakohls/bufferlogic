@@ -1,5 +1,6 @@
 import type { compareProjects } from "./compare.js";
 import type { Schedule, Task } from "./types.js";
+import type { estimateProjectPercentiles } from "./percentiles.js";
 
 const decimal = new Intl.NumberFormat("en-US", {
   useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -15,6 +16,13 @@ function table(headers: readonly string[], rows: readonly string[][]): string {
   const render = (row: readonly string[]) => row.map((cell, index) => cell.padEnd(widths[index]!)).join(" | ").trimEnd();
   return [render(lines[0]!), widths.map(width => "-".repeat(width)).join("-+-"),
     ...lines.slice(1).map(render)].join("\n");
+}
+
+export function percentilesToTable(result: ReturnType<typeof estimateProjectPercentiles>): string {
+  return [`Deterministic P50-task baseline: ${number(result.deterministicBaselineDuration)}`,
+    `Baseline Critical Chain: ${result.criticalChain.join(" -> ") || "(none)"}`, "",
+    table(["Estimated project percentile", "Duration (input units)"], Object.entries(result.projectPercentiles).map(([key, value]) => [key.toUpperCase(), number(value)])),
+    "", `Assumptions: ${result.assumptions.join("; ")}.`, result.interpretation].join("\n");
 }
 
 export function scheduleToTable(schedule: Schedule, tasks: readonly Task[]): string {

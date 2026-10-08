@@ -118,7 +118,7 @@ moving or deleting it. The input CSVs are never changed.
 npm.cmd test
 ```
 
-At this milestone, all **49 tests** pass, with none skipped. They cover the
+At this milestone, all **55 tests** pass, with none skipped. They cover the
 examples above, full-precision timing comparisons, resource and dependency
 relationships, invalid inputs/cycles, scenario immutability, stale remaining
 estimates, and the command/export workflows. GitHub Actions runs the suite
@@ -128,8 +128,9 @@ on Node.js 22 and 24 for pull requests and pushes to `main`.
 
 - Each task's P50 duration is `sqrt(goodCase * poorCase)` from its approximate
   P20/P80 estimates. Inputs must be finite, positive, and ordered good ≤ poor.
-- Project P50 here means completion of the deterministic schedule using those
-  task P50s. It is not a simulated project median or a completion probability.
+- The schedule/compare commands' Project P50 means completion of the deterministic
+  schedule using task P50s. The percentile command below estimates whole-chain
+  percentiles separately, under explicit approximation assumptions.
 - Examples use elapsed days from time zero. There are no working calendars,
   start dates, or overnight/weekend rules. Future unit settings will default
   to 8 working hours per day; hours/minutes entry is not implemented yet.
@@ -139,6 +140,45 @@ on Node.js 22 and 24 for pull requests and pushes to `main`.
   duration automatically. Completed-task actuals are retained as metadata;
   this is not yet a live progress-rescheduling workflow.
 - UI, project/feeding buffers, Commit Date logic, red/green status, Monte Carlo,
-  probability calculations, and GitLab/Duo integrations are outside this milestone.
+  simulated probability calculations, and GitLab/Duo integrations are outside this milestone.
+
+## Whole-project percentiles from the baseline Critical Chain
+
+```powershell
+npm.cmd run percentiles -- examples/project.json --format table
+```
+
+The deterministic baseline remains **20.00 days**, with chain
+**A → B → D → F → G → H**. The separate whole-chain approximation reports:
+
+| Estimated project percentile | Days |
+|---|---:|
+| P50 | 26.31 |
+| P80 | 42.40 |
+| P95 | 66.86 |
+| P99 | 98.39 |
+
+Each task's P20/P80 inputs fit a lognormal curve. Means and variances are
+combined across the baseline Critical Chain, then a lognormal approximation
+to that total gives project percentiles. There is no random sampling and no
+sum of individual task P80/P95/P99 durations. The long upper tail comes from
+the broad duration estimates and assumed lognormal distributions.
+
+These are approximate whole-project estimates assuming independent tasks
+and that the baseline chain remains controlling. They do not account for
+another chain becoming controlling or correlated delays. The deterministic
+baseline and estimated whole-chain P50 are different quantities; neither
+should be relabeled to match the other.
+
+Export for Excel with:
+
+```powershell
+npm.cmd run percentiles -- examples/project.json --output reviewer-percentiles.csv
+Invoke-Item .\reviewer-percentiles.csv
+```
+
+As with other exports, use a new filename on repeat runs. See
+[DEVELOPMENT.md](DEVELOPMENT.md#estimate-whole-project-completion-percentiles)
+for formulas and assumptions.
 
 For your own inputs and all command options, see [DEVELOPMENT.md](DEVELOPMENT.md).

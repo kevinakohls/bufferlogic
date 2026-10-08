@@ -1,6 +1,7 @@
 import type { Schedule, Task } from "./types.js";
 import { compareProjects } from "./compare.js";
 import { scheduleProject } from "./scheduler.js";
+import type { estimateProjectPercentiles } from "./percentiles.js";
 
 const decimal = new Intl.NumberFormat("en-US", {
   useGrouping: false,
@@ -12,6 +13,17 @@ function textCell(value: string): string {
   // Keep user-entered names/IDs as text when opened in spreadsheet software.
   const text = /^[\s]*[=+\-@]/.test(value) ? `'${value}` : value;
   return `"${text.replaceAll('"', '""')}"`;
+}
+
+export function percentilesToCsv(result: ReturnType<typeof estimateProjectPercentiles>): string {
+  const rows = ["Metric,Duration (input units)",
+    `Deterministic P50-task baseline,${decimal.format(result.deterministicBaselineDuration)}`,
+    ...Object.entries(result.projectPercentiles).map(([key, value]) => `Estimated project ${key.toUpperCase()},${decimal.format(value)}`),
+    "", ["Baseline Critical Chain", textCell(result.criticalChain.join(" -> "))].join(","),
+    ["Method", textCell(result.method)].join(","),
+    ...result.assumptions.map(value => ["Assumption", textCell(value)].join(",")),
+    ["Interpretation", textCell(result.interpretation)].join(",")];
+  return "\uFEFF" + rows.join("\r\n") + "\r\n";
 }
 
 export function scheduleToCsv(schedule: Schedule, tasks: readonly Task[]): string {
