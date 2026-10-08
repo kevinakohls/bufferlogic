@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test dist/tests/*.test.js",
     "demo": "npm run build && node dist/examples/scenario1.js",
-    "schedule": "npm run --silent build && node dist/src/cli.js"
+    "schedule": "npm run --silent build && node dist/src/cli.js",
+    "compare": "npm run --silent build && node dist/src/compare-cli.js"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
