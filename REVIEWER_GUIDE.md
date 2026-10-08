@@ -118,7 +118,7 @@ moving or deleting it. The input CSVs are never changed.
 npm.cmd test
 ```
 
-At this milestone, all **58 tests** pass, with none skipped. They cover the
+At this milestone, all **62 tests** pass, with none skipped. They cover the
 examples above, full-precision timing comparisons, resource and dependency
 relationships, invalid inputs/cycles, scenario immutability, stale remaining
 estimates, and the command/export workflows. GitHub Actions runs the suite
@@ -188,5 +188,12 @@ scenario uses its own baseline Critical Chain. The deterministic baseline
 and task timing rows remain separately labeled. The Excel summary includes
 the percentile estimates and assumptions, so the report can be reviewed
 without running two separate percentile commands.
+
+Percentile and comparison console/CSV reports also include whole-day planning
+columns, assuming the input estimates are in days. Each completion duration
+is rounded up, while raw values remain available. On the resource-change
+What-If, P95/P98/P99 plan as **19/20/21 days**. Whole-day comparison differences
+subtract the rounded scenario values. This view does not imply day-level
+accuracy for every project or add calendars and dates.
 
 For your own inputs and all command options, see [DEVELOPMENT.md](DEVELOPMENT.md).

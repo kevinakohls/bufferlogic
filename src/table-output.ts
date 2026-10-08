@@ -1,6 +1,7 @@
 import type { compareProjects } from "./compare.js";
 import type { Schedule, Task } from "./types.js";
 import type { estimateProjectPercentiles } from "./percentiles.js";
+import { planningDays, planningDayDifference, planningDayNote } from "./planning-days.js";
 
 const decimal = new Intl.NumberFormat("en-US", {
   useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -21,7 +22,8 @@ function table(headers: readonly string[], rows: readonly string[][]): string {
 export function percentilesToTable(result: ReturnType<typeof estimateProjectPercentiles>): string {
   return [`Deterministic P50-task baseline: ${number(result.deterministicBaselineDuration)}`,
     `Baseline Critical Chain: ${result.criticalChain.join(" -> ") || "(none)"}`, "",
-    table(["Estimated project percentile", "Duration (input units)"], Object.entries(result.projectPercentiles).map(([key, value]) => [key.toUpperCase(), number(value)])),
+    table(["Estimated project percentile", "Duration (input units)", "Whole days (round up)"], Object.entries(result.projectPercentiles).map(([key, value]) => [key.toUpperCase(), number(value), String(planningDays(value))])),
+    planningDayNote,
     "", `Assumptions: ${result.assumptions.join("; ")}.`, result.interpretation].join("\n");
 }
 
@@ -44,12 +46,16 @@ export function comparisonToTable(result: ReturnType<typeof compareProjects>): s
     `Current State Critical Chain: ${result.currentState.criticalChain.join(" -> ") || "(none)"}`,
     `What-If Critical Chain: ${result.whatIf.criticalChain.join(" -> ") || "(none)"}`,
     "",
-    table(["Estimated project percentile", "Current State", "What-If", "Difference"],
+    table(["Estimated project percentile", "Current State", "What-If", "Difference", "Current whole days", "What-If whole days", "Whole-day difference"],
       Object.entries(result.percentileEstimates.differences).map(([key, change]) => {
         const percentile = key as keyof typeof result.percentileEstimates.differences;
         return [key.toUpperCase(), number(result.percentileEstimates.currentState.projectPercentiles[percentile]),
-          number(result.percentileEstimates.whatIf.projectPercentiles[percentile]), difference(change)];
+          number(result.percentileEstimates.whatIf.projectPercentiles[percentile]), difference(change),
+          String(planningDays(result.percentileEstimates.currentState.projectPercentiles[percentile])),
+          String(planningDays(result.percentileEstimates.whatIf.projectPercentiles[percentile])),
+          String(planningDayDifference(result.percentileEstimates.currentState.projectPercentiles[percentile], result.percentileEstimates.whatIf.projectPercentiles[percentile]))];
       })),
+    planningDayNote,
     "",
     `Assumptions: ${result.percentileEstimates.currentState.assumptions.join("; ")}.`,
     result.percentileEstimates.currentState.interpretation,
