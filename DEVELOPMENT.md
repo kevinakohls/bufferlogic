@@ -51,3 +51,29 @@ Scenario #1 gives 20 days and `A -> B -> D -> F -> G -> H`.
 The `B -> D` edge comes from Developer 1 contention, not a technical dependency.
 Swapping B and D priorities gives 22 days, a +2 day impact. Automated tests
 verify both complete schedules and that Current State is unchanged.
+
+## Schedule your own project
+
+Run the supplied JSON example from the repository root:
+
+```sh
+npm run schedule -- examples/project.json
+```
+
+Copy `examples/project.json` to your own file and edit its `tasks` array. Each
+task requires `id`, `name`, `goodCase`, `poorCase`, `resource`, `dependsOn`
+(an array, empty for no dependencies), and numeric `priority`. Use the same
+duration unit for every task. Additional metadata is allowed but does not
+affect baseline scheduling. The input file is never modified.
+
+The output includes task durations/start/finish times, technical and resource
+predecessors, `criticalChain`, and `projectP50`. To save pure JSON without npm's
+command banner:
+
+```sh
+npm run --silent schedule -- examples/project.json > schedule.json
+```
+
+Invalid JSON, malformed tasks, missing files, invalid estimates/dependencies,
+or dependency cycles produce an error on stderr and a nonzero exit code.
+Use `npm run --silent schedule -- --help` for usage.
