@@ -234,3 +234,21 @@ the deterministic task-P50 baseline separately from estimated project P50.
 Task timings remain from the deterministic baseline, not percentile schedules.
 Both output formats include the approximation assumptions. Even a change
 that leaves baseline timing unchanged can change estimated upper percentiles.
+
+## Validate the approximation (development tool)
+
+```sh
+npm run validate-percentiles -- examples/resource-change-what-if.csv --iterations 100000 --seed 20261008
+```
+
+This separate command uses fixed-seed simulation only for validation. It
+compares product estimates against a sampled fixed-chain sum and a sampled
+full-project schedule, using identical task draws for both. It reports
+percentile errors, approximate 95% sampling intervals, sampled chain moments,
+and changed controlling-chain frequency. Normal product commands never call it.
+
+Defaults: 100,000 trials and seed 20261008. Trial counts must be 1,000–1,000,000;
+seeds are uint32 integers. Input task order is part of reproducibility. The
+default output is a text report; `--format json` or `--output report.json`
+provides full precision. Reports cannot overwrite existing files.
+See [validation/REPORT.md](validation/REPORT.md) for measured errors and limits.

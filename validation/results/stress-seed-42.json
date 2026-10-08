@@ -1,0 +1,144 @@
+{
+  "iterations": 100000,
+  "seed": 42,
+  "rng": "mulberry32-box-muller",
+  "empiricalQuantile": "nearest-rank",
+  "approximation": {
+    "method": "fixed-critical-chain-lognormal-moment-matching",
+    "assumptions": [
+      "Independent task durations",
+      "Fixed Critical Chain from the deterministic P50 schedule"
+    ],
+    "interpretation": "Approximate whole-project completion percentiles conditional on the baseline Critical Chain remaining controlling; alternate chains, correlations, and calendars are not modeled.",
+    "deterministicBaselineDuration": 20,
+    "criticalChain": [
+      "A",
+      "B",
+      "D",
+      "F",
+      "G",
+      "H"
+    ],
+    "chainDistribution": {
+      "mean": 30.896535326079995,
+      "variance": 361.95831309654193,
+      "mu": 3.2699015274325496,
+      "sigma": 0.5669965164179609
+    },
+    "projectPercentiles": {
+      "p50": 26.308748525692025,
+      "p80": 42.39785769973466,
+      "p95": 66.85511424625739,
+      "p98": 84.29900023744734,
+      "p99": 98.38935998618686
+    }
+  },
+  "fixedChainSampleMoments": {
+    "mean": 30.892673071415278,
+    "variance": 351.56113220841775
+  },
+  "changedCriticalChainFraction": 0.38821,
+  "percentiles": [
+    {
+      "percentile": "P50",
+      "approximation": 26.308748525692025,
+      "fixedChain": {
+        "duration": 26.79439702509213,
+        "samplingInterval95": {
+          "lower": 26.69629036674971,
+          "upper": 26.886743165133225
+        }
+      },
+      "fullProject": {
+        "duration": 28.05619665465357,
+        "samplingInterval95": {
+          "lower": 27.97216944303009,
+          "upper": 28.144209645326427
+        }
+      },
+      "errorVsFixedChainPercent": -1.8125001989979905,
+      "errorVsFullProjectPercent": -6.228385659221924
+    },
+    {
+      "percentile": "P80",
+      "approximation": 42.39785769973466,
+      "fixedChain": {
+        "duration": 39.57329342947721,
+        "samplingInterval95": {
+          "lower": 39.40306865439148,
+          "upper": 39.73828911764351
+        }
+      },
+      "fullProject": {
+        "duration": 40.61469506701117,
+        "samplingInterval95": {
+          "lower": 40.45678859256881,
+          "upper": 40.79420894127323
+        }
+      },
+      "errorVsFixedChainPercent": 7.137551680632925,
+      "errorVsFullProjectPercent": 4.390437081409582
+    },
+    {
+      "percentile": "P95",
+      "approximation": 66.85511424625739,
+      "fixedChain": {
+        "duration": 60.552727650981254,
+        "samplingInterval95": {
+          "lower": 60.07863002169883,
+          "upper": 61.088519078393944
+        }
+      },
+      "fullProject": {
+        "duration": 61.51540391323138,
+        "samplingInterval95": {
+          "lower": 61.10982801647834,
+          "upper": 62.06797476508982
+        }
+      },
+      "errorVsFixedChainPercent": 10.408096942556156,
+      "errorVsFullProjectPercent": 8.680281674745682
+    },
+    {
+      "percentile": "P98",
+      "approximation": 84.29900023744734,
+      "fixedChain": {
+        "duration": 79.10512923194099,
+        "samplingInterval95": {
+          "lower": 78.42545598337328,
+          "upper": 80.32710388818298
+        }
+      },
+      "fullProject": {
+        "duration": 80.2199852098077,
+        "samplingInterval95": {
+          "lower": 79.10404057666713,
+          "upper": 81.19671392258356
+        }
+      },
+      "errorVsFixedChainPercent": 6.565782846113066,
+      "errorVsFullProjectPercent": 5.084786561567389
+    },
+    {
+      "percentile": "P99",
+      "approximation": 98.38935998618686,
+      "fixedChain": {
+        "duration": 95.68634807337624,
+        "samplingInterval95": {
+          "lower": 94.16704956525906,
+          "upper": 97.60652624478489
+        }
+      },
+      "fullProject": {
+        "duration": 96.93376723145686,
+        "samplingInterval95": {
+          "lower": 95.13062520172777,
+          "upper": 98.70412412998638
+        }
+      },
+      "errorVsFixedChainPercent": 2.824866835484041,
+      "errorVsFullProjectPercent": 1.5016364227899759
+    }
+  ],
+  "interpretation": "Simulation benchmark only, using independent lognormal inputs. Positive error means the approximation is higher than the benchmark. Rank intervals describe sampling error, not model accuracy. A changed chain includes tie-breaking changes; dispatch follows the existing priority policy and may change when tasks become eligible at different times."
+}
