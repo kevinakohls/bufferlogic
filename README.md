@@ -6,6 +6,13 @@
 
 BufferLogic applies **Critical Chain Project Management (CCPM)** and the **Theory of Constraints (TOC)** to AI-powered software development.
 
+**Review the working deterministic P50 milestone:** follow the
+[Reviewer Guide](REVIEWER_GUIDE.md) for Windows commands and expected results.
+The current engine supports JSON/CSV scheduling, scenario comparison, and
+Excel-compatible exports. The buffer management and GitLab/Duo integration
+described below remain future goals. See [Development](DEVELOPMENT.md) for
+the input format and scheduling contract.
+
 As AI agents become capable of coding, reviewing, testing, securing, and deploying software, the next challenge is no longer simply doing more work faster.
 
 The challenge is determining:
