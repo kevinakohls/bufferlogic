@@ -234,3 +234,19 @@ the deterministic task-P50 baseline separately from estimated project P50.
 Task timings remain from the deterministic baseline, not percentile schedules.
 Both output formats include the approximation assumptions. Even a change
 that leaves baseline timing unchanged can change estimated upper percentiles.
+
+### Whole-day planning view
+
+Percentile console and CSV reports add a **Whole days (round up)** column.
+Comparison reports show both scenarios' whole-day values and their difference.
+This view assumes inputs are in days; it does not convert hours or apply
+working calendars. Choose day estimates when using this view.
+
+Each completion duration is rounded up from its full-precision value, before
+two-decimal display formatting. A value just above 19 may display as 19.00
+but correctly plan as 20 days. Exact integers and zero remain unchanged.
+Differences subtract the two rounded completion days, rather than rounding
+the raw difference. For example, 5.1 and 5.9 both plan as 6 days, so the
+whole-day impact is zero. Raw estimates, calculations, JSON, and deterministic
+task timings retain their precision. Rounding is a planning display choice,
+not a claim of improved prediction accuracy.

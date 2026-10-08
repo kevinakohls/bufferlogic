@@ -13,12 +13,12 @@ test("comparison CSV includes +2 impact, both chains, all tasks and signed timin
   const whatIf = dBeforeB(scenario1);
   const before = structuredClone({ current: scenario1, whatIf });
   const csv = comparisonToCsv(scenario1, whatIf);
-  assert.ok(csv.startsWith("\uFEFFMetric,Current State,What-If,Difference\r\n"));
-  assert.ok(csv.includes("Deterministic P50-task baseline,20.00,22.00,2.00\r\n"));
+  assert.ok(csv.startsWith("\uFEFFMetric,Current State,What-If,Difference,Current whole days"));
+  assert.ok(csv.includes("Deterministic P50-task baseline,20.00,22.00,2.00,20,22,2\r\n"));
   assert.ok(csv.includes('Critical Chain,"A -> B -> D -> F -> G -> H","A -> D -> B -> E -> F -> G -> H",'));
   assert.ok(csv.includes('"D","Integration Module","Integration Module","Developer 1","Developer 1",4.00,4.00,9.00,13.00,3.00,7.00,-6.00,-6.00,Yes,Yes\r\n'));
   assert.ok(csv.includes('"C","Build UI","Build UI","Developer 2","Developer 2",6.00,6.00,3.00,9.00,3.00,9.00,0.00,0.00,No,No\r\n'));
-  assert.equal(csv.split("\r\n").length, 22);
+  assert.equal(csv.split("\r\n").length, 23);
   assert.deepEqual({ current: scenario1, whatIf }, before);
   assert.ok(comparisonToCsv(whatIf, scenario1).includes("Deterministic P50-task baseline,22.00,20.00,-2.00"));
 });

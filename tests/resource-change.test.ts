@@ -75,7 +75,7 @@ test("CLI comparison export reproduces the resource-change report reviewed in Ex
     ], { encoding: "utf8" });
     assert.equal(result.status, 0, result.stderr);
     const csv = readFileSync(output, "utf8");
-    assert.ok(csv.includes("Deterministic P50-task baseline,18.59,15.76,-2.83\r\n"));
+    assert.ok(csv.includes("Deterministic P50-task baseline,18.59,15.76,-2.83,19,16,-3\r\n"));
     assert.ok(csv.includes('Critical Chain,"A -> B -> C -> D -> E","A -> B -> D -> E",'));
     assert.ok(csv.includes('"C","Build Two","Build Two","Alice","Bob",2.83,2.83,9.31,12.14,2.83,5.66,-6.48,-6.48,Yes,No\r\n'));
     assert.ok(csv.includes('"D","Build Three","Build Three","Alice","Alice",2.45,2.45,12.14,14.59,9.31,11.76,-2.83,-2.83,Yes,Yes\r\n'));

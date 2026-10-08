@@ -9,6 +9,7 @@ import { compareProjects } from "../src/compare.js";
 import { estimateProjectPercentiles } from "../src/percentiles.js";
 import { readProject } from "../src/read-project.js";
 import type { Task } from "../src/types.js";
+import { planningDays, planningDayDifference } from "../src/planning-days.js";
 
 const currentPath = fileURLToPath(new URL("../../examples/resource-change-current.csv", import.meta.url));
 const whatIfPath = fileURLToPath(new URL("../../examples/resource-change-what-if.csv", import.meta.url));
@@ -62,7 +63,9 @@ test("JSON, console and Excel comparisons agree on the same percentile estimates
     const csv = readFileSync(output, "utf8");
     const format = (value: number) => new Intl.NumberFormat("en-US", { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
     for (const key of keys) {
-      assert.ok(csv.includes(`Estimated project ${key.toUpperCase()},${format(result.percentileEstimates.currentState.projectPercentiles[key])},${format(result.percentileEstimates.whatIf.projectPercentiles[key])},${format(result.percentileEstimates.differences[key])}\r\n`));
+      const currentValue = result.percentileEstimates.currentState.projectPercentiles[key];
+      const whatIfValue = result.percentileEstimates.whatIf.projectPercentiles[key];
+      assert.ok(csv.includes(`Estimated project ${key.toUpperCase()},${format(currentValue)},${format(whatIfValue)},${format(result.percentileEstimates.differences[key])},${planningDays(currentValue)},${planningDays(whatIfValue)},${planningDayDifference(currentValue, whatIfValue)}\r\n`));
       assert.ok(table.stdout.includes(key.toUpperCase()));
     }
     assert.match(csv, /Assumptions,"Independent task durations; Fixed Critical Chain/);

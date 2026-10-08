@@ -2,6 +2,7 @@ import type { Schedule, Task } from "./types.js";
 import { compareProjects } from "./compare.js";
 import { scheduleProject } from "./scheduler.js";
 import type { estimateProjectPercentiles } from "./percentiles.js";
+import { planningDays, planningDayDifference, planningDayNote } from "./planning-days.js";
 
 const decimal = new Intl.NumberFormat("en-US", {
   useGrouping: false,
@@ -16,12 +17,13 @@ function textCell(value: string): string {
 }
 
 export function percentilesToCsv(result: ReturnType<typeof estimateProjectPercentiles>): string {
-  const rows = ["Metric,Duration (input units)",
-    `Deterministic P50-task baseline,${decimal.format(result.deterministicBaselineDuration)}`,
-    ...Object.entries(result.projectPercentiles).map(([key, value]) => `Estimated project ${key.toUpperCase()},${decimal.format(value)}`),
+  const rows = ["Metric,Duration (input units),Whole days (round up)",
+    `Deterministic P50-task baseline,${decimal.format(result.deterministicBaselineDuration)},${planningDays(result.deterministicBaselineDuration)}`,
+    ...Object.entries(result.projectPercentiles).map(([key, value]) => `Estimated project ${key.toUpperCase()},${decimal.format(value)},${planningDays(value)}`),
     "", ["Baseline Critical Chain", textCell(result.criticalChain.join(" -> "))].join(","),
     ["Method", textCell(result.method)].join(","),
     ...result.assumptions.map(value => ["Assumption", textCell(value)].join(",")),
+    ["Whole-day planning", textCell(planningDayNote)].join(","),
     ["Interpretation", textCell(result.interpretation)].join(",")];
   return "\uFEFF" + rows.join("\r\n") + "\r\n";
 }
@@ -51,18 +53,22 @@ export function comparisonToCsv(currentTasks: readonly Task[], whatIfTasks: read
   const whatIfById = new Map(whatIfTasks.map(task => [task.id, task]));
   const alternativeTimings = new Map(whatIf.tasks.map(task => [task.id, task]));
   const rows = [
-    "Metric,Current State,What-If,Difference",
-    `Deterministic P50-task baseline,${decimal.format(current.projectP50)},${decimal.format(whatIf.projectP50)},${decimal.format(comparison.impactDays)}`,
+    "Metric,Current State,What-If,Difference,Current whole days (round up),What-If whole days (round up),Whole-day difference",
+    `Deterministic P50-task baseline,${decimal.format(current.projectP50)},${decimal.format(whatIf.projectP50)},${decimal.format(comparison.impactDays)},${planningDays(current.projectP50)},${planningDays(whatIf.projectP50)},${planningDayDifference(current.projectP50, whatIf.projectP50)}`,
     ...Object.entries(comparison.percentileEstimates.differences).map(([key, difference]) => {
       const percentile = key as keyof typeof comparison.percentileEstimates.differences;
       return [`Estimated project ${key.toUpperCase()}`,
         decimal.format(comparison.percentileEstimates.currentState.projectPercentiles[percentile]),
         decimal.format(comparison.percentileEstimates.whatIf.projectPercentiles[percentile]),
-        decimal.format(difference)].join(",");
+        decimal.format(difference),
+        planningDays(comparison.percentileEstimates.currentState.projectPercentiles[percentile]),
+        planningDays(comparison.percentileEstimates.whatIf.projectPercentiles[percentile]),
+        planningDayDifference(comparison.percentileEstimates.currentState.projectPercentiles[percentile], comparison.percentileEstimates.whatIf.projectPercentiles[percentile])].join(",");
     }),
     ["Critical Chain", textCell(current.criticalChain.join(" -> ")), textCell(whatIf.criticalChain.join(" -> ")), ""].join(","),
     ["Method", textCell(comparison.percentileEstimates.currentState.method)].join(","),
     ["Assumptions", textCell(comparison.percentileEstimates.currentState.assumptions.join("; "))].join(","),
+    ["Whole-day planning", textCell(planningDayNote)].join(","),
     ["Interpretation", textCell(comparison.percentileEstimates.currentState.interpretation)].join(","),
     "",
     "ID,Current Task,What-If Task,Current Resource,What-If Resource,Current P50,What-If P50,Current Start,Current Finish,What-If Start,What-If Finish,Start Difference,Finish Difference,Current Critical Chain,What-If Critical Chain",
