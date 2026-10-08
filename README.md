@@ -1,93 +1,130 @@
-# Bufferlogic
+# BufferLogic
 
+**Protect the Buffer. Finish Faster.**
 
+> **AI makes code faster. BufferLogic makes projects finish faster.**
 
-## Getting started
+BufferLogic applies **Critical Chain Project Management (CCPM)** and the **Theory of Constraints (TOC)** to AI-powered software development.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+As AI agents become capable of coding, reviewing, testing, securing, and deploying software, the next challenge is no longer simply doing more work faster.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+The challenge is determining:
 
-## Add your files
+**What work should we do next to make the entire project finish sooner?**
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+BufferLogic identifies the work currently controlling project completion, monitors protective buffers, and helps focus AI agents on the work that matters most.
 
-```
-cd existing_repo
-git remote add origin https://gitlab.com/DarkVole/bufferlogic.git
-git branch -M main
-git push -uf origin main
-```
+## The Problem
 
-## Integrate with your tools
+Generative AI dramatically increases the speed at which individual software-development tasks can be completed.
 
-* [Set up project integrations](https://gitlab.com/DarkVole/bufferlogic/-/settings/integrations)
+But optimizing individual tasks does not necessarily optimize the project.
 
-## Collaborate with your team
+A project can generate code faster while remaining constrained by:
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+- Testing
+- Code review
+- Security analysis
+- Integration
+- Deployment
+- Specialized resources
+- Decisions and approvals
 
-## Test and Deploy
+**Generative AI does not eliminate constraints. It moves them.**
 
-Use the built-in continuous integration in GitLab.
+BufferLogic treats software development as a system rather than a collection of independent tasks.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+## How BufferLogic Works
 
-***
+BufferLogic analyzes:
 
-# Editing this README
+- Task dependencies
+- Resource requirements
+- Task status and progress
+- Resource contention
+- Critical Chain position
+- Feeding buffers
+- Project buffer consumption
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+From this information, BufferLogic determines the **Critical Chain** — the sequence of work currently controlling when the project can finish.
 
-## Suggestions for a good README
+It then asks a different question from conventional project-management systems.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Instead of:
 
-## Name
-Choose a self-explaining name for your project.
+**What task is late?**
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+BufferLogic asks:
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+**What should we work on now to protect the project completion date?**
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Buffer Management
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Critical Chain protects the project using buffers rather than embedding safety into every individual task.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+BufferLogic monitors those buffers to determine whether changing project conditions actually threaten completion.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+A delayed task outside the Critical Chain may require little or no intervention.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+A seemingly small delay consuming a feeding buffer or project buffer may require immediate attention.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+This provides AI agents with a system-level priority signal.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+**AI agents do the work. BufferLogic determines which work matters most.**
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## Example
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Imagine a development project in which several events occur simultaneously:
 
-## License
-For open source projects, say how it is licensed.
+- A test fails.
+- A security finding appears.
+- A merge request is waiting for review.
+- Another developer finishes early.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+A conventional system may flag all three problems as urgent.
+
+BufferLogic evaluates their effect on the Critical Chain and project buffer.
+
+If the delayed review is consuming the buffer protecting project completion while the failed test is on a non-critical path with available feeding-buffer protection, BufferLogic prioritizes the review.
+
+The objective isn't to eliminate every delay.
+
+The objective is to **protect project completion**.
+
+## Architecture
+
+The initial BufferLogic architecture is:
+
+**GitLab → BufferLogic TypeScript Engine → Critical Chain & Buffer Analysis → GitLab Duo Agent Platform → Recommendation / Action**
+
+The BufferLogic engine will:
+
+1. Build the project dependency network.
+2. Account for resource contention.
+3. Identify the Critical Chain.
+4. Establish project and feeding buffers.
+5. Monitor buffer consumption.
+6. Identify the work creating the greatest threat to project completion.
+7. Provide that priority to an AI agent for recommendation or action.
+
+## Hackathon
+
+BufferLogic is being developed for **GitLab Transcend: Life After Code**.
+
+The project explores what happens after AI makes code generation dramatically faster.
+
+Our answer:
+
+**The next opportunity is coordinating AI work around the constraint of the entire development system.**
+
+## Development Status
+
+🚧 **Hackathon prototype under active development**
+
+The first milestone is an end-to-end demonstration in which BufferLogic:
+
+**GitLab project → Critical Chain calculation → buffer status → AI-agent recommendation/action**
+
+The initial implementation will use TypeScript and the GitLab Duo Agent Platform.
+
+Future development may incorporate historical task-duration distributions and Monte Carlo simulation to estimate the probability of
