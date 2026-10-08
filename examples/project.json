@@ -1,0 +1,92 @@
+{
+  "tasks": [
+    {
+      "id": "A",
+      "name": "Architecture",
+      "resource": "Architect",
+      "dependsOn": [],
+      "goodCase": 1,
+      "poorCase": 9,
+      "priority": 1
+    },
+    {
+      "id": "B",
+      "name": "Build API",
+      "resource": "Developer 1",
+      "dependsOn": [
+        "A"
+      ],
+      "goodCase": 3,
+      "poorCase": 12,
+      "priority": 2
+    },
+    {
+      "id": "C",
+      "name": "Build UI",
+      "resource": "Developer 2",
+      "dependsOn": [
+        "A"
+      ],
+      "goodCase": 4,
+      "poorCase": 9,
+      "priority": 3
+    },
+    {
+      "id": "D",
+      "name": "Integration Module",
+      "resource": "Developer 1",
+      "dependsOn": [
+        "A"
+      ],
+      "goodCase": 2,
+      "poorCase": 8,
+      "priority": 4
+    },
+    {
+      "id": "E",
+      "name": "API Tests",
+      "resource": "QA",
+      "dependsOn": [
+        "B"
+      ],
+      "goodCase": 1,
+      "poorCase": 4,
+      "priority": 5
+    },
+    {
+      "id": "F",
+      "name": "Integration Tests",
+      "resource": "QA",
+      "dependsOn": [
+        "C",
+        "D",
+        "E"
+      ],
+      "goodCase": 2,
+      "poorCase": 8,
+      "priority": 6
+    },
+    {
+      "id": "G",
+      "name": "Security Review",
+      "resource": "Security",
+      "dependsOn": [
+        "F"
+      ],
+      "goodCase": 1,
+      "poorCase": 4,
+      "priority": 7
+    },
+    {
+      "id": "H",
+      "name": "Release Candidate",
+      "resource": "DevOps",
+      "dependsOn": [
+        "G"
+      ],
+      "goodCase": 0.5,
+      "poorCase": 2,
+      "priority": 8
+    }
+  ]
+}
