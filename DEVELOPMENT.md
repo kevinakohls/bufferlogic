@@ -142,3 +142,22 @@ spreadsheet formula character is prefixed with an apostrophe so it is treated
 as text. The command refuses to overwrite an existing file: choose a new
 output filename or remove the old output yourself. Input files remain unchanged.
 Without `--output`, the existing JSON-on-stdout behavior is preserved.
+
+## Readable console summaries
+
+```sh
+npm run schedule -- project.csv --format table
+npm run compare -- current.csv what-if.csv --format table
+```
+
+Schedule tables include names, resources, durations, timings, and Critical
+Chain membership, followed by project P50 and chain. Comparison tables show
+both P50 values and chains, signed completion impact, and changed task
+timings. All displayed numbers use two decimal places; calculations remain
+at full precision. Units are the consistent units supplied in the input
+(days in the reviewer examples). JSON remains the default; `--format json`
+can also request it explicitly.
+
+Combine `--format table --output schedule.csv` to display a summary and
+export CSV in the same command. Options follow the input filenames and may
+appear in either order. Existing output files remain protected.
