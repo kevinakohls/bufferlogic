@@ -1,0 +1,10 @@
+{
+  "asOf": 5,
+  "tasks": [
+    { "id": "A", "name": "Design", "resource": "Alice", "dependsOn": [], "goodCase": 1, "poorCase": 9, "priority": 1, "status": "completed", "actuals": { "start": 0, "finish": 3 } },
+    { "id": "B", "name": "Build API", "resource": "Alice", "dependsOn": ["A"], "goodCase": 3, "poorCase": 12, "priority": 3, "status": "active", "remaining": { "goodCase": 3, "poorCase": 12, "estimateStatus": "stale" } },
+    { "id": "C", "name": "Build UI", "resource": "Bob", "dependsOn": ["A"], "goodCase": 2, "poorCase": 8, "priority": 2, "status": "planned" },
+    { "id": "D", "name": "Integration", "resource": "Alice", "dependsOn": ["A"], "goodCase": 1, "poorCase": 4, "priority": 1, "status": "planned" },
+    { "id": "E", "name": "Test", "resource": "QA", "dependsOn": ["B", "C", "D"], "goodCase": 1, "poorCase": 4, "priority": 4, "status": "planned" }
+  ]
+}

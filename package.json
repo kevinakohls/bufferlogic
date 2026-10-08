@@ -10,7 +10,9 @@
     "demo": "npm run build && node dist/examples/scenario1.js",
     "schedule": "npm run --silent build && node dist/src/cli.js",
     "compare": "npm run --silent build && node dist/src/compare-cli.js",
-    "percentiles": "npm run --silent build && node dist/src/percentiles-cli.js"
+    "percentiles": "npm run --silent build && node dist/src/percentiles-cli.js",
+    "progress": "npm run --silent build && node dist/src/progress-cli.js",
+    "compare-progress": "npm run --silent build && node dist/src/compare-progress-cli.js"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

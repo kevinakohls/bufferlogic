@@ -118,7 +118,7 @@ moving or deleting it. The input CSVs are never changed.
 npm.cmd test
 ```
 
-At this milestone, all **62 tests** pass, with none skipped. They cover the
+At this milestone, all **73 tests** pass, with none skipped. They cover the
 examples above, full-precision timing comparisons, resource and dependency
 relationships, invalid inputs/cycles, scenario immutability, stale remaining
 estimates, and the command/export workflows. GitHub Actions runs the suite
@@ -137,8 +137,8 @@ on Node.js 22 and 24 for pull requests and pushes to `main`.
 - Each named resource handles one task at a time without interruption. Lower
   priorities run first among eligible tasks; ties preserve input order.
 - A missing remaining-duration update may be marked stale; it never reduces
-  duration automatically. Completed-task actuals are retained as metadata;
-  this is not yet a live progress-rescheduling workflow.
+  duration automatically. Baseline commands retain lifecycle metadata without
+  interpreting it; the separate progress commands below forecast remaining work.
 - UI, project/feeding buffers, Commit Date logic, red/green status, Monte Carlo,
   simulated probability calculations, and GitLab/Duo integrations are outside this milestone.
 
@@ -195,5 +195,51 @@ is rounded up, while raw values remain available. On the resource-change
 What-If, P95/P98/P99 plan as **19/20/21 days**. Whole-day comparison differences
 subtract the rounded scenario values. This view does not imply day-level
 accuracy for every project or add calendars and dates.
+
+## Forecast from a live progress snapshot
+
+Use the committed JSON snapshots so no input preparation is required:
+
+```powershell
+npm.cmd run progress -- examples/progress-current.json --format table
+npm.cmd run compare-progress -- examples/progress-current.json examples/progress-updated.json --format table
+```
+
+At **day 5**, A is completed with actuals 0–3. B is active on Alice with stale
+remaining estimates 3/12 (P50 = 6). C is planned on Bob. D is planned on Alice
+and has higher priority than B, but must wait for the already-active B. E waits
+for B, C, and D.
+
+| Task | Status | Current start–finish | After explicit B update |
+|---|---|---|---|
+| A | Completed | Actual 0–3 (history) | Actual 0–3 (history) |
+| B | Active | Remaining segment 5–11 | Remaining segment 5–9 |
+| C | Planned | 5–9 | 5–9 |
+| D | Planned | 11–13 | 9–11 |
+| E | Planned | 13–15 | 11–13 |
+
+Current deterministic remaining work is **10 days**, completion **day 15**,
+with remaining chain **B → D → E**. The second snapshot explicitly updates
+B to remaining estimates 2/8 (P50 = 4), reducing remaining work to **8 days**
+and completion to **day 13**. The comparison impact is **-2 days**.
+
+If no update arrives and `asOf` advances to day 6, B still has 6 P50 days
+remaining, the project still has 10 days remaining, and predicted completion
+moves to day 16. Stale does not mean progress. No timers or messages are built.
+
+Percentiles use remaining work on the snapshot's own Critical Chain, excluding
+completed tasks' uncertainty. Reports distinguish remaining duration from
+absolute completion day and retain the independent/fixed-chain assumptions.
+Snapshot inputs are JSON only for now; no UI has been added.
+
+Export the worked comparison for Excel:
+
+```powershell
+npm.cmd run compare-progress -- examples/progress-current.json examples/progress-updated.json --output reviewer-progress-comparison.csv
+Invoke-Item .\reviewer-progress-comparison.csv
+```
+
+Use a fresh filename on repeat runs. See [Development](DEVELOPMENT.md#live-progress-engine)
+for snapshot fields and validation rules.
 
 For your own inputs and all command options, see [DEVELOPMENT.md](DEVELOPMENT.md).

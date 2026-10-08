@@ -1,7 +1,7 @@
 import { calculateP50 } from "./duration.js";
 import type { Schedule, ScheduledTask, Task } from "./types.js";
 
-function validateTasks(tasks: readonly Task[]): void {
+export function validateTasks(tasks: readonly Task[]): void {
   const byId = new Map<string, Task>();
   for (const task of tasks) {
     if (!task.id.trim() || !task.name.trim() || !task.resource.trim()) {
