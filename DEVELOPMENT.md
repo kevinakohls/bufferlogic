@@ -161,3 +161,23 @@ can also request it explicitly.
 Combine `--format table --output schedule.csv` to display a summary and
 export CSV in the same command. Options follow the input filenames and may
 appear in either order. Existing output files remain protected.
+
+## Export a comparison for Excel
+
+```sh
+npm run compare -- current.csv what-if.csv --output comparison.csv
+```
+
+JSON and mixed CSV/JSON inputs work too. The report starts with project P50
+and Critical Chain summaries, followed by a blank row and a table of every
+task (including unchanged tasks) matched by ID, in Current State dispatch
+order. It includes both names/resources, durations, start/finish times,
+signed timing differences, and Critical Chain membership for each scenario.
+Differences are What-If minus Current State: positive means later, negative
+means earlier. Values display two decimals; calculations retain precision.
+Both scenarios must use the same units and task IDs.
+
+Add `--format table` to show a console summary while exporting. Otherwise an
+export writes only the file, with a status message on stderr. Existing files
+are never overwritten. The report uses the same Excel-compatible UTF-8,
+quoting, and text protection as schedule exports.
