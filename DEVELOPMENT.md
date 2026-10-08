@@ -225,3 +225,12 @@ of fixed-duration tasks returns the same duration at all percentiles.
 Unsupported numeric ranges are rejected instead of exporting infinity.
 CSV shows two decimals and includes assumptions; JSON retains full precision
 and the fitted aggregate moments. Existing output files are protected.
+
+The `compare` command now includes estimated project P50/P80/P95/P98/P99
+for both scenarios and differences (What-If minus Current State), using each
+scenario's own baseline Critical Chain. JSON adds `percentileEstimates`
+alongside the original deterministic fields. Console and CSV summaries label
+the deterministic task-P50 baseline separately from estimated project P50.
+Task timings remain from the deterministic baseline, not percentile schedules.
+Both output formats include the approximation assumptions. Even a change
+that leaves baseline timing unchanged can change estimated upper percentiles.

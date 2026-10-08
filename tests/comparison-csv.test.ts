@@ -14,22 +14,22 @@ test("comparison CSV includes +2 impact, both chains, all tasks and signed timin
   const before = structuredClone({ current: scenario1, whatIf });
   const csv = comparisonToCsv(scenario1, whatIf);
   assert.ok(csv.startsWith("\uFEFFMetric,Current State,What-If,Difference\r\n"));
-  assert.ok(csv.includes("Project P50,20.00,22.00,2.00\r\n"));
+  assert.ok(csv.includes("Deterministic P50-task baseline,20.00,22.00,2.00\r\n"));
   assert.ok(csv.includes('Critical Chain,"A -> B -> D -> F -> G -> H","A -> D -> B -> E -> F -> G -> H",'));
   assert.ok(csv.includes('"D","Integration Module","Integration Module","Developer 1","Developer 1",4.00,4.00,9.00,13.00,3.00,7.00,-6.00,-6.00,Yes,Yes\r\n'));
   assert.ok(csv.includes('"C","Build UI","Build UI","Developer 2","Developer 2",6.00,6.00,3.00,9.00,3.00,9.00,0.00,0.00,No,No\r\n'));
-  assert.equal(csv.split("\r\n").length, 14);
+  assert.equal(csv.split("\r\n").length, 22);
   assert.deepEqual({ current: scenario1, whatIf }, before);
-  assert.ok(comparisonToCsv(whatIf, scenario1).includes("Project P50,22.00,20.00,-2.00"));
+  assert.ok(comparisonToCsv(whatIf, scenario1).includes("Deterministic P50-task baseline,22.00,20.00,-2.00"));
 });
 
 test("reviewed zero-impact swap and empty/identical comparisons remain useful", () => {
   const load = (name: string) => parseProject(JSON.parse(readFileSync(new URL(`../../examples/${name}`, import.meta.url), "utf8")));
   const csv = comparisonToCsv(load("user-project.json"), load("user-project-what-if.json"));
-  assert.ok(csv.includes("Project P50,14.76,14.76,0.00"));
+  assert.ok(csv.includes("Deterministic P50-task baseline,14.76,14.76,0.00"));
   assert.ok(csv.includes('Critical Chain,"A -> B -> D -> E","A -> D -> B -> E",'));
-  assert.ok(comparisonToCsv([], []).includes("Project P50,0.00,0.00,0.00"));
-  assert.ok(comparisonToCsv(scenario1, scenario1).includes("Project P50,20.00,20.00,0.00"));
+  assert.ok(comparisonToCsv([], []).includes("Deterministic P50-task baseline,0.00,0.00,0.00"));
+  assert.ok(comparisonToCsv(scenario1, scenario1).includes("Deterministic P50-task baseline,20.00,20.00,0.00"));
 });
 
 test("comparison CSV escapes user text and shows resource/name changes on both sides", () => {
@@ -55,7 +55,7 @@ test("comparison CLI exports CSV/JSON inputs, supports table, protects files and
     assert.equal(result.stdout, "");
     assert.match(result.stderr, /Saved comparison CSV/);
     const saved = readFileSync(output, "utf8");
-    assert.ok(saved.includes("Project P50,2.83,2.83,0.00"));
+    assert.ok(saved.includes("Deterministic P50-task baseline,2.83,2.83,0.00"));
     const table = run([current, alternative, "--format", "table", "--output", join(directory, "table.csv")]);
     assert.equal(table.status, 0, table.stderr);
     assert.match(table.stdout, /Impact: 0\.00/);

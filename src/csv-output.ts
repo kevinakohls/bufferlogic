@@ -52,8 +52,18 @@ export function comparisonToCsv(currentTasks: readonly Task[], whatIfTasks: read
   const alternativeTimings = new Map(whatIf.tasks.map(task => [task.id, task]));
   const rows = [
     "Metric,Current State,What-If,Difference",
-    `Project P50,${decimal.format(current.projectP50)},${decimal.format(whatIf.projectP50)},${decimal.format(comparison.impactDays)}`,
+    `Deterministic P50-task baseline,${decimal.format(current.projectP50)},${decimal.format(whatIf.projectP50)},${decimal.format(comparison.impactDays)}`,
+    ...Object.entries(comparison.percentileEstimates.differences).map(([key, difference]) => {
+      const percentile = key as keyof typeof comparison.percentileEstimates.differences;
+      return [`Estimated project ${key.toUpperCase()}`,
+        decimal.format(comparison.percentileEstimates.currentState.projectPercentiles[percentile]),
+        decimal.format(comparison.percentileEstimates.whatIf.projectPercentiles[percentile]),
+        decimal.format(difference)].join(",");
+    }),
     ["Critical Chain", textCell(current.criticalChain.join(" -> ")), textCell(whatIf.criticalChain.join(" -> ")), ""].join(","),
+    ["Method", textCell(comparison.percentileEstimates.currentState.method)].join(","),
+    ["Assumptions", textCell(comparison.percentileEstimates.currentState.assumptions.join("; "))].join(","),
+    ["Interpretation", textCell(comparison.percentileEstimates.currentState.interpretation)].join(","),
     "",
     "ID,Current Task,What-If Task,Current Resource,What-If Resource,Current P50,What-If P50,Current Start,Current Finish,What-If Start,What-If Finish,Start Difference,Finish Difference,Current Critical Chain,What-If Critical Chain",
   ];

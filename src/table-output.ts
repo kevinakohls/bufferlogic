@@ -38,11 +38,21 @@ export function scheduleToTable(schedule: Schedule, tasks: readonly Task[]): str
 
 export function comparisonToTable(result: ReturnType<typeof compareProjects>): string {
   const summary = [
-    `Current State P50: ${number(result.currentState.projectP50)}`,
-    `What-If P50: ${number(result.whatIf.projectP50)}`,
+    `Current State P50: ${number(result.currentState.projectP50)} (deterministic task-P50 baseline)`,
+    `What-If P50: ${number(result.whatIf.projectP50)} (deterministic task-P50 baseline)`,
     `Impact: ${difference(result.impactDays)} (input units; positive = later, negative = earlier)`,
     `Current State Critical Chain: ${result.currentState.criticalChain.join(" -> ") || "(none)"}`,
     `What-If Critical Chain: ${result.whatIf.criticalChain.join(" -> ") || "(none)"}`,
+    "",
+    table(["Estimated project percentile", "Current State", "What-If", "Difference"],
+      Object.entries(result.percentileEstimates.differences).map(([key, change]) => {
+        const percentile = key as keyof typeof result.percentileEstimates.differences;
+        return [key.toUpperCase(), number(result.percentileEstimates.currentState.projectPercentiles[percentile]),
+          number(result.percentileEstimates.whatIf.projectPercentiles[percentile]), difference(change)];
+      })),
+    "",
+    `Assumptions: ${result.percentileEstimates.currentState.assumptions.join("; ")}.`,
+    result.percentileEstimates.currentState.interpretation,
     "",
   ];
   return summary.concat(result.taskChanges.length === 0 ? "No task timings changed." : table(

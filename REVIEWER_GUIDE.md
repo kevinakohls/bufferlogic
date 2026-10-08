@@ -118,7 +118,7 @@ moving or deleting it. The input CSVs are never changed.
 npm.cmd test
 ```
 
-At this milestone, all **55 tests** pass, with none skipped. They cover the
+At this milestone, all **58 tests** pass, with none skipped. They cover the
 examples above, full-precision timing comparisons, resource and dependency
 relationships, invalid inputs/cycles, scenario immutability, stale remaining
 estimates, and the command/export workflows. GitHub Actions runs the suite
@@ -181,5 +181,12 @@ Invoke-Item .\reviewer-percentiles.csv
 As with other exports, use a new filename on repeat runs. See
 [DEVELOPMENT.md](DEVELOPMENT.md#estimate-whole-project-completion-percentiles)
 for formulas and assumptions.
+
+The existing comparison commands also report whole-project P50/P80/P95/P98/P99
+for Current State and What-If, plus a difference at each percentile. Each
+scenario uses its own baseline Critical Chain. The deterministic baseline
+and task timing rows remain separately labeled. The Excel summary includes
+the percentile estimates and assumptions, so the report can be reviewed
+without running two separate percentile commands.
 
 For your own inputs and all command options, see [DEVELOPMENT.md](DEVELOPMENT.md).
