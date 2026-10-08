@@ -190,9 +190,9 @@ npm run percentiles -- project.csv --output project-percentiles.csv
 ```
 
 JSON input also works; JSON output is the default. This command estimates
-the entire baseline Critical Chain's P50, P80, P95, and P99 using a deterministic
+the entire baseline Critical Chain's P50, P80, P95, P98, and P99 using a deterministic
 lognormal moment-matching approximation. It does not sum task percentiles
-or run separate schedules with every task set to P80/P95/P99. It does not
+or run separate schedules with every task set to P80/P95/P98/P99. It does not
 use Monte Carlo. The existing schedule/compare commands remain unchanged.
 
 For each chain task, with `z80 = 0.8416212335729143`:
@@ -208,8 +208,8 @@ Sum the means and variances of the independent tasks on the deterministic
 P50 Critical Chain. For total mean M and variance V, approximate the sum as
 lognormal with `sigmaCC² = ln(1 + V/M²)` and
 `muCC = ln(M) - sigmaCC²/2`. Its percentile is `exp(muCC + sigmaCC*z)`.
-Standard normal z values are 0, z80, 1.6448536269514722, and
-2.3263478740408408 for P50/P80/P95/P99 respectively.
+Standard normal z values are 0, z80, 1.6448536269514722,
+2.0537489106318225, and 2.3263478740408408 for P50/P80/P95/P98/P99 respectively.
 
 Assumptions are independent task durations and a fixed baseline Critical
 Chain. Tasks outside that chain, correlations, changing resource order,

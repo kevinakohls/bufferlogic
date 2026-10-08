@@ -156,12 +156,13 @@ The deterministic baseline remains **20.00 days**, with chain
 | P50 | 26.31 |
 | P80 | 42.40 |
 | P95 | 66.86 |
+| P98 | 84.30 |
 | P99 | 98.39 |
 
 Each task's P20/P80 inputs fit a lognormal curve. Means and variances are
 combined across the baseline Critical Chain, then a lognormal approximation
 to that total gives project percentiles. There is no random sampling and no
-sum of individual task P80/P95/P99 durations. The long upper tail comes from
+sum of individual task P80/P95/P98/P99 durations. The long upper tail comes from
 the broad duration estimates and assumed lognormal distributions.
 
 These are approximate whole-project estimates assuming independent tasks

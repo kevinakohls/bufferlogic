@@ -3,7 +3,10 @@ import { scheduleProject } from "./scheduler.js";
 import type { Task } from "./types.js";
 
 const z80 = 0.8416212335729143;
-const normalQuantiles = { p50: 0, p80: z80, p95: 1.6448536269514722, p99: 2.3263478740408408 };
+const normalQuantiles = {
+  p50: 0, p80: z80, p95: 1.6448536269514722,
+  p98: 2.0537489106318225, p99: 2.3263478740408408,
+};
 
 /** Lognormal parameters and moments fitted to task P20/P80 estimates. */
 export function fitTaskLognormal(goodCase: number, poorCase: number) {
@@ -51,7 +54,8 @@ export function estimateProjectPercentiles(tasks: readonly Task[]) {
     chainDistribution: { mean, variance, mu, sigma },
     projectPercentiles: {
       p50: quantile(normalQuantiles.p50), p80: quantile(normalQuantiles.p80),
-      p95: quantile(normalQuantiles.p95), p99: quantile(normalQuantiles.p99),
+      p95: quantile(normalQuantiles.p95), p98: quantile(normalQuantiles.p98),
+      p99: quantile(normalQuantiles.p99),
     },
   };
 }

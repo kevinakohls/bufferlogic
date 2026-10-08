@@ -29,6 +29,7 @@ test("single-task project quantiles recover its lognormal distribution", () => {
   close(result.projectPercentiles.p50, 10);
   close(result.projectPercentiles.p80, 10 * Math.exp(.8416212335729143 * .5));
   close(result.projectPercentiles.p95, 10 * Math.exp(1.6448536269514722 * .5));
+  close(result.projectPercentiles.p98, 10 * Math.exp(2.0537489106318225 * .5));
   close(result.projectPercentiles.p99, 10 * Math.exp(2.3263478740408408 * .5));
 });
 
@@ -60,8 +61,8 @@ test("baseline resource Critical Chain selects contributing tasks; inputs remain
 
 test("fixed durations, empty projects, and invalid inputs have defined outcomes", () => {
   assert.deepEqual(estimateProjectPercentiles([task("A", 2, 2), task("B", 3, 3, ["A"])]).projectPercentiles,
-    { p50: 5, p80: 5, p95: 5, p99: 5 });
-  assert.deepEqual(estimateProjectPercentiles([]).projectPercentiles, { p50: 0, p80: 0, p95: 0, p99: 0 });
+    { p50: 5, p80: 5, p95: 5, p98: 5, p99: 5 });
+  assert.deepEqual(estimateProjectPercentiles([]).projectPercentiles, { p50: 0, p80: 0, p95: 0, p98: 0, p99: 0 });
   assert.throws(() => fitTaskLognormal(0, 8));
   assert.throws(() => fitTaskLognormal(8, 2));
   assert.throws(() => fitTaskLognormal(1e-300, 1e300), /numeric range/);
@@ -87,6 +88,8 @@ test("percentile CLI accepts JSON/CSV, produces labeled tables/exports, and prot
     assert.match(table.stdout, /Independent task durations/);
     const csv = readFileSync(output, "utf8");
     assert.match(csv, /Estimated project P99/);
+    assert.match(csv, /Estimated project P98/);
+    assert.match(table.stdout, /P98/);
     assert.match(csv, /Assumption,"Fixed Critical Chain/);
     assert.equal(run([input, "--output", output]).status, 1);
     assert.equal(readFileSync(output, "utf8"), csv);
