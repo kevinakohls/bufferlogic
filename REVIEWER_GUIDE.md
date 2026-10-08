@@ -1,0 +1,144 @@
+# BufferLogic reviewer walkthrough
+
+This milestone demonstrates how task dependencies, resource contention, and
+management priorities determine project completion. It implements a
+deterministic TypeScript scheduler with JSON/CSV input, console summaries,
+and CSV exports for Excel.
+
+Allow about five minutes after installation. All example files are committed
+in `examples/`; no personal files, credentials, UI, or GitLab access are needed.
+
+## Set up on Windows
+
+Install Git and Node.js 24 LTS (Node.js 22 or newer is supported), then open a
+new PowerShell window. For a new checkout:
+
+```powershell
+git clone https://github.com/kevinakohls/bufferlogic.git
+cd bufferlogic
+npm.cmd ci
+```
+
+If you already have the repository, open PowerShell in its folder and run
+`git pull origin main`, then `npm.cmd ci`. Run all remaining commands from
+the `bufferlogic` folder. `npm.cmd` avoids PowerShell script execution policy
+issues. Each command compiles the TypeScript before running the engine.
+
+## 1. Resource contention determines the Critical Chain
+
+```powershell
+npm.cmd run schedule -- examples/project.json --format table
+```
+
+Expected schedule in days:
+
+| Task | P50 duration | Start | Finish |
+|---|---:|---:|---:|
+| A | 3 | 0 | 3 |
+| B | 6 | 3 | 9 |
+| C | 6 | 3 | 9 |
+| D | 4 | 9 | 13 |
+| E | 2 | 9 | 11 |
+| F | 4 | 13 | 17 |
+| G | 2 | 17 | 19 |
+| H | 1 | 19 | 20 |
+
+**Project P50: 20 days. Critical Chain: A → B → D → F → G → H.**
+
+B and D both require Developer 1. D depends technically on A, not B, but it
+must wait until B releases the resource. That creates the B → D relationship
+in the Critical Chain. A technical Critical Path alone would miss it.
+
+## 2. A priority change can make completion later
+
+```powershell
+npm.cmd run demo
+```
+
+The demo prints the same Current State schedule and computes a separate
+What-If that puts D ahead of B by swapping their priorities. It reports:
+
+```text
+Critical Chain: A -> B -> D -> F -> G -> H
+Current State P50: 20 days
+D-before-B What-If P50: 22 days
+Impact: +2 days
+```
+
+D now finishes earlier (day 7), but B finishes at day 13 and its API tests
+finish at day 15. Integration tests therefore start at day 15 instead of
+day 13. The What-If chain is A → D → B → E → F → G → H. Moving one task
+earlier does not necessarily make the project finish earlier. Current State
+remains unchanged; the engine does not optimize away the chosen priorities.
+
+## 3. Relieving resource contention can make completion earlier
+
+```powershell
+npm.cmd run compare -- examples/resource-change-current.csv examples/resource-change-what-if.csv --format table
+```
+
+The only change in the second CSV is task C's resource: Alice becomes Bob.
+Both files use Build One estimates of 6 and 7 days.
+
+| Scenario | Project P50 (days) | Critical Chain |
+|---|---:|---|
+| Current State | 18.59 | A → B → C → D → E |
+| What-If | 15.76 | A → B → D → E |
+| Difference (What-If minus Current State) | -2.83 | |
+
+C starts at day 2.83 alongside B instead of waiting until day 9.31 for
+Alice. D and E each move 2.83 days earlier, and C leaves the Critical Chain.
+This is the resource-change example reviewed manually in Excel and covered
+by automated regression tests.
+
+### Open the comparison in Excel
+
+```powershell
+npm.cmd run compare -- examples/resource-change-current.csv examples/resource-change-what-if.csv --output reviewer-comparison.csv
+Invoke-Item .\reviewer-comparison.csv
+```
+
+The file is created in your local `bufferlogic` folder. `Invoke-Item` opens
+the default CSV application; if that is not Excel, open the file from Excel
+using **File → Open**. If columns do not separate correctly, use
+**Data → From Text/CSV** with comma as delimiter and UTF-8 encoding.
+
+The top rows show project P50 and both chains. The task table includes both
+resources, durations, timings, differences, and Critical Chain flags. All
+CSV numbers use two decimal places; Excel may choose its own display format.
+The engine retains full calculation precision.
+
+Exports refuse to overwrite existing files. For a repeat run, choose a new
+name such as `reviewer-comparison-2.csv`. Close the file in Excel before
+moving or deleting it. The input CSVs are never changed.
+
+## Verify the automated checks
+
+```powershell
+npm.cmd test
+```
+
+At this milestone, all **49 tests** pass, with none skipped. They cover the
+examples above, full-precision timing comparisons, resource and dependency
+relationships, invalid inputs/cycles, scenario immutability, stale remaining
+estimates, and the command/export workflows. GitHub Actions runs the suite
+on Node.js 22 and 24 for pull requests and pushes to `main`.
+
+## Scope and interpretation
+
+- Each task's P50 duration is `sqrt(goodCase * poorCase)` from its approximate
+  P20/P80 estimates. Inputs must be finite, positive, and ordered good ≤ poor.
+- Project P50 here means completion of the deterministic schedule using those
+  task P50s. It is not a simulated project median or a completion probability.
+- Examples use elapsed days from time zero. There are no working calendars,
+  start dates, or overnight/weekend rules. Future unit settings will default
+  to 8 working hours per day; hours/minutes entry is not implemented yet.
+- Each named resource handles one task at a time without interruption. Lower
+  priorities run first among eligible tasks; ties preserve input order.
+- A missing remaining-duration update may be marked stale; it never reduces
+  duration automatically. Completed-task actuals are retained as metadata;
+  this is not yet a live progress-rescheduling workflow.
+- UI, project/feeding buffers, Commit Date logic, red/green status, Monte Carlo,
+  probability calculations, and GitLab/Duo integrations are outside this milestone.
+
+For your own inputs and all command options, see [DEVELOPMENT.md](DEVELOPMENT.md).
