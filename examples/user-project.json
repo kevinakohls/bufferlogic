@@ -1,0 +1,9 @@
+{
+  "tasks": [
+    { "id": "A", "name": "Design", "resource": "Alice", "dependsOn": [], "goodCase": 2, "poorCase": 4, "priority": 1 },
+    { "id": "B", "name": "Build One", "resource": "Alice", "dependsOn": ["A"], "goodCase": 5, "poorCase": 6, "priority": 2 },
+    { "id": "C", "name": "Build Two", "resource": "Bob", "dependsOn": ["A"], "goodCase": 2, "poorCase": 4, "priority": 3 },
+    { "id": "D", "name": "Buld Three", "resource": "Alice", "dependsOn": ["A"], "goodCase": 2, "poorCase": 3, "priority": 4 },
+    { "id": "E", "name": "Test", "resource": "Bob", "dependsOn": ["B", "C", "D"], "goodCase": 4, "poorCase": 4, "priority": 5 }
+  ]
+}
