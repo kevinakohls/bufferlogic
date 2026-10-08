@@ -181,3 +181,56 @@ Add `--format table` to show a console summary while exporting. Otherwise an
 export writes only the file, with a status message on stderr. Existing files
 are never overwritten. The report uses the same Excel-compatible UTF-8,
 quoting, and text protection as schedule exports.
+
+## Estimate whole-project completion percentiles
+
+```sh
+npm run percentiles -- project.csv --format table
+npm run percentiles -- project.csv --output project-percentiles.csv
+```
+
+JSON input also works; JSON output is the default. This command estimates
+the entire baseline Critical Chain's P50, P80, P95, P98, and P99 using a deterministic
+lognormal moment-matching approximation. It does not sum task percentiles
+or run separate schedules with every task set to P80/P95/P98/P99. It does not
+use Monte Carlo. The existing schedule/compare commands remain unchanged.
+
+For each chain task, with `z80 = 0.8416212335729143`:
+
+```text
+mu = (ln(P20) + ln(P80)) / 2
+sigma = (ln(P80) - ln(P20)) / (2 * z80)
+mean = exp(mu + sigma²/2)
+variance = expm1(sigma²) * mean²
+```
+
+Sum the means and variances of the independent tasks on the deterministic
+P50 Critical Chain. For total mean M and variance V, approximate the sum as
+lognormal with `sigmaCC² = ln(1 + V/M²)` and
+`muCC = ln(M) - sigmaCC²/2`. Its percentile is `exp(muCC + sigmaCC*z)`.
+Standard normal z values are 0, z80, 1.6448536269514722,
+2.0537489106318225, and 2.3263478740408408 for P50/P80/P95/P98/P99 respectively.
+
+Assumptions are independent task durations and a fixed baseline Critical
+Chain. Tasks outside that chain, correlations, changing resource order,
+alternate controlling chains, calendars, and progress are not modeled.
+The sum of lognormals is generally not lognormal, so these are approximate
+project completion percentiles conditional on the baseline chain remaining
+controlling, not calibrated probability guarantees. Tail estimates, especially
+P99, are sensitive to the estimates and assumed lognormal shape.
+
+The deterministic sum of task P50s is reported separately and may differ
+from the approximated whole-chain P50. Empty projects return zero; a chain
+of fixed-duration tasks returns the same duration at all percentiles.
+Unsupported numeric ranges are rejected instead of exporting infinity.
+CSV shows two decimals and includes assumptions; JSON retains full precision
+and the fitted aggregate moments. Existing output files are protected.
+
+The `compare` command now includes estimated project P50/P80/P95/P98/P99
+for both scenarios and differences (What-If minus Current State), using each
+scenario's own baseline Critical Chain. JSON adds `percentileEstimates`
+alongside the original deterministic fields. Console and CSV summaries label
+the deterministic task-P50 baseline separately from estimated project P50.
+Task timings remain from the deterministic baseline, not percentile schedules.
+Both output formats include the approximation assumptions. Even a change
+that leaves baseline timing unchanged can change estimated upper percentiles.

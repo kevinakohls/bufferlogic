@@ -8,7 +8,8 @@ BufferLogic applies **Critical Chain Project Management (CCPM)** and the **Theor
 
 **Review the working deterministic P50 milestone:** follow the
 [Reviewer Guide](REVIEWER_GUIDE.md) for Windows commands and expected results.
-The current engine supports JSON/CSV scheduling, scenario comparison, and
+The current engine supports JSON/CSV scheduling, scenario comparison,
+approximate whole-project percentiles from the baseline Critical Chain, and
 Excel-compatible exports. The buffer management and GitLab/Duo integration
 described below remain future goals. See [Development](DEVELOPMENT.md) for
 the input format and scheduling contract.

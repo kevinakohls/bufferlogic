@@ -1,4 +1,5 @@
 import { scheduleProject } from "./scheduler.js";
+import { estimateProjectPercentiles } from "./percentiles.js";
 import type { Task } from "./types.js";
 
 /** Compare two full-project scenarios, matching task timings by ID. */
@@ -21,10 +22,23 @@ export function compareProjects(currentTasks: readonly Task[], whatIfTasks: read
       finishDifference: alternative.finish - task.finish,
     }];
   });
+  const currentEstimates = estimateProjectPercentiles(currentTasks);
+  const whatIfEstimates = estimateProjectPercentiles(whatIfTasks);
+  const percentileDifference = (key: keyof typeof currentEstimates.projectPercentiles) =>
+    whatIfEstimates.projectPercentiles[key] - currentEstimates.projectPercentiles[key];
   return {
     currentState: { projectP50: current.projectP50, criticalChain: current.criticalChain },
     whatIf: { projectP50: whatIf.projectP50, criticalChain: whatIf.criticalChain },
     impactDays: whatIf.projectP50 - current.projectP50,
     taskChanges,
+    percentileEstimates: {
+      currentState: currentEstimates,
+      whatIf: whatIfEstimates,
+      differences: {
+        p50: percentileDifference("p50"), p80: percentileDifference("p80"),
+        p95: percentileDifference("p95"), p98: percentileDifference("p98"),
+        p99: percentileDifference("p99"),
+      },
+    },
   };
 }
