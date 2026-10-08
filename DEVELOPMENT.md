@@ -250,3 +250,70 @@ the raw difference. For example, 5.1 and 5.9 both plan as 6 days, so the
 whole-day impact is zero. Raw estimates, calculations, JSON, and deterministic
 task timings retain their precision. Rounding is a planning display choice,
 not a claim of improved prediction accuracy.
+
+## Live progress engine
+
+Progress commands accept a JSON snapshot with `asOf` (elapsed project day)
+and the existing `tasks` array. Example files are committed and ready to run:
+
+```sh
+npm run progress -- examples/progress-current.json --format table
+npm run progress -- examples/progress-current.json --output progress.csv
+npm run compare-progress -- examples/progress-current.json examples/progress-updated.json --format table
+npm run compare-progress -- examples/progress-current.json examples/progress-updated.json --output progress-comparison.csv
+```
+
+Use `npm.cmd` in PowerShell. JSON output is the default; CSV exports are
+Excel-compatible with two-decimal values, whole-day completion columns, and
+protection against overwriting existing files. Snapshot inputs are JSON only
+for this milestone; the original CSV input format remains a baseline format.
+
+Task `status` is `planned` (default), `active`, or `completed`:
+
+- Completed tasks require `actuals: { "start": 0, "finish": 3 }`. Times must
+  be finite, nonnegative, ordered, and finish no later than `asOf`. Their
+  predecessors must also be completed before the recorded start, and actuals
+  on a shared resource cannot overlap. Actuals and estimates remain in history
+  but contribute no remaining duration or uncertainty.
+- Active tasks require `remaining: { "goodCase": 3, "poorCase": 12,
+  "estimateStatus": "stale" }`. These are remaining P20/P80 estimates, not
+  total original estimates. Both must be positive and ordered. All technical
+  predecessors must be completed, and only one active task may occupy each
+  resource. Active tasks continue immediately at `asOf`; planned work on that
+  resource waits, even if it has higher priority. No splitting or interruption
+  is modeled. Active-task start in the report means the start of the remaining
+  forecast segment, not its historical start.
+- Planned tasks use their original P20/P80 estimates. Completed dependencies
+  are satisfied; unfinished dependencies still gate dispatch. Priority chooses
+  among eligible tasks without silently optimizing the project's order.
+
+`remaining.estimateStatus` may be `current` or `stale`. Stale estimates are
+flagged and used unchanged. Advancing `asOf` never subtracts duration or
+automatically changes a status; the resource must explicitly report progress.
+This milestone has no daily notifications, timers, percent-complete inference,
+or actual start tracking for active tasks. `actuals` represents completed work
+and is rejected on unfinished tasks. Optional remaining metadata on planned
+tasks is retained but not used until they become active.
+
+`forecastProgress` returns deterministic remaining duration, completion day,
+remaining Critical Chain, unfinished task timings, completed history, stale
+active task IDs, and fixed-chain percentile estimates based on remaining work.
+Remaining durations start at zero internally; reported start/finish/completion
+days add `asOf`. Whole-day planning rounds absolute completion days up.
+Independent-duration and fixed-chain approximation limits still apply.
+
+When all tasks are complete, remaining duration and uncertainty are zero;
+completion reports the latest actual finish (not the later snapshot day).
+An empty project reports zero remaining work and its snapshot time.
+
+Progress comparisons require the same `asOf` day and task IDs. They keep both
+snapshots unchanged and compare deterministic completion, whole-project
+remaining-based P50/P80/P95/P98/P99 completion days, and rounded-day impacts.
+JSON includes both complete forecasts/history; comparison CSV summarizes
+completion differences, chains, stale estimates, and assumptions. Export each
+individual progress report to inspect all task timing details in Excel.
+
+The existing `schedule`, `compare`, and `percentiles` commands remain full-project
+baseline commands: they use original estimates regardless of lifecycle status.
+The JSON parser now preserves and validates lifecycle metadata, so a future UI
+can use the same typed task model without duplicating scheduling logic.
