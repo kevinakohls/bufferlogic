@@ -118,3 +118,22 @@ escaped quotes, and multiline quoted task names are supported.
 
 Inputs remain unchanged. Malformed CSV, missing/duplicate headers, invalid
 numbers, and invalid schedules fail with an error and nonzero exit code.
+
+## Export a schedule for Excel
+
+```sh
+npm run schedule -- project.csv --output schedule.csv
+```
+
+JSON inputs also support `--output`. The CSV includes ID, task name, resource,
+P50 duration, start, finish, and a Yes/No Critical Chain flag, in dispatch
+order. Values retain full precision; start and finish are elapsed units from
+project time zero, not calendar dates. Format the numeric columns in Excel
+to display fewer decimal places if desired.
+
+Exports use UTF-8 with an Excel-compatible marker and Windows line endings.
+Quoted text handles commas, quotes, and newlines. Text beginning with a
+spreadsheet formula character is prefixed with an apostrophe so it is treated
+as text. The command refuses to overwrite an existing file: choose a new
+output filename or remove the old output yourself. Input files remain unchanged.
+Without `--output`, the existing JSON-on-stdout behavior is preserved.
