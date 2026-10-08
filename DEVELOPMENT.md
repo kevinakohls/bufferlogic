@@ -96,3 +96,25 @@ completion; negative means earlier completion. Units must be days in both
 inputs for `impactDays` to represent days. Values retain full precision.
 Use `npm run --silent compare -- <current.json> <what-if.json>` for pure JSON
 output or `npm run --silent compare -- --help` for usage.
+
+## Excel CSV input
+
+Save the sheet as **CSV UTF-8 (Comma delimited)**. Both `schedule` and
+`compare` accept `.csv` paths as well as JSON (including mixed-format
+comparisons). No additional packages are needed.
+
+```sh
+npm run schedule -- project.csv
+npm run compare -- current.csv what-if.csv
+```
+
+Required column names are `ID`, `Task`, `Resource`, `Depends on`, `Good days`,
+`Poor days`, and `Priority`. Column order may vary; extra metadata columns
+are ignored. Use a blank dependency cell or `none` for no dependencies.
+Multiple dependencies are comma-separated IDs within a quoted CSV field,
+such as `"B,C,D"`; Excel adds the quotes when exporting. Numbers must use
+a decimal point. UTF-8 markers, Windows line endings, quoted commas,
+escaped quotes, and multiline quoted task names are supported.
+
+Inputs remain unchanged. Malformed CSV, missing/duplicate headers, invalid
+numbers, and invalid schedules fail with an error and nonzero exit code.
