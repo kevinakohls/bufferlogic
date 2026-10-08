@@ -13,18 +13,30 @@ test("CSV export contains all timings, task names, and Critical Chain membership
   const result = scheduleToCsv(scheduleProject(scenario1), scenario1);
   assert.ok(result.startsWith("\uFEFFID,Task,Resource,P50 duration,Start,Finish,Critical Chain\r\n"));
   assert.equal(result.split("\r\n").length, 10);
-  assert.ok(result.includes('"B","Build API","Developer 1",6,3,9,Yes\r\n'));
-  assert.ok(result.includes('"C","Build UI","Developer 2",6,3,9,No\r\n'));
-  assert.ok(result.includes('"H","Release Candidate","DevOps",1,19,20,Yes\r\n'));
+  assert.ok(result.includes('"B","Build API","Developer 1",6.00,3.00,9.00,Yes\r\n'));
+  assert.ok(result.includes('"C","Build UI","Developer 2",6.00,3.00,9.00,No\r\n'));
+  assert.ok(result.includes('"H","Release Candidate","DevOps",1.00,19.00,20.00,Yes\r\n'));
 });
 
-test("CSV export escapes quotes/commas/newlines, preserves Unicode and numeric precision", () => {
+test("CSV export escapes text and rounds display values without changing schedule precision", () => {
   const tasks = [{ ...scenario1[0]!, name: 'Design, "API"\n東京', goodCase: 2, poorCase: 4 }];
-  const csv = scheduleToCsv(scheduleProject(tasks), tasks);
+  const schedule = scheduleProject(tasks);
+  const before = structuredClone(schedule);
+  const csv = scheduleToCsv(schedule, tasks);
   assert.ok(csv.includes('"Design, ""API""\n東京"'));
-  assert.ok(csv.includes(",2.8284271247461903,0,2.8284271247461903,Yes"));
+  assert.ok(csv.includes(",2.83,0.00,2.83,Yes"));
+  assert.deepEqual(schedule, before);
+  assert.equal(JSON.parse(JSON.stringify(schedule)).projectP50, Math.sqrt(8));
   const formula = [{ ...tasks[0]!, id: "=1+1", name: " +SUM(A1)", resource: "@example" }];
   assert.ok(scheduleToCsv(scheduleProject(formula), formula).includes('"\'=1+1","\' +SUM(A1)","\'@example"'));
+});
+
+test("CSV numeric values use two decimals without scientific notation or grouping", () => {
+  for (const [value, expected] of [[1e-7, "0.00"], [1e22, "10000000000000000000000.00"], [1234.567, "1234.57"]] as const) {
+    const tasks = [{ ...scenario1[0]!, goodCase: value, poorCase: value }];
+    const csv = scheduleToCsv(scheduleProject(tasks), tasks);
+    assert.ok(csv.includes(`,${expected},0.00,${expected},Yes\r\n`), csv);
+  }
 });
 
 test("empty schedules export a header only", () => {

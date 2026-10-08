@@ -127,9 +127,14 @@ npm run schedule -- project.csv --output schedule.csv
 
 JSON inputs also support `--output`. The CSV includes ID, task name, resource,
 P50 duration, start, finish, and a Yes/No Critical Chain flag, in dispatch
-order. Values retain full precision; start and finish are elapsed units from
-project time zero, not calendar dates. Format the numeric columns in Excel
-to display fewer decimal places if desired.
+order. CSV numeric values use two decimal places, without scientific notation
+or thousands separators. This rounds display values only; scheduling and JSON
+output retain full precision. Very small durations can therefore display as
+0.00. Start and finish are elapsed units from project time zero, not calendar
+dates. Excel may apply its own cell display format when opening a CSV.
+
+The reviewer examples use days. Future explicit unit support will default to
+8 working hours per day; hours/minutes input and a settings UI are deferred.
 
 Exports use UTF-8 with an Excel-compatible marker and Windows line endings.
 Quoted text handles commas, quotes, and newlines. Text beginning with a
