@@ -2,7 +2,7 @@ import { parseProject } from "./project-input.js";
 import type { Task } from "./types.js";
 
 /** Comma-separated records with quoted fields, escaped quotes, and CRLF support. */
-function records(text: string): string[][] {
+export function csvRecords(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
@@ -44,7 +44,7 @@ function records(text: string): string[][] {
 const columns = ["ID", "Task", "Resource", "Depends on", "Good days", "Poor days", "Priority"] as const;
 
 export function parseProjectCsv(text: string): Task[] {
-  const rows = records(text);
+  const rows = csvRecords(text);
   const header = rows.shift()?.map(cell => cell.trim());
   if (!header) throw new Error("CSV must contain a header row");
   if (new Set(header).size !== header.length) throw new Error("CSV has duplicate column names");

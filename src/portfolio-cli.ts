@@ -1,11 +1,13 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { basename, extname } from 'node:path';
+import { parsePortfolioCsv } from './portfolio-csv.js';
 import { parseOptions } from './cli-options.js';
 import { parsePortfolio, schedulePortfolio, comparePortfolioVersions, type PortfolioResult } from './portfolio.js';
 
 try {
   const args = process.argv.slice(2);
   if (args.includes('--help')) {
-    console.log('Usage: npm run portfolio -- plan.json [--format json|table] [--output result.json]\nRevision history: npm run portfolio -- plan.json --previous previous-result.json [--output result.json]');
+    console.log('Usage: npm run portfolio -- plan.json|tasks.csv [--format json|table] [--output result.json]\nRevision history: npm run portfolio -- plan.json --previous previous-result.json [--output result.json]');
   } else {
     const previousIndex = args.indexOf('--previous');
     let previous: PortfolioResult | undefined;
@@ -17,7 +19,12 @@ try {
       args.splice(previousIndex, 2);
     }
     const options = parseOptions(args, 1, true);
-    const result = schedulePortfolio(parsePortfolio(JSON.parse(await readFile(options.files[0]!, 'utf8'))), previous);
+    const inputFile = options.files[0]!;
+    const source = await readFile(inputFile, 'utf8');
+    const plan = extname(inputFile).toLowerCase() === '.csv'
+      ? parsePortfolioCsv(source, basename(inputFile, extname(inputFile)), previous ? `${previous.plan.versionId}-revision` : 'csv-v1')
+      : parsePortfolio(JSON.parse(source));
+    const result = schedulePortfolio(plan, previous);
     const comparison = previous && previous.plan.asOf === result.plan.asOf ? comparePortfolioVersions(previous, result) : undefined;
     const json = JSON.stringify({ ...result, ...(comparison ? { comparison } : {}) }, null, 2) + '\n';
     if (options.output) {
