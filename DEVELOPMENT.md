@@ -327,3 +327,7 @@ can use the same typed task model without duplicating scheduling logic.
 `src/resource-calendars.ts` validates CSV/calendar settings and provides date-only availability and effort traversal. `schedulePortfolio` applies these calendars to dispatch, resource waits, fixed conflicts and project forecast dates. `tests/resource-calendars.test.ts` verifies calendar scheduling and timezone-aware today selection. No dependencies or services were added.
 
 `src/resource-recommendations.ts` provides deterministic one-resource-at-a-time Saturday sensitivity analysis. Recommendations rank the sum of individual project P95 improvements and leave baseline data untouched. `tests/resource-recommendations.test.ts` exercises eligibility, exceptions, limits and CLI output.
+
+## Local review UI
+
+`npm run ui` builds and starts `src/ui-server.ts` on local port 3000. `ui/` contains the dependency-free browser view. API load/schedule routes call the existing parsers and engine without persisting files. `tests/ui-server.test.ts` exercises the local API. `BUFFERLOGIC_PORT` can select another port. See [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md).

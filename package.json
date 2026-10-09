@@ -15,7 +15,8 @@
     "percentiles": "npm run --silent build && node dist/src/percentiles-cli.js",
     "progress": "npm run --silent build && node dist/src/progress-cli.js",
     "compare-progress": "npm run --silent build && node dist/src/compare-progress-cli.js",
-    "portfolio": "npm run --silent build && node dist/src/portfolio-cli.js"
+    "portfolio": "npm run --silent build && node dist/src/portfolio-cli.js",
+    "ui": "npm run --silent build && node dist/src/ui-server.js"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
