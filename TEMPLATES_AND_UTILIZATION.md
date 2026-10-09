@@ -7,7 +7,7 @@ import ordering, add multiple people to a task, or automatically increase capaci
 ## Create projects from templates
 
 Start `npm run ui`, then click **Create from template**. Choose your template CSV or
-**Use software template**, enter a new project name, and click **Create project**.
+**Use housing template** or **Use software template**, enter a new project name, and click **Create project**.
 A project is appended to the current workspace. In an empty workspace it starts a
 new portfolio. Repeat with another name to demonstrate two software projects sharing
 one resource pool.
@@ -116,3 +116,9 @@ Engine APIs: `instantiateTemplate`, `templateProjects` in `src/templates.ts` and
 `resourceUtilization(result)` in `src/utilization.ts`. UI result JSON now also includes
 `utilization` when a working calendar is present. Calendar-free plans can still be
 loaded and edited; their utilization tab asks for a calendar.
+
+The housing template and two-house example also include draft task descriptions and
+comments for both houses. Review these assumptions for the actual build, especially
+permit approval, inspections and curing or drying waits. Notes do not change estimates,
+dependencies or resource assignments. New template copies inherit the notes; saved
+projects retain their existing notes.
