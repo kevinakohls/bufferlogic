@@ -28,6 +28,31 @@ of Alice; its build finishes on day 5. Project One's build moves to day 5–8.
 The customer test and milestone retain their fixed times, and both projects are
 feasible. The engine does not optimize or silently reorder the portfolio.
 
+## Shared-resource delay example
+
+This separate example shows resource contention extending a project's completion,
+without a locked-date violation:
+
+```powershell
+npm.cmd run portfolio -- examples/portfolio-contention-isolated.json --format table
+npm.cmd run portfolio -- examples/portfolio-contention.json --format table
+```
+
+Project Two alone finishes on day **6**. Its design runs on Alice from day 0–2,
+build on Bob from day 2–5, and test on Alice from day 5–6.
+
+With Project One present, its long build occupies Bob from day 0–6. Project Two's
+design still finishes on day 2, but its build waits four days for Bob. That build
+runs from day 6–9, and its test from day 9–10. Project Two therefore finishes on
+day **10**, a **four-day delay** caused entirely by another project's resource use.
+
+Its critical chain is `P1-build -> P2-build -> P2-test`. The console task table's
+**Resource waits for** column identifies `P1-build` as the resource predecessor
+of `P2-build`; the technical predecessor remains `P2-design`. No technical dependency
+between the projects was added. This is resolved contention, so both forecasts are
+feasible and no capacity-violation warning is expected. Estimates are fixed in this
+example, making all project percentiles equal to their deterministic completion day.
+
 ## Project and task input
 
 The top-level JSON requires `id`, a unique `versionId`, `asOf` (day number),

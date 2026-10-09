@@ -108,3 +108,24 @@ test('portfolio CLI exports versioned JSON, retains previous runs and refuses ov
     assert.throws(()=>execFileSync(process.execPath,cli,{stdio:'pipe'}),/Command failed/);
   } finally {await rm(dir,{recursive:true,force:true});}
 });
+
+
+test('worked contention example extends Project Two completion through Project One resource work', async () => {
+  const shared = schedulePortfolio(parsePortfolio(JSON.parse(await readFile('examples/portfolio-contention.json', 'utf8'))));
+  const isolated = schedulePortfolio(parsePortfolio(JSON.parse(await readFile('examples/portfolio-contention-isolated.json', 'utf8'))));
+  const before = isolated.projects.find(p => p.id === 'P2')!.forecast;
+  const after = shared.projects.find(p => p.id === 'P2')!.forecast;
+  assert.equal(before.deterministicCompletion, 6);
+  assert.equal(after.deterministicCompletion, 10);
+  assert.equal(get(shared, 'P2-design').finish, 2);
+  assert.equal(get(shared, 'P2-build').start, 6);
+  assert.deepEqual(get(shared, 'P2-build').resourcePredecessors, ['P1-build']);
+  assert.deepEqual(get(shared, 'P2-build').technicalPredecessors, ['P2-design']);
+  assert.deepEqual(after.criticalChain, ['P1-build', 'P2-build', 'P2-test']);
+  assert.ok(after.feasible);
+  assert.equal(shared.conflicts.length, 0);
+  assert.equal(after.completionPercentiles.p95 - before.completionPercentiles.p95, 4);
+  const consoleResult = execFileSync(process.execPath, ['dist/src/portfolio-cli.js', 'examples/portfolio-contention.json', '--format', 'table'], { encoding: 'utf8' });
+  assert.match(consoleResult, /Resource waits for/);
+  assert.match(consoleResult, /P1-build -> P2-build -> P2-test/);
+});
