@@ -257,3 +257,5 @@ For dated schedules, add `--calendar examples/house-resource-calendars.csv` to t
 Add `--recommend-resources` to a calendar run to rank individual resource Saturday changes. The report keeps the baseline intact, lists separate project P95 gains, preserves exceptions and excludes infeasible or worsening outcomes from recommendations. See the resource-calendar guide for the ranking rule.
 
 The first UI is available with `npm run ui`. Follow [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md) to load the two-house example, edit estimates or availability, recalculate and save a review.
+
+In the UI Timeline tab, highlight P2 and find task 38. Its resource-wait predecessor is task 2 in P1. Both appear on P2’s critical chain. Use the predecessor button to inspect P1’s task; try the locked-task sample JSON to review milestone and fixed-commitment markers.
