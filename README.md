@@ -138,3 +138,11 @@ The first milestone is an end-to-end demonstration in which BufferLogic:
 The initial implementation will use TypeScript and the GitLab Duo Agent Platform.
 
 Future development may incorporate historical task-duration distributions and Monte Carlo simulation to estimate the probability of
+
+## Multi-project scheduling
+
+The portfolio engine schedules projects against shared resources, with project order, task overrides, percentage allocations, locked commitments and milestones. Projects own their versioned completion forecasts. See [PORTFOLIO_GUIDE.md](PORTFOLIO_GUIDE.md) for the worked example and conflict rules.
+
+```sh
+npm run portfolio -- examples/portfolio.json --format table
+```
