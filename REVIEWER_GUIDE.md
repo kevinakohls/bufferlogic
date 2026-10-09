@@ -118,7 +118,7 @@ moving or deleting it. The input CSVs are never changed.
 npm.cmd test
 ```
 
-At this milestone, all **89 tests** pass, with none skipped. They cover the
+At this milestone, all **117 tests** pass, with none skipped. They cover the
 examples above, full-precision timing comparisons, resource and dependency
 relationships, invalid inputs/cycles, scenario immutability, stale remaining
 estimates, and the command/export workflows. GitHub Actions runs the suite
@@ -249,3 +249,9 @@ For your own inputs and all command options, see [DEVELOPMENT.md](DEVELOPMENT.md
 Run `npm run portfolio -- examples/portfolio.json --format table`, then the same command with `examples/portfolio-what-if.json`. The first reports a missed locked customer test; the task-order override resolves it without moving the test. See [PORTFOLIO_GUIDE.md](PORTFOLIO_GUIDE.md) for ownership, allocation, milestone and schedule-version rules. Portfolio regression tests also verify cross-project critical chains and project-owned forecasts.
 
 For a direct cross-project delay, run the portfolio command with `examples/portfolio-contention-isolated.json`, then `examples/portfolio-contention.json`. Project Two moves from day 6 to day 10 because Project One occupies Bob. Its critical chain includes Project One’s build, and the task table names that resource wait.
+
+A larger acceptance case is the user-supplied two-house project: `npm run portfolio -- examples/house_build_tasks2.csv --format table`. See [HOUSE_BUILD_REVIEW.md](HOUSE_BUILD_REVIEW.md) for the dependency alignment requested by the user and completion forecasts.
+
+For dated schedules, add `--calendar examples/house-resource-calendars.csv` to the two-house command. Start defaults to today; pin `--start-date 2026-10-09` for the documented review dates. Calendar regression tests cover weekends, holidays, Saturday work, overtime, resource-specific availability, allocations, elapsed waits, locked conflicts, forecast dates, timezone boundaries and immutable versions.
+
+Add `--recommend-resources` to a calendar run to rank individual resource Saturday changes. The report keeps the baseline intact, lists separate project P95 gains, preserves exceptions and excludes infeasible or worsening outcomes from recommendations. See the resource-calendar guide for the ranking rule.

@@ -1,3 +1,4 @@
+import { createCalendar, validateCalendarSettings, type CalendarSettings } from './resource-calendars.js';
 import { calculateP50 } from './duration.js';
 import { fitTaskLognormal } from './percentiles.js';
 import { parseProject } from './project-input.js';
@@ -7,6 +8,7 @@ export interface PortfolioTask extends Task {
   readonly projectId: string;
   /** Percentage of one resource's capacity; default 100. */
   readonly allocationPercent?: number;
+  readonly durationMode?: 'working' | 'elapsed';
   readonly locked?: { readonly start: number; readonly finish: number };
 }
 export interface Project {
@@ -19,6 +21,7 @@ export interface PortfolioPlan {
   readonly versionId: string;
   readonly asOf: number;
   readonly approvalStatus?: 'draft' | 'approved';
+  readonly calendar?: CalendarSettings;
   readonly settings: { readonly durationUnit: 'days' };
   readonly resources: readonly string[];
   /** Array order is management's resource preference. */
@@ -37,9 +40,11 @@ export interface PortfolioEntry {
   readonly status: 'planned' | 'active' | 'completed';
   readonly technicalPredecessors: readonly string[];
   readonly resourcePredecessors: readonly string[];
+  readonly startDate?: string;
+  readonly finishDate?: string;
 }
 export interface PortfolioConflict {
-  readonly kind: 'dependency' | 'resource';
+  readonly kind: 'dependency' | 'resource' | 'calendar';
   readonly taskIds: readonly string[];
   readonly projectIds: readonly string[];
   readonly message: string;
@@ -51,6 +56,7 @@ export interface ProjectForecast {
   readonly criticalChain: readonly string[];
   readonly completionPercentiles: { readonly p50: number; readonly p80: number; readonly p95: number; readonly p98: number; readonly p99: number };
   readonly staleTaskIds: readonly string[];
+  readonly completionDates?: { readonly deterministic: string; readonly p50: string; readonly p80: string; readonly p95: string; readonly p98: string; readonly p99: string };
 }
 export interface PortfolioVersion {
   readonly plan: PortfolioPlan;
@@ -79,6 +85,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
     if (!object(p) || !text(p.id) || !text(p.name) || !Array.isArray(p.tasks)) throw new Error('Invalid project');
     const tasks = p.tasks.map((t: unknown): PortfolioTask => {
       if (!object(t) || t.projectId !== p.id) throw new Error('Each task must name its single owning projectId');
+      if (t.durationMode !== undefined && t.durationMode !== 'working' && t.durationMode !== 'elapsed') throw new Error('durationMode must be working or elapsed');
       const milestone = t.goodCase === 0 && t.poorCase === 0;
       const parsed = parseProject({ tasks: [{ ...t, ...(milestone ? { goodCase: 1, poorCase: 1 } : {}) }] })[0]!;
       if (t.allocationPercent !== undefined && (typeof t.allocationPercent !== 'number'
@@ -90,6 +97,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
         locked = { start: t.locked.start, finish: t.locked.finish };
       }
       return { ...parsed, ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
+        ...(t.durationMode === undefined ? {} : { durationMode: t.durationMode }),
         ...(t.allocationPercent === undefined ? {} : { allocationPercent: t.allocationPercent as number }),
         ...(locked === undefined ? {} : { locked }) };
     });
@@ -98,6 +106,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
   if (value.taskOrderOverrides !== undefined && (!Array.isArray(value.taskOrderOverrides) || !value.taskOrderOverrides.every(text))) throw new Error('Invalid taskOrderOverrides');
   return { id: value.id, versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days' },
     resources: [...value.resources] as string[], projects,
+    ...(value.calendar === undefined ? {} : { calendar: validateCalendarSettings(value.calendar) }),
     ...(value.approvalStatus === undefined ? {} : { approvalStatus: value.approvalStatus }),
     ...(value.taskOrderOverrides === undefined ? {} : { taskOrderOverrides: [...value.taskOrderOverrides] as string[] }) };
 }
@@ -105,6 +114,8 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
 /** Non-preemptive capacity scheduling with fixed reservations and immutable schedule history. */
 export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResult): PortfolioResult {
   const plan = parsePortfolio(input); // detached snapshot, validate typed callers too
+  const calendar = plan.calendar ? createCalendar(plan.calendar) : undefined;
+  if (calendar) for (const resource of plan.resources) calendar.available(resource, plan.asOf);
   const tasks = plan.projects.flatMap(p => p.tasks);
   const byId = new Map(tasks.map(t => [t.id, t]));
   if (byId.size !== tasks.length) throw new Error('Task IDs must be globally unique');
@@ -139,21 +150,25 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   const entries = new Map<string, PortfolioEntry>();
   const conflicts: PortfolioConflict[] = [];
   function entry(t: PortfolioTask, start: number, finish: number): PortfolioEntry {
-    return { id: t.id, projectId: t.projectId, resource: t.resource, allocationPercent: t.allocationPercent ?? 100,
-      start, finish, locked: t.locked !== undefined, status: t.status ?? 'planned', technicalPredecessors: [...t.dependsOn], resourcePredecessors: [] };
+    return { id: t.id, projectId: t.projectId, resource: t.resource, allocationPercent: t.durationMode === 'elapsed' ? 0 : t.allocationPercent ?? 100,
+      start, finish, locked: t.locked !== undefined, status: t.status ?? 'planned', technicalPredecessors: [...t.dependsOn], resourcePredecessors: [],
+      ...(calendar ? {startDate:calendar.date(start),finishDate:start===finish?calendar.date(finish):calendar.completionDate(finish)} : {}) };
   }
   function duration(t: PortfolioTask): number {
     const estimates = t.status === 'active' ? t.remaining! : t;
-    const value = estimates.goodCase === 0 && estimates.poorCase === 0 ? 0 : calculateP50(estimates.goodCase, estimates.poorCase) / ((t.allocationPercent ?? 100) / 100);
+    const value = estimates.goodCase === 0 && estimates.poorCase === 0 ? 0 : calculateP50(estimates.goodCase, estimates.poorCase) / (t.durationMode === 'elapsed' ? 1 : ((t.allocationPercent ?? 100) / 100));
     if (!Number.isFinite(value)) throw new Error(`Duration exceeds numeric range: ${t.id}`);
     return value;
+  }
+  function taskFinish(t:PortfolioTask,start:number,effort=duration(t)):number {
+    return calendar && t.durationMode !== 'elapsed' ? calendar.finish(t.resource,start,effort) : start+effort;
   }
   // Reserve all commitments and running work before dispatching planned work.
   for (const t of tasks) {
     if (t.status === 'completed') entries.set(t.id, entry(t, t.actuals!.start, t.actuals!.finish));
     else if (t.locked) entries.set(t.id, entry(t, t.locked.start, t.locked.finish));
     else if (t.status === 'active') {
-      const finish = plan.asOf + duration(t);
+      const finish = taskFinish(t,plan.asOf);
       if (!Number.isFinite(finish) || finish <= plan.asOf) throw new Error(`Schedule exceeds numeric precision: ${t.id}`);
       entries.set(t.id, entry(t, plan.asOf, finish));
     }
@@ -165,7 +180,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     || projectOrder.get(a.projectId)! - projectOrder.get(b.projectId)! || a.priority - b.priority);
   function overlaps(e: PortfolioEntry, start: number, finish: number) { return e.start < finish && e.finish > start && e.finish > e.start; }
   function fits(t: PortfolioTask, start: number, finish: number): boolean {
-    if (start === finish) return true; // milestone requires no resource capacity
+    if (start === finish || t.durationMode === 'elapsed') return true; // milestone requires no resource capacity
     const existing = [...entries.values()].filter(e => e.resource === t.resource && overlaps(e, start, finish));
     const events = [start, ...existing.flatMap(e => [Math.max(start, e.start), Math.min(finish, e.finish)])].filter(v => v < finish);
     return events.every(time => existing.filter(e => e.start <= time && e.finish > time).reduce((sum, e) => sum + e.allocationPercent, t.allocationPercent ?? 100) <= 100 + 1e-9);
@@ -177,7 +192,8 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     for (let i = 0; i < pending.length;) {
       const t = pending[i]!;
       if (!t.dependsOn.every(id => entries.has(id) && entries.get(id)!.finish <= time)) { i++; continue; }
-      const finish = time + duration(t);
+      if (calendar && t.durationMode !== 'elapsed' && duration(t)>0 && calendar.nextWorking(t.resource,time) > time+1e-9) { i++; continue; }
+      const finish = taskFinish(t,time);
       if (!Number.isFinite(finish) || (duration(t) > 0 && finish <= time)) throw new Error(`Schedule exceeds numeric precision: ${t.id}`);
       if (!fits(t, time, finish)) { i++; continue; }
       entries.set(t.id, entry(t, time, finish)); pending.splice(i, 1); progressed = true;
@@ -185,6 +201,13 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     if (!pending.length) break;
     if (progressed) continue; // newly completed zero-duration milestones at this event
     const events = [...entries.values()].flatMap(e => [e.start, e.finish]).filter(v => v > time);
+    if (calendar) for (const t of pending) {
+      if (t.durationMode === 'elapsed' || duration(t)===0) continue;
+      if (t.dependsOn.every(id=>entries.has(id) && entries.get(id)!.finish<=time)) {
+        const next=calendar.nextWorking(t.resource,time);
+        if (next>time+1e-9) events.push(next);
+      }
+    }
     if (!events.length) throw new Error('Unable to advance portfolio schedule');
     time = Math.min(...events);
   }
@@ -194,6 +217,12 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   }
   for (const e of scheduled) {
     for (const id of e.technicalPredecessors) if (entries.get(id)!.finish > e.start) conflict('dependency', [id, e.id], `${id} finishes after ${e.id}'s fixed start`);
+  }
+  if (calendar) for (const t of tasks) {
+    if (!t.locked || t.status==='completed' || t.durationMode==='elapsed' || t.goodCase===0) continue;
+    const required=duration(t);
+    if (calendar.effortBetween(t.resource,Math.max(plan.asOf,t.locked.start),t.locked.finish)+1e-9 < required)
+      conflict('calendar',[t.id],`${t.id} has insufficient working availability inside its fixed interval`);
   }
   for (const resource of plan.resources) {
     const occupants = scheduled.filter(e => e.resource === resource && e.finish > e.start);
@@ -205,10 +234,11 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   }
   // Resource links at dispatch boundaries capture cross-project capacity releases.
   for (const e of scheduled) {
-    if (e.status === 'completed' || e.locked || e.start === plan.asOf || e.start === e.finish) continue;
-    const priorLoad = scheduled.filter(p => p.id !== e.id && p.resource === e.resource && p.start < e.start && p.finish >= e.start).reduce((sum,p)=>sum+p.allocationPercent,0);
+    if (e.status === 'completed' || e.locked || e.start === plan.asOf || e.start === e.finish || e.allocationPercent===0) continue;
+    const releases = scheduled.filter(p => p.id !== e.id && p.resource === e.resource && p.start < p.finish && p.finish <= e.start && p.allocationPercent > 0 && (calendar ? calendar.nextWorking(e.resource,p.finish) <= e.start+1e-9 && calendar.nextWorking(e.resource,p.finish) >= e.start-1e-9 : p.finish === e.start));
+    const priorLoad = scheduled.filter(p => p.id !== e.id && p.resource === e.resource && p.start < e.start && (p.finish >= e.start || releases.includes(p))).reduce((sum,p)=>sum+p.allocationPercent,0);
     if (priorLoad + e.allocationPercent <= 100 + 1e-9) continue;
-    const links = scheduled.filter(p => p.id !== e.id && p.resource === e.resource && p.finish === e.start && p.start < p.finish).map(p => p.id);
+    const links = releases.map(p => p.id);
     entries.set(e.id, { ...e, resourcePredecessors: links });
   }
   function chainTo(id: string, seen = new Set<string>()): string[] {
@@ -223,8 +253,9 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   while (changed) { changed = false; for (const e of entries.values()) if (!affected.has(e.id) && [...e.technicalPredecessors,...e.resourcePredecessors].some(id=>affected.has(id))) { affected.add(e.id); changed=true; } }
   const projects = plan.projects.map(p => {
     const own = p.tasks.map(t => entries.get(t.id)!);
-    own.sort((a,b) => b.finish-a.finish);
+    own.sort((a,b) => b.finish-a.finish || (calendar ? Number(b.start===b.finish)-Number(a.start===a.finish) : 0));
     const completion = own[0]?.finish ?? plan.asOf;
+    const forecastDate = calendar ? (own[0]?.start===own[0]?.finish || own.length===0 ? calendar.date : calendar.completionDate) : undefined;
     const criticalChain = own[0] ? chainTo(own[0].id) : [];
     // Fixed appointments reset the completion anchor. Prior uncertainty is a deadline risk,
     // not permission to move the appointment. Only subsequent uncertain work shifts completion.
@@ -234,7 +265,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
       if (e.locked || e.status === 'completed') { anchor = e.finish; mean = 0; variance = 0; continue; }
       const estimates = t.status === 'active' ? t.remaining! : t;
       if (estimates.goodCase === 0) continue;
-      const moments = fitTaskLognormal(estimates.goodCase, estimates.poorCase), fraction = e.allocationPercent / 100;
+      const moments = fitTaskLognormal(estimates.goodCase, estimates.poorCase), fraction = t.durationMode === 'elapsed' ? 1 : e.allocationPercent / 100;
       mean += moments.mean/fraction; variance += moments.variance/(fraction*fraction);
     }
     // Preserve idle gaps after the last fixed anchor, including resource availability gaps.
@@ -242,21 +273,43 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     const suffixDuration = suffix.reduce((sum,id)=>sum+entries.get(id)!.finish-entries.get(id)!.start,0);
     const offset = Math.max(anchor, completion-suffixDuration);
     const sigmaSquared = mean === 0 ? 0 : Math.log1p((variance/mean)/mean);
-    const quantile = (z:number) => offset + (mean===0 ? 0 : variance===0 ? mean : Math.exp(Math.log(mean)-sigmaSquared/2+Math.sqrt(sigmaSquared)*z));
+    const quantile = (z:number) => {
+      const effort = mean===0 ? 0 : variance===0 ? mean : Math.exp(Math.log(mean)-sigmaSquared/2+Math.sqrt(sigmaSquared)*z);
+      if (!calendar) return offset+effort;
+      // Distribute the aggregate chain quantile by task expected effort, then traverse
+      // each resource calendar. This stays deterministic; alternate chains are not sampled.
+      let finish=anchor, priorBaseline=anchor;
+      for (const id of suffix) {
+        const e=entries.get(id)!, t=byId.get(id)!;
+        const estimates=t.status==='active'?t.remaining!:t;
+        const baselineReady=t.durationMode==='elapsed'||estimates.goodCase===0 ? priorBaseline : calendar.nextWorking(t.resource,priorBaseline);
+        const gap=Math.max(0,e.start-baselineReady);
+        finish+=gap;
+        if (estimates.goodCase>0) {
+          const moments=fitTaskLognormal(estimates.goodCase,estimates.poorCase);
+          const fraction=t.durationMode==='elapsed'?1:e.allocationPercent/100;
+          finish=taskFinish(t,finish,mean===0?0:effort*(moments.mean/fraction)/mean);
+        }
+        priorBaseline=e.finish;
+      }
+      return finish;
+    };
     const completionPercentiles = { p50:quantile(0), p80:quantile(.8416212335729143), p95:quantile(1.6448536269514722), p98:quantile(2.0537489106318225), p99:quantile(2.3263478740408408) };
     if (!Object.values(completionPercentiles).every(Number.isFinite)) throw new Error('Portfolio forecast exceeds numeric range');
     return { ...p, forecast: { scheduleVersionId: plan.versionId, feasible: !p.tasks.some(t=>affected.has(t.id)), deterministicCompletion: completion, criticalChain,
-      completionPercentiles, staleTaskIds: p.tasks.filter(t=>t.status==='active'&&t.remaining?.estimateStatus==='stale').map(t=>t.id) } };
+      completionPercentiles,
+      ...(calendar ? { completionDates: { deterministic:forecastDate!(completion),p50:forecastDate!(completionPercentiles.p50),p80:forecastDate!(completionPercentiles.p80),p95:forecastDate!(completionPercentiles.p95),p98:forecastDate!(completionPercentiles.p98),p99:forecastDate!(completionPercentiles.p99) } } : {}),
+      staleTaskIds: p.tasks.filter(t=>t.status==='active'&&t.remaining?.estimateStatus==='stale').map(t=>t.id) } };
   });
   const previousVersions = previous ? structuredClone([...previous.previousVersions, { plan:previous.plan,tasks:previous.tasks,conflicts:previous.conflicts,projects:previous.projects }]) : [];
   return { plan, tasks:[...entries.values()],conflicts,projects,previousVersions,
     forecastMethod:'fixed-critical-chain-lognormal-moment-matching',
-    assumptions:['Independent task durations; fixed baseline cross-project critical chain', 'Allocation scales duration inversely; tasks run without preemption', 'Locked start/finish are fixed anchors; percentiles are conditional on meeting commitments', 'Infeasible forecasts are diagnostic, not achievable commitments; no calendars or alternate-chain simulation'] };
+    assumptions:['Independent task durations; fixed baseline cross-project critical chain', 'Allocation scales duration inversely; tasks run without preemption', 'Locked start/finish are fixed anchors; percentiles are conditional on meeting commitments', 'Infeasible forecasts are diagnostic, not achievable commitments; alternate chains are not simulated', ...(calendar ? ['Daily resource capacity calendars; dates are date-only, not clock-time shifts', 'Calendar percentile dates are approximate: aggregate fixed-chain quantiles distributed by task expected effort'] : ['No resource calendars applied'])] };
 }
 
 /** Compare saved runs without recalculating or changing either version. */
 export function comparePortfolioVersions(current: PortfolioVersion, whatIf: PortfolioVersion) {
-  if (current.plan.id !== whatIf.plan.id || current.plan.asOf !== whatIf.plan.asOf) throw new Error('Compare the same portfolio at the same asOf day');
+  if (current.plan.id !== whatIf.plan.id || current.plan.asOf !== whatIf.plan.asOf || current.plan.calendar?.startDate !== whatIf.plan.calendar?.startDate) throw new Error('Compare the same portfolio at the same asOf day and calendar origin');
   return {
     portfolioId: current.plan.id, currentVersionId: current.plan.versionId, whatIfVersionId: whatIf.plan.versionId,
     projects: whatIf.projects.map(p => {

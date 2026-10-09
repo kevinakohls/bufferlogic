@@ -58,8 +58,8 @@ example, making all project percentiles equal to their deterministic completion 
 The top-level JSON requires `id`, a unique `versionId`, `asOf` (day number),
 `settings: { "durationUnit": "days" }`, `resources` (unique resource IDs), and
 `projects`. Each project requires `id`, `name`, and `tasks`. See the sample files
-for complete inputs. Times use an abstract day axis; calendars and date conversion
-are not implemented.
+for complete inputs. Times use an abstract day axis unless optional resource calendars are applied;
+see [RESOURCE_CALENDARS.md](RESOURCE_CALENDARS.md) for dated scheduling.
 
 Tasks use the existing `id`, `name`, `resource`, `goodCase`, `poorCase`, `priority`,
 and `dependsOn` fields, plus:
@@ -120,7 +120,8 @@ A new run returns new project data; it never mutates its input or an earlier run
 
 Percentiles use independent lognormal task durations and moment matching on the
 fixed baseline cross-project critical chain. They remain approximations, without
-alternate-chain simulation or resource calendars. A fixed appointment resets the
+alternate-chain simulation. Optional resource calendars convert the forecasts to
+dates using the documented daily-capacity approximation. A fixed appointment resets the
 completion anchor: earlier uncertainty represents risk to the appointment, not
 permission to move it. Percentiles after that appointment are conditional on it
 being met. Deterministic conflicts mark forecasts infeasible; displayed numbers
@@ -145,6 +146,14 @@ comparison so elapsed time is not presented as a What-If estimate change.
 
 Engine API: `parsePortfolio`, `schedulePortfolio(plan, previous?)`, and
 `comparePortfolioVersions(current, whatIf)` from `src/portfolio.ts`. The portfolio
-command accepts JSON and exports JSON so ownership, conflicts and version history
+command accepts JSON or baseline CSV with a Project column and exports JSON so ownership, conflicts and version history
 are retained. Existing single-project JSON/CSV and progress commands continue to
 work with their original formats.
+
+## Two-house CSV example
+
+See [HOUSE_BUILD_REVIEW.md](HOUSE_BUILD_REVIEW.md) for the 72-task construction example, dependency corrections and shared-resource results. Run `npm run portfolio -- examples/house_build_tasks2.csv --format table`. CSV imports retain project ownership and share matching resource names across projects.
+
+## Working calendars
+
+Use `--calendar examples/house-resource-calendars.csv` to apply calendars to the house CSV. Start defaults to today. See [RESOURCE_CALENDARS.md](RESOURCE_CALENDARS.md) for workday effort, elapsed waiting, holidays, overtime, fixed commitments and reproducible start-date options.
