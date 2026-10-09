@@ -118,7 +118,7 @@ moving or deleting it. The input CSVs are never changed.
 npm.cmd test
 ```
 
-At this milestone, all **117 tests** pass, with none skipped. They cover the
+At this milestone, all **121 tests** pass, with none skipped. They cover the
 examples above, full-precision timing comparisons, resource and dependency
 relationships, invalid inputs/cycles, scenario immutability, stale remaining
 estimates, and the command/export workflows. GitHub Actions runs the suite
@@ -255,3 +255,5 @@ A larger acceptance case is the user-supplied two-house project: `npm run portfo
 For dated schedules, add `--calendar examples/house-resource-calendars.csv` to the two-house command. Start defaults to today; pin `--start-date 2026-10-09` for the documented review dates. Calendar regression tests cover weekends, holidays, Saturday work, overtime, resource-specific availability, allocations, elapsed waits, locked conflicts, forecast dates, timezone boundaries and immutable versions.
 
 Add `--recommend-resources` to a calendar run to rank individual resource Saturday changes. The report keeps the baseline intact, lists separate project P95 gains, preserves exceptions and excludes infeasible or worsening outcomes from recommendations. See the resource-calendar guide for the ranking rule.
+
+The first UI is available with `npm run ui`. Follow [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md) to load the two-house example, edit estimates or availability, recalculate and save a review.

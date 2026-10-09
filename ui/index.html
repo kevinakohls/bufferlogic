@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BufferLogic · Project review</title><link rel="stylesheet" href="/styles.css"><script type="module" src="/app.js"></script></head>
+<body>
+<header><a class="brand" href="/">B<span>BufferLogic</span></a><span class="badge">Review workspace</span><span class="header-note">Plan with the resources you actually have.</span></header>
+<main>
+<div class="page-title"><div><p class="eyebrow">YOUR PROJECTS, ONE SHARED SCHEDULE</p><h1>See when the work finishes.</h1><p class="intro">Load your plan, adjust the work, and see the effect on each project.</p></div><button id="example" class="secondary">Load two-house example</button></div>
+<section class="panel load-panel" aria-label="Load schedule files">
+<div><label class="file-label" for="project-file">Project plan <span>CSV or portfolio JSON</span></label><input id="project-file" type="file" accept=".csv,.json"><small id="project-name">No file selected</small></div>
+<div><label class="file-label" for="calendar-file">Resource calendar <span>Optional CSV</span></label><input id="calendar-file" type="file" accept=".csv"><small id="calendar-name">Without a calendar, results are in abstract days.</small></div>
+<div><label for="start-date">Schedule starts</label><input id="start-date" type="date"><small>Defaults to today</small></div>
+<button id="load" class="secondary">Load files</button>
+</section>
+<div id="error" class="error hidden" role="alert"></div><div id="status" class="status" role="status">Start with your files or the two-house example.</div>
+<div id="workspace" class="hidden">
+<div class="results-heading"><div><h2>Project completion forecasts</h2><p id="freshness">Calculated from the current plan</p></div><div class="actions"><button id="download" class="secondary">Save review JSON</button><button id="recalculate" class="primary">Recalculate schedule</button></div></div>
+<div id="project-cards" class="cards"></div>
+<p class="forecast-note">P95 is an approximate, more conservative completion forecast. Estimates use the fixed critical chain and independent task durations; locked appointments are assumed to be met.</p>
+<section id="conflicts-panel" class="panel hidden"><h2>Commitments that need attention</h2><div id="conflicts"></div></section>
+<section class="panel editor-panel"><div class="section-heading"><div><h2>Plan details</h2><p>Change estimates or availability, then recalculate.</p></div><nav class="tabs" aria-label="Plan views"><button class="tab selected" data-tab="tasks" aria-pressed="true">Tasks</button><button class="tab" data-tab="calendars" aria-pressed="false">Resource calendars</button><button class="tab" data-tab="schedule" aria-pressed="false">Calculated schedule</button></nav></div>
+<div id="tasks-view"><div class="table-toolbar"><label for="project-filter">Project</label><select id="project-filter"><option value="all">All projects</option></select><span id="task-count"></span></div><div class="table-scroll"><table><thead><tr><th>ID</th><th>Project</th><th>Task</th><th>Resource</th><th>Depends on</th><th>Good days · P20</th><th>Poor days · P80</th><th>Priority</th><th>Allocation %</th><th>Duration type</th><th>Status</th></tr></thead><tbody id="tasks-body"></tbody></table></div></div>
+<div id="calendars-view" class="hidden"><p id="no-calendars" class="hidden">Load a resource-calendar CSV to calculate dates.</p><div id="calendar-editor"><div class="table-toolbar"><label for="workday-hours">Hours per estimated workday</label><input id="workday-hours" type="number" min="0.1" max="24" step="0.5"><span>Weekly hours are total availability, shared across projects.</span></div><div class="table-scroll"><table><thead><tr><th>Resource</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr></thead><tbody id="calendars-body"></tbody></table></div><div class="exceptions-heading"><div><h3>Dated exceptions</h3><p>Replace normal hours for a holiday, working Saturday, or overtime.</p></div><button id="add-exception" class="secondary">Add exception</button></div><div class="table-scroll"><table><thead><tr><th>Resource</th><th>Date</th><th>Total available hours</th><th></th></tr></thead><tbody id="exceptions-body"></tbody></table></div><p id="exceptions-empty">No dated exceptions.</p></div></div>
+<div id="schedule-view" class="hidden"><p class="schedule-caption">Resource waits can link tasks from different projects. Locked tasks keep their recorded position.</p><div class="table-scroll"><table><thead><tr><th>Project</th><th>Task</th><th>Resource</th><th>Start</th><th>Finish</th><th>Resource waits for</th><th>Commitment</th></tr></thead><tbody id="schedule-body"></tbody></table></div></div>
+</section>
+</div>
+<footer>BufferLogic · Review prototype <span>Changes stay in this browser session until you save review JSON.</span></footer>
+</main>
+</body></html>
