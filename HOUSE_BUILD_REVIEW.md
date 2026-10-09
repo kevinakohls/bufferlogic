@@ -100,3 +100,22 @@ These dates assume all task durations are working effort, including permit appro
 use elapsed-mode tasks in JSON where waiting is more realistic. The percentile dates
 remain fixed-chain approximations. See [RESOURCE_CALENDARS.md](RESOURCE_CALENDARS.md)
 for exceptions, daily capacity conventions and fixed commitments.
+
+## Rank additional hours by resource
+
+Run the calendar command with `--recommend-resources`. For the fixed October 9,
+2026 review origin, the leading candidates are:
+
+| Resource receiving eight Saturday hours | House 1 P95 date gain | House 2 P95 date gain |
+| --- | ---: | ---: |
+| General Contractor | 65 days | 32 days |
+| Framing Crew | 7 days | 14 days |
+| Waterproofing Crew | 8 days | 8 days |
+
+Each candidate is applied alone. The General Contractor scenario changes approximate
+P95 dates to 2027-09-22 and 2027-11-29, respectively. Its large benefit depends on
+permit approval currently being represented as contractor working effort. If those
+estimates describe elapsed administrative waiting, first represent that task as an
+elapsed wait in JSON and rerun; extra contractor hours cannot shorten elapsed waiting.
+These are sensitivity results under the input assumptions, not guaranteed savings.
+The tool never modifies the input file or accepts recommendations automatically.

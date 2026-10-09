@@ -116,3 +116,31 @@ confidence guarantee. Fixed commitments remain anchors, conditional on being met
 is emitted only for matching portfolio origins and `asOf` values; changes to weekly
 hours or exceptions at the same origin can be compared. A run started on a new date
 retains history but omits the same-origin comparison.
+
+## Resource recommendations before changing the plan
+
+Add `--recommend-resources` to test additional Saturday hours for every resource
+separately:
+
+```powershell
+npm.cmd run portfolio -- examples/house_build_tasks2.csv --calendar examples/house-resource-calendars.csv --recommend-resources --format table
+```
+
+Each candidate adds up to eight hours to that resource's recurring Saturday schedule,
+capped at 24 hours total. All other resource calendars stay unchanged. Dated exceptions
+still override weekly hours, so a Saturday holiday remains unavailable. Each scenario
+is rerun from the same baseline; changes are not stacked or automatically accepted.
+
+The report ranks eligible candidates by the sum of **separate project P95
+elapsed-calendar-day improvements**. It also shows each project's current/proposed
+P95 date and whole-date gain. This summed score is a ranking choice, not a joint
+portfolio percentile. Ties preserve resource input order. A candidate is eligible only
+if every project forecast is feasible, no project P95 worsens, and the summed
+improvement is positive. No-impact, worsening, infeasible and already-maximum-hour
+candidates remain visible with reasons. If none qualifies, no resource is recommended.
+
+JSON output includes `resourceRecommendations`; the baseline plan, schedule and
+project forecasts remain unchanged. Accept a recommendation manually by editing its
+weekly Saturday hours, then rerun to find the next best change. No optimal-plan or
+cost-benefit claim is made, and gains from separate candidates must not be added
+together. Dates and gains remain subject to the fixed-chain forecast approximation.
