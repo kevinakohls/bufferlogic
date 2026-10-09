@@ -13,7 +13,9 @@ new portfolio. Repeat with another name to demonstrate two software projects sha
 one resource pool.
 
 The software template is the user's 26-task CSV, checked in as
-`examples/software-template.csv`. Its original contents are preserved. No Priority
+`examples/software-template.csv`. Its original task IDs, resources, dependencies and estimates are preserved. Draft
+Description and Comments columns explain the intended work and assumptions for review;
+revise them to match the actual project. No Priority
 or Project columns are needed in template mode. These software headings are accepted:
 
 | Template heading | Engine field |

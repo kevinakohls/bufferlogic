@@ -1,27 +1,27 @@
-ID,Task,Resource,Predecessors,Low Estimate P20 (days),High Estimate P80 (days)
-1,Stakeholder interviews & requirements gathering,Product Manager,,5,10
-2,Product requirements document,Product Manager,1,3,7
-3,UX research & user flows,UX Designer,2,5,10
-4,Technical architecture & design,Tech Lead,2,5,10
-5,Wireframes,UX Designer,3,5,9
-6,Visual design & UI kit,UI Designer,5,7,14
-7,Dev environment & CI/CD pipeline,DevOps Engineer,4,3,7
-8,Cloud infrastructure provisioning,DevOps Engineer,7,4,9
-9,Database schema design,Backend Developer,4,3,6
-10,Authentication & user accounts,Backend Developer,"7,9",5,10
-11,Core API endpoints,Backend Developer,10,10,20
-12,Third-party integrations (payments & email),Backend Developer,11,6,15
-13,Frontend app shell & routing,Frontend Developer,"6,7",4,8
-14,Frontend screens & components,Frontend Developer,13,12,22
-15,Connect frontend to API,Frontend Developer,"11,14",5,10
-16,Admin & reporting features,Full-Stack Developer,11,6,12
-17,Test plan & test cases,QA Engineer,2,4,8
-18,Automated test suite,QA Engineer,"15,17",6,12
-19,Integration & system testing,QA Engineer,"12,16,18",6,14
-20,Security review & penetration test,Security Engineer,19,4,10
-21,Performance & load testing,DevOps Engineer,"8,19",3,8
-22,Bug fixing & stabilization,Development Team,"20,21",7,18
-23,User acceptance testing,Product Manager,22,5,12
-24,User documentation & help content,Technical Writer,15,5,9
-25,Production deployment,DevOps Engineer,"23,24",1,3
-26,Post-launch monitoring & hypercare,Tech Lead,25,5,10
+ID,Task,Resource,Predecessors,Low Estimate P20 (days),High Estimate P80 (days),Description,Comments
+1,Stakeholder interviews & requirements gathering,Product Manager,,5,10,"Gather stakeholder needs, business goals, current problems, and the initial scope for the software project.",Draft guidance: identify decision makers and capture unresolved questions; confirm stakeholder availability before relying on these estimates.
+2,Product requirements document,Product Manager,1,3,7,"Document the agreed requirements, scope boundaries, priorities, and acceptance expectations.",Draft guidance: confirm who approves the requirements and how later scope changes will be handled.
+3,UX research & user flows,UX Designer,2,5,10,Understand target users and map the main journeys through the product.,Draft guidance: confirm access to representative users; record findings and assumptions that affect the proposed flows.
+4,Technical architecture & design,Tech Lead,2,5,10,"Define the technical approach, system components, interfaces, and major design decisions.",Draft guidance: identify technical unknowns and external constraints; create separate investigation tasks where uncertainty needs resolution.
+5,Wireframes,UX Designer,3,5,9,Create low-detail screen layouts that demonstrate the agreed user flows and interactions.,Draft guidance: plan review time with product stakeholders; distinguish design effort from any waiting for feedback.
+6,Visual design & UI kit,UI Designer,5,7,14,Develop the visual design and reusable interface styles and components for the agreed screens.,Draft guidance: agree which screens and states are included; confirm review expectations and accessibility needs.
+7,Dev environment & CI/CD pipeline,DevOps Engineer,4,3,7,"Set up development tooling and automated build, test, and delivery workflows.","Draft guidance: confirm repository access, credentials, and target environments; track blocked access separately from hands-on setup effort."
+8,Cloud infrastructure provisioning,DevOps Engineer,7,4,9,"Provision the agreed cloud environments, infrastructure configuration, and supporting services.","Draft guidance: confirm account access, service limits, and approvals; external provisioning waits may need separate elapsed-time tasks."
+9,Database schema design,Backend Developer,4,3,6,Design the data structures and relationships needed by the agreed application features.,"Draft guidance: confirm data ownership, migration needs, and expected volumes before finalizing the schema."
+10,Authentication & user accounts,Backend Developer,"7,9",5,10,Implement the agreed authentication and user-account flows.,"Draft guidance: confirm sign-in methods, permissions, and account recovery scope; assumptions about these flows can materially change the estimate."
+11,Core API endpoints,Backend Developer,10,10,20,Implement the core backend interfaces and business logic required by the agreed features.,Draft guidance: define endpoint scope and interface contracts early so frontend work can proceed with stable expectations.
+12,Third-party integrations (payments & email),Backend Developer,11,6,15,Connect the application to the selected payment and email providers.,Draft guidance: confirm provider access and sandbox availability; distinguish integration effort from vendor onboarding or approval waits.
+13,Frontend app shell & routing,Frontend Developer,"6,7",4,8,"Build the frontend structure, navigation, routing, and shared application foundations.",Draft guidance: use the agreed UI kit and route structure; clarify what belongs in the shell versus individual feature screens.
+14,Frontend screens & components,Frontend Developer,13,12,22,"Implement the agreed frontend screens, components, and interaction states.",Draft guidance: confirm the screen inventory and supported devices; split independently deliverable work into tasks if multiple developers will contribute.
+15,Connect frontend to API,Frontend Developer,"11,14",5,10,"Connect frontend features to backend interfaces and handle the agreed loading, success, and failure states.",Draft guidance: confirm API contract readiness; include integration checks and track interface changes that require rework.
+16,Admin & reporting features,Full-Stack Developer,11,6,12,Implement the agreed administrative functions and reporting capabilities.,"Draft guidance: confirm access controls, report definitions, and data requirements; this resource must represent real available capacity."
+17,Test plan & test cases,QA Engineer,2,4,8,Define the test approach and cases covering the agreed requirements and acceptance expectations.,Draft guidance: confirm test data and environment needs; update coverage when requirements change.
+18,Automated test suite,QA Engineer,"15,17",6,12,Implement automated tests for the agreed application flows and integrate them into the delivery workflow.,"Draft guidance: clarify the balance of unit, integration, and end-to-end coverage; include maintenance effort for unstable interfaces."
+19,Integration & system testing,QA Engineer,"12,16,18",6,14,Verify integrated behavior across the application and external interfaces.,Draft guidance: confirm environment and test-data readiness; record defects and distinguish testing effort from subsequent fixes.
+20,Security review & penetration test,Security Engineer,19,4,10,Assess the implemented system for the agreed security risks and conduct the planned penetration testing.,"Draft guidance: confirm reviewer availability, access, and assessment scope; agree how findings will be prioritized for stabilization."
+21,Performance & load testing,DevOps Engineer,"8,19",3,8,Measure behavior under agreed workloads and identify performance constraints.,Draft guidance: agree measurable performance targets and realistic load profiles; distinguish test execution from tuning and fixes.
+22,Bug fixing & stabilization,Development Team,"20,21",7,18,Resolve prioritized defects and stabilize the application for customer acceptance.,Draft guidance: replace the Development Team placeholder with actual developer assignments or split fixes into individual-resource tasks; it must not imply extra capacity beyond the named developers.
+23,User acceptance testing,Product Manager,22,5,12,Have customer representatives evaluate the release against the agreed acceptance criteria.,Draft guidance: confirm customer reviewers and acceptance authority; use locked commitments for agreed review dates and separate feedback waits from working effort.
+24,User documentation & help content,Technical Writer,15,5,9,Prepare user-facing instructions and help content for the agreed product features.,Draft guidance: confirm the intended audience and publishing format; allow for updates when screens or workflows change.
+25,Production deployment,DevOps Engineer,"23,24",1,3,Release the accepted application to the production environment and verify the agreed deployment checks.,"Draft guidance: confirm release authority, the cutover window, and rollback arrangements; lock the deployment slot only once it is committed."
+26,Post-launch monitoring & hypercare,Tech Lead,25,5,10,"Monitor the release, respond to launch issues, and support the initial transition into normal operation.",Draft guidance: clarify whether the estimates represent active support effort or an elapsed monitoring period; reserve staff only for work that actually uses their capacity.
