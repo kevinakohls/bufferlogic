@@ -1,3 +1,5 @@
+import { instantiateTemplate, templateProjects } from './templates.js';
+import { resourceUtilization } from './utilization.js';
 import { createServer, type IncomingMessage } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +8,7 @@ import { parsePortfolio, schedulePortfolio } from './portfolio.js';
 import { parsePortfolioCsv } from './portfolio-csv.js';
 import { parseResourceCalendarsCsv, todayDate } from './resource-calendars.js';
 
+function reviewResult(plan:unknown){const result=schedulePortfolio(parsePortfolio(plan));return {...result,...(result.plan.calendar?{utilization:resourceUtilization(result)}:{})};}
 const root = new URL('../../', import.meta.url);
 async function body(request:IncomingMessage):Promise<Record<string,unknown>> {
   if (!request.headers['content-type']?.startsWith('application/json')) throw new Error('Send JSON data');
@@ -26,8 +29,18 @@ export function createReviewServer() {
       if(!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)){json({error:'Use localhost or 127.0.0.1'},403);return;}
       if(request.headers.origin && request.headers.origin!==`http://${host}`){json({error:'Open the review app on this computer'},403);return;}
       const path=new URL(request.url??'/',`http://${host}`).pathname;
+      if(request.method==='GET'&&path==='/api/software-template'){json({csvText:await readFile(new URL('examples/software-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/example'){
         json({projectText:await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8'),calendarText:await readFile(new URL('examples/house-resource-calendars.csv',root),'utf8')});return;
+      }
+      if(request.method==='POST'&&path==='/api/template-info'){
+        const data=await body(request);if(typeof data.csvText!=='string')throw new Error('Choose a template CSV');json({projects:templateProjects(data.csvText)});return;
+      }
+      if(request.method==='POST'&&path==='/api/template'){
+        const data=await body(request);if(typeof data.csvText!=='string'||typeof data.name!=='string')throw new Error('Choose a template and project name');
+        let plan=instantiateTemplate(data.csvText,data.name,data.plan===undefined?undefined:parsePortfolio(data.plan),typeof data.sourceProjectId==='string'?data.sourceProjectId:undefined);
+        if(!plan.calendar){const timeZone=typeof data.timeZone==='string'?data.timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone;plan={...plan,calendar:{startDate:typeof data.startDate==='string'&&data.startDate?data.startDate:todayDate(timeZone),timeZone,hoursPerWorkday:8,resources:plan.resources.map(resource=>({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}))}};}
+        json(reviewResult(plan));return;
       }
       if(request.method==='POST'&&path==='/api/load'){
         const data=await body(request);
@@ -42,10 +55,10 @@ export function createReviewServer() {
           if(plan.calendar && plan.calendar.startDate!==startDate && plan.projects.some(p=>p.tasks.some(t=>t.locked||t.actuals)))throw new Error('This plan contains fixed commitments or actuals. Keep its recorded schedule start date.');
           plan={...plan,calendar:{startDate,timeZone,hoursPerWorkday:plan.calendar?.hoursPerWorkday??8,resources:parseResourceCalendarsCsv(data.calendarText)}};
         }
-        json(schedulePortfolio(plan));return;
+        json(reviewResult(plan));return;
       }
       if(request.method==='POST'&&path==='/api/schedule'){
-        const data=await body(request);json(schedulePortfolio(parsePortfolio(data.plan)));return;
+        const data=await body(request);json(reviewResult(data.plan));return;
       }
       const files:Record<string,{file:string;type:string}>={'/':{file:'index.html',type:'text/html'},'/app.js':{file:'app.js',type:'text/javascript'},'/timeline.js':{file:'timeline.js',type:'text/javascript'},'/styles.css':{file:'styles.css',type:'text/css'}};
       if(request.method==='GET'&&files[path]){const asset=files[path]!;response.setHeader('Content-Type',asset.type+'; charset=utf-8');response.end(await readFile(new URL('ui/'+asset.file,root)));return;}

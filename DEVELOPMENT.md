@@ -331,3 +331,7 @@ can use the same typed task model without duplicating scheduling logic.
 ## Local review UI
 
 `npm run ui` builds and starts `src/ui-server.ts` on local port 3000. `ui/` contains the dependency-free browser view. API load/schedule routes call the existing parsers and engine without persisting files. `tests/ui-server.test.ts` exercises the local API. `BUFFERLOGIC_PORT` can select another port. See [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md).
+
+## Templates and utilization
+
+`src/templates.ts` instantiates CSV projects with generated IDs and remapped predecessors. Portfolio parsing retains optional notes and resource details. `src/utilization.ts` reports calendar availability and allocated effort by week/project. UI template endpoints and schedule responses expose these to the browser. No dependencies were added. See [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md).

@@ -4,14 +4,26 @@ import { fitTaskLognormal } from './percentiles.js';
 import { parseProject } from './project-input.js';
 import type { Task } from './types.js';
 
-export interface PortfolioTask extends Task {
+export interface Notes {
+  readonly description?: string;
+  readonly comments?: string;
+}
+export interface ResourceDetails extends Notes {
+  readonly id: string;
+  readonly name?: string;
+  readonly role?: string;
+}
+export interface PortfolioTask extends Task, Notes {
+  readonly completionCriteria?: string;
+  readonly lockReason?: string;
   readonly projectId: string;
   /** Percentage of one resource's capacity; default 100. */
   readonly allocationPercent?: number;
   readonly durationMode?: 'working' | 'elapsed';
   readonly locked?: { readonly start: number; readonly finish: number };
 }
-export interface Project {
+export interface Project extends Notes {
+  readonly owner?: string;
   readonly id: string;
   readonly name: string;
   readonly tasks: readonly PortfolioTask[];
@@ -24,6 +36,7 @@ export interface PortfolioPlan {
   readonly calendar?: CalendarSettings;
   readonly settings: { readonly durationUnit: 'days' };
   readonly resources: readonly string[];
+  readonly resourceDetails?: readonly ResourceDetails[];
   /** Array order is management's resource preference. */
   readonly projects: readonly Project[];
   /** Explicit first-choice tasks, in order, ahead of ordinary project ordering. */
@@ -73,6 +86,12 @@ const object = (v: unknown): v is Record<string, unknown> => typeof v === 'objec
 const text = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0;
 const day = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
+function strings(value: Record<string,unknown>, fields:readonly string[]):Record<string,string> {
+  const result:Record<string,string>={};
+  for(const field of fields)if(value[field]!==undefined){if(typeof value[field]!=='string')throw new Error(`${field} must be text`);result[field]=value[field] as string;}
+  return result;
+}
+
 /** JSON boundary, including zero-duration milestones (legacy task commands remain unchanged). */
 export function parsePortfolio(value: unknown): PortfolioPlan {
   if (!object(value) || !text(value.id) || !text(value.versionId) || !day(value.asOf)
@@ -96,16 +115,26 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
         if (milestone !== (t.locked.start === t.locked.finish)) throw new Error('A milestone lock must have zero duration; a work task lock must have positive duration');
         locked = { start: t.locked.start, finish: t.locked.finish };
       }
-      return { ...parsed, ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
+      return { ...parsed, ...strings(t,['description','comments','completionCriteria','lockReason']), ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
         ...(t.durationMode === undefined ? {} : { durationMode: t.durationMode }),
         ...(t.allocationPercent === undefined ? {} : { allocationPercent: t.allocationPercent as number }),
         ...(locked === undefined ? {} : { locked }) };
     });
-    return { id: p.id, name: p.name, tasks };
+    return { id: p.id, name: p.name, tasks, ...strings(p,['description','comments','owner']) };
   });
+  let resourceDetails:ResourceDetails[]|undefined;
+  if(value.resourceDetails!==undefined){
+    if(!Array.isArray(value.resourceDetails))throw new Error('resourceDetails must be an array');
+    const seen=new Set<string>();
+    resourceDetails=value.resourceDetails.map((r:unknown)=>{
+      if(!object(r)||!text(r.id)||!(value.resources as string[]).includes(r.id)||seen.has(r.id))throw new Error('Resource details require unique existing resource IDs');
+      seen.add(r.id);return {id:r.id,...strings(r,['name','role','description','comments'])};
+    });
+  }
   if (value.taskOrderOverrides !== undefined && (!Array.isArray(value.taskOrderOverrides) || !value.taskOrderOverrides.every(text))) throw new Error('Invalid taskOrderOverrides');
   return { id: value.id, versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days' },
     resources: [...value.resources] as string[], projects,
+    ...(resourceDetails===undefined?{}:{resourceDetails}),
     ...(value.calendar === undefined ? {} : { calendar: validateCalendarSettings(value.calendar) }),
     ...(value.approvalStatus === undefined ? {} : { approvalStatus: value.approvalStatus }),
     ...(value.taskOrderOverrides === undefined ? {} : { taskOrderOverrides: [...value.taskOrderOverrides] as string[] }) };

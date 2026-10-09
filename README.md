@@ -158,3 +158,5 @@ Use `--recommend-resources` on a calendar portfolio run to rank additional Satur
 Run `npm run ui` and open the printed local address in your browser. Load the two-house example or your CSV/JSON files, edit task estimates and calendars, then recalculate forecasts. See [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md) for Windows instructions and saving reviews.
 
 The UI **Timeline** tab groups tasks by project and highlights the selected project’s critical chain across project boundaries. Select a task for dependency/resource-wait details; locked tasks and milestones are marked.
+
+The UI also creates project copies from CSV templates, retains project/task/resource descriptions and comments, and reports weekly resource utilization. See [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md).

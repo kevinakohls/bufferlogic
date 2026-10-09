@@ -1,0 +1,27 @@
+ID,Task,Resource,Predecessors,Low Estimate P20 (days),High Estimate P80 (days)
+1,Stakeholder interviews & requirements gathering,Product Manager,,5,10
+2,Product requirements document,Product Manager,1,3,7
+3,UX research & user flows,UX Designer,2,5,10
+4,Technical architecture & design,Tech Lead,2,5,10
+5,Wireframes,UX Designer,3,5,9
+6,Visual design & UI kit,UI Designer,5,7,14
+7,Dev environment & CI/CD pipeline,DevOps Engineer,4,3,7
+8,Cloud infrastructure provisioning,DevOps Engineer,7,4,9
+9,Database schema design,Backend Developer,4,3,6
+10,Authentication & user accounts,Backend Developer,"7,9",5,10
+11,Core API endpoints,Backend Developer,10,10,20
+12,Third-party integrations (payments & email),Backend Developer,11,6,15
+13,Frontend app shell & routing,Frontend Developer,"6,7",4,8
+14,Frontend screens & components,Frontend Developer,13,12,22
+15,Connect frontend to API,Frontend Developer,"11,14",5,10
+16,Admin & reporting features,Full-Stack Developer,11,6,12
+17,Test plan & test cases,QA Engineer,2,4,8
+18,Automated test suite,QA Engineer,"15,17",6,12
+19,Integration & system testing,QA Engineer,"12,16,18",6,14
+20,Security review & penetration test,Security Engineer,19,4,10
+21,Performance & load testing,DevOps Engineer,"8,19",3,8
+22,Bug fixing & stabilization,Development Team,"20,21",7,18
+23,User acceptance testing,Product Manager,22,5,12
+24,User documentation & help content,Technical Writer,15,5,9
+25,Production deployment,DevOps Engineer,"23,24",1,3
+26,Post-launch monitoring & hypercare,Tech Lead,25,5,10
