@@ -72,7 +72,7 @@ the UI rejects changes that would silently reposition those recorded dates.
 
 ## Save and reopen a review
 
-After recalculating, click **Save review JSON**. Your browser downloads the current plan,
+After recalculating, click **Save workspace**. Your browser downloads the current plan,
 calendars, calculated tasks, conflicts and project forecasts as a JSON file. Select it
 as the project file and click **Load files** to reopen and recalculate it. Unsaved changes
 live only in the current browser session. This first screen does not automatically save
@@ -157,3 +157,17 @@ and a dashed available-hours line. Hover or keyboard-focus a cell or bar for exa
 values; the tables and CSV export retain the full detail. First and last weeks
 are clipped to the reporting period. Graphs use the last calculated schedule until
 you recalculate pending edits.
+
+## Order projects and save the workspace
+
+Use **Move up** or **Move down** under **Project order**, then **Recalculate
+schedule**. Higher projects get first choice among eligible tasks on shared
+resources; dependencies, active tasks, fixed commitments and explicit task-order
+exceptions still apply. The displayed forecasts remain from the previous
+calculation until you recalculate.
+
+Click **Save workspace** after recalculating. To restore the downloaded file, click
+**Open saved workspace** and select it. This restores all projects, their order,
+notes, progress and calendars, including the recorded schedule start date. The
+file keeps its existing format and older saved workspaces still load. Opening a
+workspace asks before discarding pending edits.

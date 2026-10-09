@@ -4,9 +4,9 @@
 <body>
 <header><a class="brand" href="/">B<span>BufferLogic</span></a><span class="badge">Review workspace</span><span class="header-note">Plan with the resources you actually have.</span></header>
 <main>
-<div class="page-title"><div><p class="eyebrow">YOUR PROJECTS, ONE SHARED SCHEDULE</p><h1>See when the work finishes.</h1><p class="intro">Load your plan, adjust the work, and see the effect on each project.</p></div><div class="actions"><button id="show-template" class="secondary">Create from template</button><button id="example" class="secondary">Load two-house example</button></div></div>
+<div class="page-title"><div><p class="eyebrow">YOUR PROJECTS, ONE SHARED SCHEDULE</p><h1>See when the work finishes.</h1><p class="intro">Load your plan, adjust the work, and see the effect on each project.</p></div><div class="actions"><button id="open-workspace" class="secondary">Open saved workspace</button><input id="workspace-file" type="file" accept=".json" hidden><button id="show-template" class="secondary">Create from template</button><button id="example" class="secondary">Load two-house example</button></div></div>
 <section class="panel load-panel" aria-label="Load schedule files">
-<div><label class="file-label" for="project-file">Project plan <span>CSV or portfolio JSON</span></label><input id="project-file" type="file" accept=".csv,.json"><small id="project-name">No file selected</small></div>
+<div><label class="file-label" for="project-file">Project plan <span>CSV or saved workspace</span></label><input id="project-file" type="file" accept=".csv,.json"><small id="project-name">No file selected</small></div>
 <div><label class="file-label" for="calendar-file">Resource calendar <span>Optional CSV</span></label><input id="calendar-file" type="file" accept=".csv"><small id="calendar-name">Without a calendar, results are in abstract days.</small></div>
 <div><label for="start-date">Schedule starts</label><input id="start-date" type="date"><small>Defaults to today</small></div>
 <button id="load" class="secondary">Load files</button>
@@ -14,7 +14,8 @@
 <section id="template-panel" class="panel hidden"><div class="section-heading"><div><h2>Create a project from a template</h2><p>Each copy gets new IDs and priorities from row order. Existing projects remain in the workspace.</p></div><div class="actions"><button id="housing-template" class="secondary">Use housing template</button><button id="software-template" class="secondary">Use software template</button></div></div><div class="template-fields"><div><label for="template-file">Template CSV</label><input id="template-file" type="file" accept=".csv"><small id="template-file-name">Choose a CSV or use a housing or software template.</small></div><div><label for="template-source">Source project</label><select id="template-source"></select></div><div><label for="template-name">New project name</label><input id="template-name" type="text" placeholder="Name this project"></div><button id="create-template" class="primary">Create project</button></div><p class="template-note">New resources start with eight-hour weekdays. Copies share resources with matching labels; edit availability to match your actual capacity.</p></section>
 <div id="error" class="error hidden" role="alert"></div><div id="status" class="status" role="status">Start with your files or the two-house example.</div>
 <div id="workspace" class="hidden">
-<div class="results-heading"><div><h2>Project completion forecasts</h2><p id="freshness">Calculated from the current plan</p></div><div class="actions"><button id="download" class="secondary">Save review JSON</button><button id="recalculate" class="primary">Recalculate schedule</button></div></div>
+<div class="results-heading"><div><h2>Project completion forecasts</h2><p id="freshness">Calculated from the current plan</p></div><div class="actions"><button id="download" class="secondary">Save workspace</button><button id="recalculate" class="primary">Recalculate schedule</button></div></div>
+<section class="panel project-order-panel"><h2>Project order</h2><p>Higher projects get first choice of shared resources among eligible tasks. Dependencies, active work and locked dates still apply. Recalculate after changing the order.</p><p id="order-overrides" class="hidden">This workspace also contains task order exceptions, which take precedence over ordinary project order.</p><ol id="project-order"></ol></section>
 <div id="project-cards" class="cards"></div>
 <p class="forecast-note">P95 is an approximate, more conservative completion forecast. Estimates use the fixed critical chain and independent task durations; locked appointments are assumed to be met.</p>
 <section id="conflicts-panel" class="panel hidden"><h2>Commitments that need attention</h2><div id="conflicts"></div></section>
@@ -33,6 +34,6 @@
 <div id="schedule-view" class="hidden"><p class="schedule-caption">Resource waits can link tasks from different projects. Locked tasks keep their recorded position.</p><div class="table-scroll"><table><thead><tr><th>Project</th><th>Task</th><th>Resource</th><th>Start</th><th>Finish</th><th>Resource waits for</th><th>Commitment</th></tr></thead><tbody id="schedule-body"></tbody></table></div></div>
 </section>
 </div>
-<footer>BufferLogic · Review prototype <span>Changes stay in this browser session until you save review JSON.</span></footer>
+<footer>BufferLogic · Review prototype <span>Changes stay in this browser session until you save your workspace.</span></footer>
 </main>
 </body></html>

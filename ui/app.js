@@ -7,7 +7,7 @@ $('start-date').value=today();
 function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);if(className)node.className=className;return node;}
 function dateText(value){if(!value)return '—';const [year,month,day]=value.split('-').map(Number);return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month-1,day)));}
 function valueText(f,key){return f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
-function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan)renderProgress();}
+function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan){renderProgress();renderProjectOrder();}}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
 function changed(){if(!plan)return;dirty=true;$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
@@ -70,12 +70,12 @@ function loadResult(value){result=value;plan=structuredClone(value.plan);dirty=f
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
  $('workspace').classList.remove('hidden');$('error').classList.add('hidden');$('freshness').textContent='Calculated from the current plan';
  const filter=$('project-filter'),previousFilter=filter.value;filter.replaceChildren();for(const [id,name] of [['all','All projects'],...plan.projects.map(p=>[p.id,p.name])]){const option=element('option',name);option.value=id;filter.append(option);}if([...filter.options].some(o=>o.value===previousFilter))filter.value=previousFilter;
- renderResults();renderTasks();renderProgress();renderCalendars();renderNotes();renderUtilization();message(`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`);
+ renderResults();renderProjectOrder();renderTasks();renderProgress();renderCalendars();renderNotes();renderUtilization();message(`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`);
 }
 $('example').addEventListener('click',async()=>{setBusy(true);message('Loading the two-house example…');try{const response=await fetch('/api/example');if(!response.ok)throw new Error('Unable to load the example');const source=await response.json();loadResult(await request('/api/load',{...source,format:'csv',startDate:$('start-date').value,timeZone:zone}));$('project-file').value='';$('calendar-file').value='';$('project-name').textContent='Two-house example · 72 tasks';$('calendar-name').textContent='Example calendar · 21 resources';}catch(error){failure(error);}finally{setBusy(false);}});
 for(const [id,label] of [['project-file','project-name'],['calendar-file','calendar-name']])$(id).addEventListener('change',()=>{$(label).textContent=$(id).files[0]?.name??'No file selected';});
 $('load').addEventListener('click',async()=>{setBusy(true);try{
- const project=$('project-file').files[0],calendar=$('calendar-file').files[0];if(!project&&!plan)throw new Error('Select a project CSV or portfolio JSON first');if(!project&&!calendar)throw new Error('Select a file to load, or edit the existing plan below');
+ const project=$('project-file').files[0],calendar=$('calendar-file').files[0];if(!project&&!plan)throw new Error('Select a project CSV or saved workspace first');if(!project&&!calendar)throw new Error('Select a file to load, or edit the existing plan below');
  const format=project?project.name.toLowerCase().endsWith('.csv')?'csv':'json':'json';
  const data={projectText:project?await project.text():JSON.stringify(plan),format,timeZone:zone,startDate:$('start-date').value};if(calendar)data.calendarText=await calendar.text();
  loadResult(await request('/api/load',data));
@@ -178,3 +178,27 @@ function renderUtilizationGraph(report,selection){
  }
  host.append(element('p','First and last weeks cover only the reporting period. Detailed values remain in the tables below.','graph-legend'));
 }
+
+function renderProjectOrder(){
+ const list=$('project-order');list.replaceChildren();$('order-overrides').classList.toggle('hidden',!plan.taskOrderOverrides?.length);
+ plan.projects.forEach((project,index)=>{
+  const row=element('li'),label=element('span',`${index+1}. ${project.name}`),actions=element('div',undefined,'actions');
+  for(const [direction,text] of [[-1,'Move up'],[1,'Move down']]){const button=element('button',text,'secondary');button.type='button';button.dataset.project=project.id;button.dataset.direction=direction;button.setAttribute('aria-label',`${text}: ${project.name}`);button.disabled=busy||(direction<0?index===0:index===plan.projects.length-1);actions.append(button);}
+  row.append(label,actions);list.append(row);
+ });
+}
+$('project-order').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-project]');if(!button||button.disabled||busy)return;
+ const index=plan.projects.findIndex(p=>p.id===button.dataset.project),next=index+Number(button.dataset.direction);
+ if(next<0||next>=plan.projects.length)return;
+ [plan.projects[index],plan.projects[next]]=[plan.projects[next],plan.projects[index]];changed();renderProjectOrder();
+ $('project-order').querySelector(`button[data-project="${CSS.escape(button.dataset.project)}"][data-direction="${next===0?1:next===plan.projects.length-1?-1:button.dataset.direction}"]`)?.focus();
+});
+$('open-workspace').addEventListener('click',()=>{$('workspace-file').value='';$('workspace-file').click();});
+$('workspace-file').addEventListener('change',async()=>{
+ const file=$('workspace-file').files[0];if(!file)return;
+ if(dirty&&!confirm('Open this workspace and discard your pending edits?'))return;
+ setBusy(true);message('Opening saved workspace…');
+ try{loadResult(await request('/api/load',{projectText:await file.text(),format:'json'}));$('project-file').value='';$('calendar-file').value='';$('project-name').textContent=file.name;}
+ catch(error){failure(error);}finally{setBusy(false);}
+});
