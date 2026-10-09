@@ -145,6 +145,10 @@ comparison so elapsed time is not presented as a What-If estimate change.
 
 Engine API: `parsePortfolio`, `schedulePortfolio(plan, previous?)`, and
 `comparePortfolioVersions(current, whatIf)` from `src/portfolio.ts`. The portfolio
-command accepts JSON and exports JSON so ownership, conflicts and version history
+command accepts JSON or baseline CSV with a Project column and exports JSON so ownership, conflicts and version history
 are retained. Existing single-project JSON/CSV and progress commands continue to
 work with their original formats.
+
+## Two-house CSV example
+
+See [HOUSE_BUILD_REVIEW.md](HOUSE_BUILD_REVIEW.md) for the 72-task construction example, dependency corrections and shared-resource results. Run `npm run portfolio -- examples/house_build_tasks2.csv --format table`. CSV imports retain project ownership and share matching resource names across projects.

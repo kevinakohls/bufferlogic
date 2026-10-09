@@ -146,3 +146,5 @@ The portfolio engine schedules projects against shared resources, with project o
 ```sh
 npm run portfolio -- examples/portfolio.json --format table
 ```
+
+The portfolio command also imports Excel CSV files with a `Project` column. See [HOUSE_BUILD_REVIEW.md](HOUSE_BUILD_REVIEW.md) for the two-house example.
