@@ -47,7 +47,7 @@ export function createReviewServer() {
       if(request.method==='POST'&&path==='/api/schedule'){
         const data=await body(request);json(schedulePortfolio(parsePortfolio(data.plan)));return;
       }
-      const files:Record<string,{file:string;type:string}>={'/':{file:'index.html',type:'text/html'},'/app.js':{file:'app.js',type:'text/javascript'},'/styles.css':{file:'styles.css',type:'text/css'}};
+      const files:Record<string,{file:string;type:string}>={'/':{file:'index.html',type:'text/html'},'/app.js':{file:'app.js',type:'text/javascript'},'/timeline.js':{file:'timeline.js',type:'text/javascript'},'/styles.css':{file:'styles.css',type:'text/css'}};
       if(request.method==='GET'&&files[path]){const asset=files[path]!;response.setHeader('Content-Type',asset.type+'; charset=utf-8');response.end(await readFile(new URL('ui/'+asset.file,root)));return;}
       json({error:'Not found'},404);
     } catch(error){json({error:error instanceof Error?error.message:'Unable to calculate the schedule'},400);}

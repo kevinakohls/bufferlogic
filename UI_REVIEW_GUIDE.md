@@ -89,5 +89,41 @@ stale-result labeling, invalid dependency recovery, Saturday changes, dated exce
 JSON download/reload, the schedule table and a narrow mobile viewport. No browser page
 errors occurred. The browser is a development validation tool, not a project dependency.
 
-The interactive timeline, critical-chain highlighting, Current State/What-If comparison,
-project reordering, and resource-recommendation controls are subsequent UI milestones.
+Current State/What-If comparison, project reordering, drag-to-reorder, and
+resource-recommendation controls are subsequent UI milestones.
+
+## Interactive timeline
+
+Open the **Timeline** tab after loading or calculating a plan.
+
+- **Highlight project** selects which project's critical chain to trace. Both projects
+  stay visible, and amber task bars include controlling work belonging to the other
+  project. The summary reports how many chain tasks belong to another project.
+- Solid blue links represent technical dependencies; dashed purple links represent
+  resource waits. By default, only links along the selected critical chain are shown.
+  **Show links** can instead show connections for the selected task, all links, or none.
+- Click a task bar or its label to open its resource, timing, allocation, estimates,
+  predecessors and commitment details. Predecessor buttons navigate to those tasks.
+  **Find task** also jumps to a task, including one in another project. Keyboard users
+  can focus task rows and press Enter or Space to select them.
+- Tasks are grouped by owning project and ordered by their calculated start/finish
+  within each group. **Zoom** offers an overview or two/four-times detail. Scroll through
+  the rows; the date axis stays visible. Calendar inputs produce date labels; abstract
+  schedules produce day offsets.
+- Diamonds represent zero-duration milestones. **L** and a stronger outline mark locked
+  commitments. Infeasible project summaries and selected-task conflicts stay visible.
+
+For a review demonstration, load the houses, highlight P2 and find task 38
+(architectural design). It depends on task 37 in P2 but waits for task 2 in P1 to
+release the Architect. Click task 2 in the resource-wait list to see how P1's work
+contributes to P2's critical chain.
+
+Bars show deterministic start-to-finish spans, including weekends or other nonworking
+pauses. They are not P95-duration bars or a working-hours heatmap. The forecast cards
+above retain each project's separate percentile dates. Pending edits do not reposition
+bars until a successful recalculation. The timeline is for viewing and selection;
+it does not drag tasks or alter ordering.
+
+Browser checks also verified the 72-task timeline, cross-project highlighting,
+resource/dependency link modes, task and predecessor selection, zoom, locked tasks,
+milestones, keyboard focus and the narrow-screen layout.
