@@ -14,6 +14,7 @@ export interface ResourceDetails extends Notes {
   readonly role?: string;
 }
 export interface PortfolioTask extends Task, Notes {
+  readonly actualStart?: number;
   readonly completionCriteria?: string;
   readonly lockReason?: string;
   readonly projectId: string;
@@ -105,6 +106,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
     const tasks = p.tasks.map((t: unknown): PortfolioTask => {
       if (!object(t) || t.projectId !== p.id) throw new Error('Each task must name its single owning projectId');
       if (t.durationMode !== undefined && t.durationMode !== 'working' && t.durationMode !== 'elapsed') throw new Error('durationMode must be working or elapsed');
+      if(t.actualStart!==undefined&&!day(t.actualStart))throw new Error('Invalid actualStart');
       const milestone = t.goodCase === 0 && t.poorCase === 0;
       const parsed = parseProject({ tasks: [{ ...t, ...(milestone ? { goodCase: 1, poorCase: 1 } : {}) }] })[0]!;
       if (t.allocationPercent !== undefined && (typeof t.allocationPercent !== 'number'
@@ -115,7 +117,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
         if (milestone !== (t.locked.start === t.locked.finish)) throw new Error('A milestone lock must have zero duration; a work task lock must have positive duration');
         locked = { start: t.locked.start, finish: t.locked.finish };
       }
-      return { ...parsed, ...strings(t,['description','comments','completionCriteria','lockReason']), ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
+      return { ...parsed, ...(t.actualStart===undefined?{}:{actualStart:t.actualStart as number}), ...strings(t,['description','comments','completionCriteria','lockReason']), ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
         ...(t.durationMode === undefined ? {} : { durationMode: t.durationMode }),
         ...(t.allocationPercent === undefined ? {} : { allocationPercent: t.allocationPercent as number }),
         ...(locked === undefined ? {} : { locked }) };
@@ -162,6 +164,12 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     visiting.add(t.id);
     for (const id of t.dependsOn) { const d = byId.get(id); if (!d) throw new Error(`Missing dependency: ${id}`); visit(d); }
     visiting.delete(t.id); visited.add(t.id);
+    if(t.actualStart!==undefined){
+      if(t.status!=='active'&&t.status!=='completed')throw new Error(`Actual start requires active/completed status: ${t.id}`);
+      if(t.actualStart>plan.asOf)throw new Error(`Actual start must be through asOf: ${t.id}`);
+      if(t.status==='completed'&&t.actuals?.start!==t.actualStart)throw new Error(`Actual start disagrees with completed actuals: ${t.id}`);
+      if(t.dependsOn.some(id=>byId.get(id)!.status!=='completed'||byId.get(id)!.actuals!.finish>t.actualStart!))throw new Error(`Actual start precedes dependency completion: ${t.id}`);
+    }
     if (t.status === 'completed') {
       if (!t.actuals || t.actuals.finish > plan.asOf) throw new Error(`Completed task requires actuals through asOf: ${t.id}`);
       if (t.locked && (t.actuals.start !== t.locked.start || t.actuals.finish !== t.locked.finish)) throw new Error(`Actuals disagree with locked plan: ${t.id}`);

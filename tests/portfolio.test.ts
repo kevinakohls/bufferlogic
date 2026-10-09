@@ -129,3 +129,13 @@ test('worked contention example extends Project Two completion through Project O
   assert.match(consoleResult, /Resource waits for/);
   assert.match(consoleResult, /P1-build -> P2-build -> P2-test/);
 });
+
+ test('progress actual start survives reload, remaining estimates drive forecasts and chronology is checked',()=>{
+ const input=plan([task('A','P1',{status:'completed',actualStart:0,actuals:{start:0,finish:2}}),task('B','P1',{dependsOn:['A'],status:'active',actualStart:2,remaining:{goodCase:3,poorCase:3,estimateStatus:'current'}})]);
+ const snapshot={...input,asOf:4};const result=schedulePortfolio(parsePortfolio(snapshot));
+ assert.equal(result.plan.projects[0]!.tasks[1]!.actualStart,2);
+ assert.equal(get(result,'B').finish,7);
+ const later=schedulePortfolio({...snapshot,asOf:5});assert.equal(get(later,'B').finish,8);
+ assert.throws(()=>schedulePortfolio({...snapshot,projects:[{...input.projects[0]!,tasks:[input.projects[0]!.tasks[0]!,{...input.projects[0]!.tasks[1]!,actualStart:1}]}]}),/precedes dependency/);
+ assert.throws(()=>schedulePortfolio({...snapshot,projects:[{...input.projects[0]!,tasks:[input.projects[0]!.tasks[0]!,{...input.projects[0]!.tasks[1]!,actualStart:6}]}]}),/through asOf/);
+ });

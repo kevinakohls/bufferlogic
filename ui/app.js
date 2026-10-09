@@ -7,7 +7,7 @@ $('start-date').value=today();
 function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);if(className)node.className=className;return node;}
 function dateText(value){if(!value)return '—';const [year,month,day]=value.split('-').map(Number);return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month-1,day)));}
 function valueText(f,key){return f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
-function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);}
+function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan)renderProgress();}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
 function changed(){if(!plan)return;dirty=true;$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
@@ -23,7 +23,7 @@ function renderResults(){
   card.append(top,element('div','P95 · Conservative completion forecast','p95-label'),element('p',valueText(f,'p95'),'p95-date'),element('p',`Deterministic schedule: ${valueText(f,'deterministic')}`,'deterministic'));
   const values=element('div',undefined,'percentiles');
   for(const key of ['p50','p80','p98','p99']){const item=element('div');item.append(element('div',key.toUpperCase(),'percentile-label'),element('div',valueText(f,key),'percentile-value'));values.append(item);}
-  card.append(values);cards.append(card);
+  card.append(values);if(f.staleTaskIds.length)card.append(element('p',`Remaining estimates need review: ${f.staleTaskIds.join(', ')}`,'timeline-note'));cards.append(card);
  }
  $('conflicts-panel').classList.toggle('hidden',!result.conflicts.length);$('conflicts').replaceChildren();
  for(const conflict of result.conflicts)$('conflicts').append(element('p',`${conflict.message} · ${conflict.taskIds.map(taskName).join('; ')}`));
@@ -70,7 +70,7 @@ function loadResult(value){result=value;plan=structuredClone(value.plan);dirty=f
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
  $('workspace').classList.remove('hidden');$('error').classList.add('hidden');$('freshness').textContent='Calculated from the current plan';
  const filter=$('project-filter'),previousFilter=filter.value;filter.replaceChildren();for(const [id,name] of [['all','All projects'],...plan.projects.map(p=>[p.id,p.name])]){const option=element('option',name);option.value=id;filter.append(option);}if([...filter.options].some(o=>o.value===previousFilter))filter.value=previousFilter;
- renderResults();renderTasks();renderCalendars();renderNotes();renderUtilization();message(`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`);
+ renderResults();renderTasks();renderProgress();renderCalendars();renderNotes();renderUtilization();message(`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`);
 }
 $('example').addEventListener('click',async()=>{setBusy(true);message('Loading the two-house example…');try{const response=await fetch('/api/example');if(!response.ok)throw new Error('Unable to load the example');const source=await response.json();loadResult(await request('/api/load',{...source,format:'csv',startDate:$('start-date').value,timeZone:zone}));$('project-file').value='';$('calendar-file').value='';$('project-name').textContent='Two-house example · 72 tasks';$('calendar-name').textContent='Example calendar · 21 resources';}catch(error){failure(error);}finally{setBusy(false);}});
 for(const [id,label] of [['project-file','project-name'],['calendar-file','calendar-name']])$(id).addEventListener('change',()=>{$(label).textContent=$(id).files[0]?.name??'No file selected';});
@@ -95,7 +95,7 @@ $('start-date').addEventListener('change',changed);
 $('add-exception').addEventListener('click',()=>{exceptions.push({resource:plan.calendar.resources[0].resource,date:'',hours:0});renderExceptions();changed();});
 $('exceptions-body').addEventListener('change',event=>{const node=event.target;if(!node.dataset.exception)return;const entry=exceptions[Number(node.closest('tr').dataset.index)];entry[node.dataset.exception]=node.type==='number'?node.valueAsNumber:node.value;changed();});
 $('exceptions-body').addEventListener('click',event=>{const node=event.target;if(node.dataset.remove===undefined)return;exceptions.splice(Number(node.dataset.remove),1);renderExceptions();changed();});
-for(const button of document.querySelectorAll('[data-tab]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-tab]')){b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button));}for(const name of ['tasks','calendars','notes','utilization','timeline','schedule'])$(name+'-view').classList.toggle('hidden',name!==button.dataset.tab);if(button.dataset.tab==='timeline')refreshTimeline();});
+for(const button of document.querySelectorAll('[data-tab]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-tab]')){b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button));}for(const name of ['tasks','progress','calendars','notes','utilization','timeline','schedule'])$(name+'-view').classList.toggle('hidden',name!==button.dataset.tab);if(button.dataset.tab==='timeline')refreshTimeline();});
 $('download').addEventListener('click',()=>{if(dirty){failure(new Error('Recalculate before saving so the plan and forecasts match.'));return;}const blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`bufferlogic-${result.plan.versionId}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 
 function editablePlan(){
@@ -124,3 +124,32 @@ function renderUtilizationRows(){const report=result.utilization;if(!report)retu
  $('utilization-weeks').replaceChildren();for(const row of report.weeks.filter(r=>resource==='all'||r.resource===resource)){const tr=element('tr');for(const value of [dateText(row.weekStart),resourceName(row.resource,result.plan),hours(row.availableHours),hours(row.scheduledHours),hours(row.remainingHours),row.utilizationPercent===null?'—':hours(row.utilizationPercent)+'%',projectsText(row),row.taskIds.join(', ')||'—'])tr.append(element('td',value));$('utilization-weeks').append(tr);}}
 $('utilization-resource').addEventListener('change',renderUtilizationRows);
 $('export-utilization').addEventListener('click',()=>{if(dirty){failure(new Error('Recalculate before exporting utilization.'));return;}const report=result.utilization;if(!report)return;const header=['Week beginning','Resource','Available hours','Scheduled hours','Remaining hours','Utilization percent',...result.projects.map(p=>`${p.name} hours`),'Task IDs'];const selection=$('utilization-resource').value;const rows=report.weeks.filter(r=>selection==='all'||r.resource===selection).map(r=>[r.weekStart,r.resource,r.availableHours,r.scheduledHours,r.remainingHours,r.utilizationPercent??'',...result.projects.map(p=>r.projectHours.find(h=>h.projectId===p.id).hours),r.taskIds.join(', ')]);const quote=value=>{let text=String(value);if(typeof value==='string'&&/^[=+@\-\t\r]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';};const blob=new Blob(['\uFEFF'+[header,...rows].map(row=>row.map(quote).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='resource-utilization.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+
+function progressValue(day){if(day===undefined)return '';if(!plan.calendar)return day;return new Date(Date.parse(plan.calendar.startDate+'T00:00:00Z')+day*86400000).toISOString().slice(0,10);}
+function progressDay(node){return plan.calendar?(Date.parse(node.value+'T00:00:00Z')-Date.parse(plan.calendar.startDate+'T00:00:00Z'))/86400000:node.valueAsNumber;}
+function progressInput(day,label){return input(progressValue(day),label,plan.calendar?{type:'date'}:{type:'number',min:0,step:'any'});}
+function renderProgress(){
+ const asof=$('progress-asof');asof.type=plan.calendar?'date':'number';asof.value=progressValue(plan.asOf);asof.min=plan.calendar?plan.calendar.startDate:0;asof.step='any';$('progress-units').textContent=plan.calendar?'At the beginning of this date':'Days from schedule start';
+ const body=$('progress-body');body.replaceChildren();
+ for(const task of allTasks()){
+  const status=task.status??'planned',row=element('tr');row.dataset.id=task.id;row.append(element('td',`${task.id} · ${task.name}`),element('td',plan.projects.find(p=>p.id===task.projectId).name));
+  const fields=[['status',select(status,`${task.id} progress status`,[['planned','Not started'],['active','In progress'],['completed','Complete']])],['start',progressInput(task.actuals?.start??task.actualStart,`${task.id} actual start`)],['finish',progressInput(task.actuals?.finish,`${task.id} actual finish`)]];
+  for(const field of ['goodCase','poorCase'])fields.push([field,input(task.remaining?.[field]??'',`${task.id} remaining ${field}`,{type:'number',min:0,step:'any'})]);
+  fields.push(['review',select(task.remaining?.estimateStatus??'stale',`${task.id} estimate review`,[['stale','Needs review'],['current','Reviewed']])]);
+  for(const [field,node] of fields){node.dataset.progress=field;node.disabled=field==='start'?status==='planned':field==='finish'?status!=='completed':['goodCase','poorCase','review'].includes(field)?status!=='active':false;row.append(cell(node));}body.append(row);
+ }
+}
+$('progress-asof').addEventListener('change',event=>{const day=progressDay(event.target);if(!Number.isFinite(day)||day<plan.asOf){failure(new Error('Progress date must not move backward.'));event.target.value=progressValue(plan.asOf);return;}if(day>plan.asOf)for(const task of allTasks())if(task.status==='active'&&task.remaining)task.remaining.estimateStatus='stale';plan.asOf=day;changed();for(const row of $('progress-body').rows){const task=allTasks().find(t=>t.id===row.dataset.id);if(task.remaining)row.querySelector('[data-progress="review"]').value=task.remaining.estimateStatus;}});
+$('progress-body').addEventListener('change',event=>{
+ const node=event.target,field=node.dataset.progress;if(!field)return;const task=allTasks().find(t=>t.id===node.closest('tr').dataset.id);
+ if(field==='status'){
+  task.status=node.value;
+  if(task.status==='planned'){delete task.actuals;delete task.actualStart;delete task.remaining;}
+  else if(task.status==='active'){task.actualStart=task.actuals?.start??task.actualStart??plan.asOf;delete task.actuals;task.remaining??={goodCase:task.goodCase,poorCase:task.poorCase,estimateStatus:'stale'};}
+  else {task.actualStart=task.actualStart??plan.asOf;task.actuals={start:task.actualStart,finish:plan.asOf};delete task.remaining;}
+ }else if(field==='start'){task.actualStart=progressDay(node);if(task.actuals)task.actuals.start=task.actualStart;}
+ else if(field==='finish')task.actuals.finish=progressDay(node);
+ else if(field==='review')task.remaining.estimateStatus=node.value;
+ else {task.remaining[field]=node.valueAsNumber;task.remaining.estimateStatus='current';}
+ changed();if(field==='status')renderProgress();else if(task.remaining)node.closest('tr').querySelector('[data-progress="review"]').value=task.remaining.estimateStatus;renderTasks();
+});
