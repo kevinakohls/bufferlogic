@@ -131,3 +131,19 @@ milestones, keyboard focus and the narrow-screen layout.
 ## Templates, notes and utilization
 
 Use **Create from template** to make named project copies with unique IDs and row-order priorities. **Descriptions & comments** edits project/task/resource notes. **Resource utilization** reports weekly capacity and project allocations, with CSV download. Follow [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md) for the software example and counting rules.
+
+## Update progress
+
+Open **Progress** and set **Progress as of** before entering updates. Dates denote
+start-of-day boundaries: work finished at the end of Monday has Tuesday as its
+finish boundary. Without a calendar, enter days from schedule start.
+
+Choose **In progress**, record the actual start, and enter remaining P20/P80 work
+estimates. New active tasks initially copy original estimates and flag them for
+review; replace these with the work still to do. Choose **Reviewed** to confirm an
+unchanged estimate. Advancing the progress date preserves remaining estimates and
+flags them for review. Choose **Complete** and record actual start and finish.
+Completed predecessors must finish before a successor's actual start. Recalculate
+and check project forecasts, critical chains and resource utilization, then save
+review JSON to retain the updates. Existing locked commitments retain their dates.
+Changing status back to Not started clears that task's actuals and remaining estimates.
