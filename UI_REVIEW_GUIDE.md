@@ -80,7 +80,7 @@ history or compare revisions; preserve separate downloaded files if needed.
 
 ## Verified in this milestone
 
-The automated suite has **121 passing tests**. New API tests verify static/example
+The automated suite has **133 passing tests**. New API tests verify static/example
 loading, parity with the existing engine, calendar edits, saved-result reload, invalid
 input handling, request-origin restrictions and locked-plan origin protection.
 
@@ -127,3 +127,7 @@ it does not drag tasks or alter ordering.
 Browser checks also verified the 72-task timeline, cross-project highlighting,
 resource/dependency link modes, task and predecessor selection, zoom, locked tasks,
 milestones, keyboard focus and the narrow-screen layout.
+
+## Templates, notes and utilization
+
+Use **Create from template** to make named project copies with unique IDs and row-order priorities. **Descriptions & comments** edits project/task/resource notes. **Resource utilization** reports weekly capacity and project allocations, with CSV download. Follow [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md) for the software example and counting rules.

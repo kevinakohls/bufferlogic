@@ -118,7 +118,7 @@ moving or deleting it. The input CSVs are never changed.
 npm.cmd test
 ```
 
-At this milestone, all **121 tests** pass, with none skipped. They cover the
+At this milestone, all **133 tests** pass, with none skipped. They cover the
 examples above, full-precision timing comparisons, resource and dependency
 relationships, invalid inputs/cycles, scenario immutability, stale remaining
 estimates, and the command/export workflows. GitHub Actions runs the suite
@@ -259,3 +259,5 @@ Add `--recommend-resources` to a calendar run to rank individual resource Saturd
 The first UI is available with `npm run ui`. Follow [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md) to load the two-house example, edit estimates or availability, recalculate and save a review.
 
 In the UI Timeline tab, highlight P2 and find task 38. Its resource-wait predecessor is task 2 in P1. Both appear on P2’s critical chain. Use the predecessor button to inspect P1’s task; try the locked-task sample JSON to review milestone and fixed-commitment markers.
+
+For the software demo, use **Create from template → Use software template**, create two named projects, add descriptions/comments, and inspect **Resource utilization** by resource and week. Templates generate new IDs and priorities; normal import preserves existing ones. See [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md).

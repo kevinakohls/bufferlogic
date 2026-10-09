@@ -44,3 +44,14 @@ test('review API rejects cross-origin requests and moving a dated locked plan or
  const response=await post(base,'/api/load',{projectText:JSON.stringify(plan),format:'json',calendarText:calendar,startDate:'2026-10-10'});
  assert.equal(response.status,400);assert.match((await response.json()).error,/fixed commitments/);
 }));
+
+test('template API appends unique software projects and includes utilization without changing prior data',async()=>withServer(async base=>{
+ const source=await (await fetch(base+'/api/software-template')).json();
+ const info=await (await post(base,'/api/template-info',{csvText:source.csvText})).json();assert.deepEqual(info.projects,['Template']);
+ const first=await (await post(base,'/api/template',{csvText:source.csvText,name:'Software One',startDate:'2026-10-09'})).json();
+ assert.equal(first.projects[0].tasks[0].id,'P1-T001');assert.equal(first.projects[0].tasks.length,26);assert.ok(first.utilization);
+ first.plan.projects[0].comments='Customer review';
+ const second=await (await post(base,'/api/template',{csvText:source.csvText,name:'Software Two',plan:first.plan})).json();
+ assert.equal(second.projects[1].tasks[0].id,'P2-T001');assert.equal(second.projects[0].comments,'Customer review');assert.equal(first.plan.projects.length,1);
+ assert.equal(second.utilization.resources.length,12);assert.ok(second.utilization.resources.some((r:{projectHours:{hours:number}[]})=>r.projectHours.every(p=>p.hours>0)));
+}));

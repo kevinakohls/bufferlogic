@@ -13,12 +13,15 @@ function details(){
  panel.append(html('p','SELECTED TASK','eyebrow'),html('h3',task.name),html('p',`${task.id} · ${owner.name}`,'detail-project'));
  if(chain.includes(task.id))panel.append(html('span',entry.projectId===projectId?'On this project’s critical chain':'Cross-project critical-chain task','detail-chain'));
  const list=html('dl');const estimates=task.status==='active'?task.remaining:task;
- for(const [label,value]of [['Resource',task.resource],['Allocation',`${entry.allocationPercent}%${task.durationMode==='elapsed'?' · elapsed wait':''}`],['Start',entry.startDate??displayDate(entry.start)],['Finish',entry.finishDate??displayDate(entry.finish)],['Estimates',`${estimates.goodCase} / ${estimates.poorCase} days · P20 / P80${task.status==='active'?' remaining':''}`],['Commitment',entry.locked?(entry.start===entry.finish?'Locked milestone':'Locked start and finish'):(entry.start===entry.finish?'Milestone':'Flexible')],['Status',task.status??'planned']])list.append(html('dt',label),html('dd',value));
+ for(const [label,value]of [['Resource',result.plan.resourceDetails?.find(r=>r.id===task.resource)?.name||task.resource],['Allocation',`${entry.allocationPercent}%${task.durationMode==='elapsed'?' · elapsed wait':''}`],['Start',entry.startDate??displayDate(entry.start)],['Finish',entry.finishDate??displayDate(entry.finish)],['Estimates',`${estimates.goodCase} / ${estimates.poorCase} days · P20 / P80${task.status==='active'?' remaining':''}`],['Commitment',entry.locked?(entry.start===entry.finish?'Locked milestone':'Locked start and finish'):(entry.start===entry.finish?'Milestone':'Flexible')],['Status',task.status??'planned']])list.append(html('dt',label),html('dd',value));
  panel.append(list);
+ for(const [title,value]of [['Description',task.description],['Completion criteria',task.completionCriteria],['Locked commitment reason',task.lockReason],['Comments',task.comments]])if(value){panel.append(html('h4',title),html('p',value,'detail-note'));}
  for(const [title,ids]of [['Depends on',entry.technicalPredecessors],['Waits for resource from',entry.resourcePredecessors]]){
   panel.append(html('h4',title));if(!ids.length){panel.append(html('p','None','detail-empty'));continue;}
   for(const id of ids){const button=html('button',taskLabel(id),'detail-link');button.type='button';button.addEventListener('click',()=>selectTask(id,true));panel.append(button);}
  }
+ const resource=result.plan.resourceDetails?.find(r=>r.id===task.resource);
+ if(resource?.comments){panel.append(html('h4','Resource comments'),html('p',resource.comments,'detail-note'));}
  const warnings=result.conflicts.filter(c=>c.taskIds.includes(task.id));for(const warning of warnings)panel.append(html('p',warning.message,'detail-warning'));
 }
 function selectTask(id,scroll=false){selectedId=id;$('timeline-task').value=id;draw();if(scroll){const node=[...$('timeline-chart').querySelectorAll('[data-task]')].find(n=>n.dataset.task===id);node?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});}}
