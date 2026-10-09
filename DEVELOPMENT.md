@@ -317,3 +317,7 @@ The existing `schedule`, `compare`, and `percentiles` commands remain full-proje
 baseline commands: they use original estimates regardless of lifecycle status.
 The JSON parser now preserves and validates lifecycle metadata, so a future UI
 can use the same typed task model without duplicating scheduling logic.
+
+## Portfolio engine
+
+`src/portfolio.ts` exposes parsing, immutable multi-project scheduling and saved-version comparison. `tests/portfolio.test.ts` covers resource contention, task overrides, allocations, locked deadlines, milestones, progress, ownership validation and CLI version history. No additional dependencies or services are required. See [PORTFOLIO_GUIDE.md](PORTFOLIO_GUIDE.md).

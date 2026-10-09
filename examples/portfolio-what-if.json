@@ -1,0 +1,119 @@
+{
+  "id": "sample-portfolio",
+  "versionId": "plan-v2",
+  "asOf": 0,
+  "settings": {
+    "durationUnit": "days"
+  },
+  "resources": [
+    "Alice",
+    "Bob",
+    "Customer"
+  ],
+  "projects": [
+    {
+      "id": "P1",
+      "name": "Project One",
+      "tasks": [
+        {
+          "id": "P1-design",
+          "projectId": "P1",
+          "name": "Design",
+          "resource": "Alice",
+          "goodCase": 2,
+          "poorCase": 2,
+          "dependsOn": [],
+          "priority": 1
+        },
+        {
+          "id": "P1-build",
+          "projectId": "P1",
+          "name": "Build",
+          "resource": "Bob",
+          "goodCase": 3,
+          "poorCase": 3,
+          "dependsOn": [
+            "P1-design"
+          ],
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "Project Two",
+      "tasks": [
+        {
+          "id": "P2-design",
+          "projectId": "P2",
+          "name": "Design",
+          "resource": "Alice",
+          "goodCase": 2,
+          "poorCase": 2,
+          "dependsOn": [],
+          "priority": 1
+        },
+        {
+          "id": "P2-build",
+          "projectId": "P2",
+          "name": "Build",
+          "resource": "Bob",
+          "goodCase": 3,
+          "poorCase": 3,
+          "dependsOn": [
+            "P2-design"
+          ],
+          "priority": 1
+        },
+        {
+          "id": "P2-test",
+          "projectId": "P2",
+          "name": "Customer test",
+          "resource": "Customer",
+          "goodCase": 1,
+          "poorCase": 1,
+          "dependsOn": [
+            "P2-build"
+          ],
+          "priority": 1,
+          "locked": {
+            "start": 7,
+            "finish": 8
+          }
+        },
+        {
+          "id": "P2-approval",
+          "projectId": "P2",
+          "name": "Approval milestone",
+          "resource": "Customer",
+          "goodCase": 0,
+          "poorCase": 0,
+          "dependsOn": [
+            "P2-test"
+          ],
+          "priority": 1,
+          "locked": {
+            "start": 8,
+            "finish": 8
+          }
+        },
+        {
+          "id": "P2-feedback",
+          "projectId": "P2",
+          "name": "Apply feedback",
+          "resource": "Alice",
+          "goodCase": 1,
+          "poorCase": 1,
+          "dependsOn": [
+            "P2-approval"
+          ],
+          "priority": 1
+        }
+      ]
+    }
+  ],
+  "taskOrderOverrides": [
+    "P2-design"
+  ],
+  "approvalStatus": "draft"
+}
