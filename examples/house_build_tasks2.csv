@@ -1,73 +1,73 @@
-ID,Task,Resource,Depends on,Good days,Poor days,Priority,Project
-1,Site survey & soil test,Surveyor,none,3,7,1,P1
-2,Architectural design & drawings,Architect,1,20,40,2,P1
-3,Structural engineering,Structural Engineer,2,7,15,3,P1
-4,Permit application & approval,General Contractor,3,15,45,4,P1
-5,Site clearing & grading,Excavation Crew,4,3,7,5,P1
-6,Temporary utilities & erosion control,General Contractor,5,2,4,6,P1
-7,Excavate foundation,Excavation Crew,6,2,5,7,P1
-8,Form & pour footings,Concrete Crew,7,3,6,8,P1
-9,Foundation walls,Concrete Crew,8,4,8,9,P1
-10,Waterproofing & foundation drainage,Waterproofing Crew,9,2,4,10,P1
-11,Backfill,Excavation Crew,10,1,3,11,P1
-12,Under-slab plumbing,Plumber,9,2,4,12,P1
-13,Pour slab / basement floor,Concrete Crew,"11, 12",2,4,13,P1
-14,Floor framing & subfloor,Framing Crew,13,4,8,14,P1
-15,Wall framing,Framing Crew,14,7,12,15,P1
-16,Roof trusses & sheathing,Framing Crew,15,4,8,16,P1
-17,Windows & exterior doors,Framing Crew,16,2,4,17,P1
-18,Roofing,Roofer,16,3,7,18,P1
-19,House wrap & siding,Siding Crew,17,7,14,19,P1
-20,Plumbing rough-in,Plumber,18,4,7,20,P1
-21,Electrical rough-in,Electrician,18,5,8,21,P1
-22,HVAC rough-in,HVAC Contractor,18,4,7,22,P1
-23,Rough-in inspections,Building Inspector,"20,21,22",2,7,23,P1
-24,Insulation,Insulation Crew,23,3,5,24,P1
-25,Drywall hang & finish,Drywall Crew,24,10,18,25,P1
-26,Interior prime & paint,Painter,25,6,10,26,P1
-27,Cabinets & countertops,Cabinet Installer,26,5,12,27,P1
-28,Interior trim & doors,Finish Carpenter,26,6,10,28,P1
-29,Flooring,Flooring Installer,28,5,9,29,P1
-30,Plumbing fixtures & finish,Plumber,"27,29",2,4,30,P1
-31,Electrical finish,Electrician,"27,29",2,4,31,P1
-32,HVAC finish & startup,HVAC Contractor,29,1,3,32,P1
-33,Driveway & walkways,Concrete Crew,19,2,5,33,P1
-34,Final grading & landscaping,Landscaper,33,4,9,34,P1
-35,Punch list & final cleaning,General Contractor,"30,31,32,34",3,7,35,P1
-36,Final inspection & certificate of occupancy,Building Inspector,35,2,7,36,P1
-37,Site survey & soil test,Surveyor,none,3,7,1,P2
-38,Architectural design & drawings,Architect,37,20,40,2,P2
-39,Structural engineering,Structural Engineer,38,7,15,3,P2
-40,Permit application & approval,General Contractor,39,15,45,4,P2
-41,Site clearing & grading,Excavation Crew,40,3,7,5,P2
-42,Temporary utilities & erosion control,General Contractor,41,2,4,6,P2
-43,Excavate foundation,Excavation Crew,42,2,5,7,P2
-44,Form & pour footings,Concrete Crew,43,3,6,8,P2
-45,Foundation walls,Concrete Crew,44,4,8,9,P2
-46,Waterproofing & foundation drainage,Waterproofing Crew,45,2,4,10,P2
-47,Backfill,Excavation Crew,46,1,3,11,P2
-48,Under-slab plumbing,Plumber,45,2,4,12,P2
-49,Pour slab / basement floor,Concrete Crew,"47,48",2,4,13,P2
-50,Floor framing & subfloor,Framing Crew,49,4,8,14,P2
-51,Wall framing,Framing Crew,50,7,12,15,P2
-52,Roof trusses & sheathing,Framing Crew,51,4,8,16,P2
-53,Windows & exterior doors,Framing Crew,52,2,4,17,P2
-54,Roofing,Roofer,52,3,7,18,P2
-55,House wrap & siding,Siding Crew,53,7,14,19,P2
-56,Plumbing rough-in,Plumber,54,4,7,20,P2
-57,Electrical rough-in,Electrician,54,5,8,21,P2
-58,HVAC rough-in,HVAC Contractor,54,4,7,22,P2
-59,Rough-in inspections,Building Inspector,"56,57,58",2,7,23,P2
-60,Insulation,Insulation Crew,59,3,5,24,P2
-61,Drywall hang & finish,Drywall Crew,60,10,18,25,P2
-62,Interior prime & paint,Painter,61,6,10,26,P2
-63,Cabinets & countertops,Cabinet Installer,62,5,12,27,P2
-64,Interior trim & doors,Finish Carpenter,62,6,10,28,P2
-65,Flooring,Flooring Installer,64,5,9,29,P2
-66,Plumbing fixtures & finish,Plumber,"63,65",2,4,30,P2
-67,Electrical finish,Electrician,"63,65",2,4,31,P2
-68,HVAC finish & startup,HVAC Contractor,65,1,3,32,P2
-69,Driveway & walkways,Concrete Crew,55,2,5,33,P2
-70,Final grading & landscaping,Landscaper,69,4,9,34,P2
-71,Punch list & final cleaning,General Contractor,"66,67,68,70",3,7,35,P2
-72,Final inspection & certificate of occupancy,Building Inspector,71,2,7,36,P2
+ID,Task,Resource,Depends on,Good days,Poor days,Priority,Project,Description,Comments
+1,Site survey & soil test,Surveyor,none,3,7,1,P1,Survey the site and assess soil conditions for the proposed foundation.,"Draft guidance: Confirm boundaries, access and soil recommendations before design."
+2,Architectural design & drawings,Architect,1,20,40,2,P1,Prepare architectural plans and drawings for the house.,Draft guidance: Confirm customer scope and selections; allow for design review and revisions.
+3,Structural engineering,Structural Engineer,2,7,15,3,P1,Design structural elements using the architectural plans and soil findings.,Draft guidance: Confirm local design requirements and resolve coordination issues before permitting.
+4,Permit application & approval,General Contractor,3,15,45,4,P1,Submit the permit package and obtain approval to start construction.,Draft guidance: Review authority turnaround. This template currently models permit time as working effort assigned to the general contractor; consider separating active preparation from elapsed approval waiting.
+5,Site clearing & grading,Excavation Crew,4,3,7,5,P1,Clear the building area and grade the site for construction.,"Draft guidance: Confirm site access, disposal arrangements and weather assumptions."
+6,Temporary utilities & erosion control,General Contractor,5,2,4,6,P1,Install temporary services and erosion controls for the construction site.,Draft guidance: Confirm utility availability and required site protection before excavation.
+7,Excavate foundation,Excavation Crew,6,2,5,7,P1,Excavate the foundation to the required lines and depths.,Draft guidance: Confirm soil conditions and access; unexpected rock or groundwater may change estimates.
+8,Form & pour footings,Concrete Crew,7,3,6,8,P1,Form and pour foundation footings.,"Draft guidance: Confirm inspection requirements, concrete delivery and curing assumptions."
+9,Foundation walls,Concrete Crew,8,4,8,9,P1,Construct the foundation walls.,"Draft guidance: Confirm reinforcement, inspection and curing requirements before follow-on work."
+10,Waterproofing & foundation drainage,Waterproofing Crew,9,2,4,10,P1,Install foundation waterproofing and drainage.,Draft guidance: Confirm drainage routing and inspect protection before backfill.
+11,Backfill,Excavation Crew,10,1,3,11,P1,Backfill around the completed foundation.,Draft guidance: Confirm foundation readiness and protect drainage and waterproofing.
+12,Under-slab plumbing,Plumber,9,2,4,12,P1,Install plumbing below the floor slab.,Draft guidance: Confirm fixture locations and required checks before covering the pipework.
+13,Pour slab / basement floor,Concrete Crew,"11, 12",2,4,13,P1,Place and finish the slab or basement floor.,Draft guidance: Confirm under-slab services and curing requirements before framing.
+14,Floor framing & subfloor,Framing Crew,13,4,8,14,P1,Frame the floor system and install the subfloor.,Draft guidance: Confirm material delivery and foundation dimensions before starting.
+15,Wall framing,Framing Crew,14,7,12,15,P1,Frame walls and structural openings.,Draft guidance: Confirm approved drawings and coordinate openings with other trades.
+16,Roof trusses & sheathing,Framing Crew,15,4,8,16,P1,Install roof trusses and roof sheathing.,"Draft guidance: Confirm truss delivery, lifting access and weather conditions."
+17,Windows & exterior doors,Framing Crew,16,2,4,17,P1,Install windows and exterior doors.,"Draft guidance: Confirm dimensions, delivery and weatherproofing details."
+18,Roofing,Roofer,16,3,7,18,P1,Install the roof covering and associated weatherproofing.,Draft guidance: Confirm roof readiness and suitable weather; review drying-in requirements for interior trades.
+19,House wrap & siding,Siding Crew,17,7,14,19,P1,Install house wrap and exterior siding.,"Draft guidance: Confirm flashing details, material availability and access."
+20,Plumbing rough-in,Plumber,18,4,7,20,P1,"Install plumbing supply, waste and vent rough-in.",Draft guidance: Coordinate routes and fixture locations with framing and other trades.
+21,Electrical rough-in,Electrician,18,5,8,21,P1,"Install electrical wiring, boxes and rough-in components.",Draft guidance: Confirm layout and coordinate routes with plumbing and HVAC.
+22,HVAC rough-in,HVAC Contractor,18,4,7,22,P1,Install HVAC ductwork and rough-in components.,Draft guidance: Confirm equipment layout and coordinate penetrations with other trades.
+23,Rough-in inspections,Building Inspector,"20,21,22",2,7,23,P1,Complete inspections of the rough-in work.,Draft guidance: Confirm inspector availability and allow for corrections; recorded appointments can be modeled as locked tasks.
+24,Insulation,Insulation Crew,23,3,5,24,P1,Install insulation after rough-in approval.,Draft guidance: Confirm approved assemblies and that concealed work is ready to cover.
+25,Drywall hang & finish,Drywall Crew,24,10,18,25,P1,Hang drywall and complete joint finishing.,Draft guidance: Review drying time between coats; elapsed drying waits may warrant separate tasks.
+26,Interior prime & paint,Painter,25,6,10,26,P1,Prime and paint interior surfaces.,"Draft guidance: Confirm finishes and allow for preparation, drying and touch-ups."
+27,Cabinets & countertops,Cabinet Installer,26,5,12,27,P1,Install cabinets and countertops.,"Draft guidance: Confirm measurements, customer selections and supplier lead times."
+28,Interior trim & doors,Finish Carpenter,26,6,10,28,P1,Install interior doors and finish trim.,Draft guidance: Confirm finish details and material readiness; coordinate with painting and flooring.
+29,Flooring,Flooring Installer,28,5,9,29,P1,Install finished flooring.,Draft guidance: Confirm substrate readiness and product acclimation requirements.
+30,Plumbing fixtures & finish,Plumber,"27,29",2,4,30,P1,Install plumbing fixtures and complete final connections.,Draft guidance: Confirm fixture delivery and complete functional and leak checks.
+31,Electrical finish,Electrician,"27,29",2,4,31,P1,Install electrical fixtures and complete final connections.,Draft guidance: Confirm fixture selections and complete required electrical checks.
+32,HVAC finish & startup,HVAC Contractor,29,1,3,32,P1,Complete HVAC installation and start up the system.,"Draft guidance: Confirm utilities, controls and commissioning requirements."
+33,Driveway & walkways,Concrete Crew,19,2,5,33,P1,Construct the driveway and walkways.,"Draft guidance: Confirm grading, access and weather; allow for curing before use."
+34,Final grading & landscaping,Landscaper,33,4,9,34,P1,Complete final grading and landscaping.,"Draft guidance: Confirm drainage, planting scope and seasonal weather assumptions."
+35,Punch list & final cleaning,General Contractor,"30,31,32,34",3,7,35,P1,Resolve punch-list items and perform final cleaning.,Draft guidance: Agree acceptance criteria and verify required trade corrections are complete.
+36,Final inspection & certificate of occupancy,Building Inspector,35,2,7,36,P1,Complete final inspection and obtain the certificate of occupancy.,Draft guidance: Confirm authority requirements and appointment availability; do not assume occupancy approval until issued.
+37,Site survey & soil test,Surveyor,none,3,7,1,P2,Survey the site and assess soil conditions for the proposed foundation.,"Draft guidance: Confirm boundaries, access and soil recommendations before design."
+38,Architectural design & drawings,Architect,37,20,40,2,P2,Prepare architectural plans and drawings for the house.,Draft guidance: Confirm customer scope and selections; allow for design review and revisions.
+39,Structural engineering,Structural Engineer,38,7,15,3,P2,Design structural elements using the architectural plans and soil findings.,Draft guidance: Confirm local design requirements and resolve coordination issues before permitting.
+40,Permit application & approval,General Contractor,39,15,45,4,P2,Submit the permit package and obtain approval to start construction.,Draft guidance: Review authority turnaround. This template currently models permit time as working effort assigned to the general contractor; consider separating active preparation from elapsed approval waiting.
+41,Site clearing & grading,Excavation Crew,40,3,7,5,P2,Clear the building area and grade the site for construction.,"Draft guidance: Confirm site access, disposal arrangements and weather assumptions."
+42,Temporary utilities & erosion control,General Contractor,41,2,4,6,P2,Install temporary services and erosion controls for the construction site.,Draft guidance: Confirm utility availability and required site protection before excavation.
+43,Excavate foundation,Excavation Crew,42,2,5,7,P2,Excavate the foundation to the required lines and depths.,Draft guidance: Confirm soil conditions and access; unexpected rock or groundwater may change estimates.
+44,Form & pour footings,Concrete Crew,43,3,6,8,P2,Form and pour foundation footings.,"Draft guidance: Confirm inspection requirements, concrete delivery and curing assumptions."
+45,Foundation walls,Concrete Crew,44,4,8,9,P2,Construct the foundation walls.,"Draft guidance: Confirm reinforcement, inspection and curing requirements before follow-on work."
+46,Waterproofing & foundation drainage,Waterproofing Crew,45,2,4,10,P2,Install foundation waterproofing and drainage.,Draft guidance: Confirm drainage routing and inspect protection before backfill.
+47,Backfill,Excavation Crew,46,1,3,11,P2,Backfill around the completed foundation.,Draft guidance: Confirm foundation readiness and protect drainage and waterproofing.
+48,Under-slab plumbing,Plumber,45,2,4,12,P2,Install plumbing below the floor slab.,Draft guidance: Confirm fixture locations and required checks before covering the pipework.
+49,Pour slab / basement floor,Concrete Crew,"47,48",2,4,13,P2,Place and finish the slab or basement floor.,Draft guidance: Confirm under-slab services and curing requirements before framing.
+50,Floor framing & subfloor,Framing Crew,49,4,8,14,P2,Frame the floor system and install the subfloor.,Draft guidance: Confirm material delivery and foundation dimensions before starting.
+51,Wall framing,Framing Crew,50,7,12,15,P2,Frame walls and structural openings.,Draft guidance: Confirm approved drawings and coordinate openings with other trades.
+52,Roof trusses & sheathing,Framing Crew,51,4,8,16,P2,Install roof trusses and roof sheathing.,"Draft guidance: Confirm truss delivery, lifting access and weather conditions."
+53,Windows & exterior doors,Framing Crew,52,2,4,17,P2,Install windows and exterior doors.,"Draft guidance: Confirm dimensions, delivery and weatherproofing details."
+54,Roofing,Roofer,52,3,7,18,P2,Install the roof covering and associated weatherproofing.,Draft guidance: Confirm roof readiness and suitable weather; review drying-in requirements for interior trades.
+55,House wrap & siding,Siding Crew,53,7,14,19,P2,Install house wrap and exterior siding.,"Draft guidance: Confirm flashing details, material availability and access."
+56,Plumbing rough-in,Plumber,54,4,7,20,P2,"Install plumbing supply, waste and vent rough-in.",Draft guidance: Coordinate routes and fixture locations with framing and other trades.
+57,Electrical rough-in,Electrician,54,5,8,21,P2,"Install electrical wiring, boxes and rough-in components.",Draft guidance: Confirm layout and coordinate routes with plumbing and HVAC.
+58,HVAC rough-in,HVAC Contractor,54,4,7,22,P2,Install HVAC ductwork and rough-in components.,Draft guidance: Confirm equipment layout and coordinate penetrations with other trades.
+59,Rough-in inspections,Building Inspector,"56,57,58",2,7,23,P2,Complete inspections of the rough-in work.,Draft guidance: Confirm inspector availability and allow for corrections; recorded appointments can be modeled as locked tasks.
+60,Insulation,Insulation Crew,59,3,5,24,P2,Install insulation after rough-in approval.,Draft guidance: Confirm approved assemblies and that concealed work is ready to cover.
+61,Drywall hang & finish,Drywall Crew,60,10,18,25,P2,Hang drywall and complete joint finishing.,Draft guidance: Review drying time between coats; elapsed drying waits may warrant separate tasks.
+62,Interior prime & paint,Painter,61,6,10,26,P2,Prime and paint interior surfaces.,"Draft guidance: Confirm finishes and allow for preparation, drying and touch-ups."
+63,Cabinets & countertops,Cabinet Installer,62,5,12,27,P2,Install cabinets and countertops.,"Draft guidance: Confirm measurements, customer selections and supplier lead times."
+64,Interior trim & doors,Finish Carpenter,62,6,10,28,P2,Install interior doors and finish trim.,Draft guidance: Confirm finish details and material readiness; coordinate with painting and flooring.
+65,Flooring,Flooring Installer,64,5,9,29,P2,Install finished flooring.,Draft guidance: Confirm substrate readiness and product acclimation requirements.
+66,Plumbing fixtures & finish,Plumber,"63,65",2,4,30,P2,Install plumbing fixtures and complete final connections.,Draft guidance: Confirm fixture delivery and complete functional and leak checks.
+67,Electrical finish,Electrician,"63,65",2,4,31,P2,Install electrical fixtures and complete final connections.,Draft guidance: Confirm fixture selections and complete required electrical checks.
+68,HVAC finish & startup,HVAC Contractor,65,1,3,32,P2,Complete HVAC installation and start up the system.,"Draft guidance: Confirm utilities, controls and commissioning requirements."
+69,Driveway & walkways,Concrete Crew,55,2,5,33,P2,Construct the driveway and walkways.,"Draft guidance: Confirm grading, access and weather; allow for curing before use."
+70,Final grading & landscaping,Landscaper,69,4,9,34,P2,Complete final grading and landscaping.,"Draft guidance: Confirm drainage, planting scope and seasonal weather assumptions."
+71,Punch list & final cleaning,General Contractor,"66,67,68,70",3,7,35,P2,Resolve punch-list items and perform final cleaning.,Draft guidance: Agree acceptance criteria and verify required trade corrections are complete.
+72,Final inspection & certificate of occupancy,Building Inspector,71,2,7,36,P2,Complete final inspection and obtain the certificate of occupancy.,Draft guidance: Confirm authority requirements and appointment availability; do not assume occupancy approval until issued.

@@ -29,6 +29,7 @@ export function createReviewServer() {
       if(!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)){json({error:'Use localhost or 127.0.0.1'},403);return;}
       if(request.headers.origin && request.headers.origin!==`http://${host}`){json({error:'Open the review app on this computer'},403);return;}
       const path=new URL(request.url??'/',`http://${host}`).pathname;
+      if(request.method==='GET'&&path==='/api/housing-template'){json({csvText:await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/software-template'){json({csvText:await readFile(new URL('examples/software-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/example'){
         json({projectText:await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8'),calendarText:await readFile(new URL('examples/house-resource-calendars.csv',root),'utf8')});return;
