@@ -321,3 +321,7 @@ can use the same typed task model without duplicating scheduling logic.
 ## Portfolio engine
 
 `src/portfolio.ts` exposes parsing, immutable multi-project scheduling and saved-version comparison. `tests/portfolio.test.ts` covers resource contention, task overrides, allocations, locked deadlines, milestones, progress, ownership validation and CLI version history. No additional dependencies or services are required. See [PORTFOLIO_GUIDE.md](PORTFOLIO_GUIDE.md).
+
+## Daily resource calendars
+
+`src/resource-calendars.ts` validates CSV/calendar settings and provides date-only availability and effort traversal. `schedulePortfolio` applies these calendars to dispatch, resource waits, fixed conflicts and project forecast dates. `tests/resource-calendars.test.ts` verifies calendar scheduling and timezone-aware today selection. No dependencies or services were added.

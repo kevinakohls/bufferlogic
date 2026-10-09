@@ -72,3 +72,31 @@ project's forecasts. It is JSON, not an Excel report. For advanced What-If chang
 copy the `plan` object into a separate plan JSON file and assign a new version ID.
 CSV revision runs can use `--previous` with the same input filename; the CLI creates
 a new version ID by appending `-revision` to the previous ID.
+
+## Resource-calendar review
+
+Calendar support is now available:
+
+```powershell
+npm.cmd run portfolio -- examples/house_build_tasks2.csv --calendar examples/house-resource-calendars.csv --format table
+```
+
+This defaults to today's local date. For a fixed review origin of **2026-10-09**,
+8-hour weekdays, and no holiday exceptions, results are:
+
+| Project | Deterministic completion | Approximate P95 completion |
+| --- | --- | --- |
+| House 1 | 2027-08-04 | 2027-11-26 |
+| House 2 | 2027-09-06 | 2027-12-31 |
+
+Giving every resource eight hours on Saturdays produces:
+
+| Project | Deterministic completion | Approximate P95 completion |
+| --- | --- | --- |
+| House 1 | 2027-06-15 | 2027-09-18 |
+| House 2 | 2027-07-12 | 2027-10-18 |
+
+These dates assume all task durations are working effort, including permit approval;
+use elapsed-mode tasks in JSON where waiting is more realistic. The percentile dates
+remain fixed-chain approximations. See [RESOURCE_CALENDARS.md](RESOURCE_CALENDARS.md)
+for exceptions, daily capacity conventions and fixed commitments.
