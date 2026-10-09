@@ -23,7 +23,7 @@ export function parsePortfolioCsv(text: string, id = 'csv-portfolio', versionId 
   const cell = (value:string) => '"' + value.replaceAll('"','""') + '"';
   const projects = [...groups].map(([projectId,records]) => {
     const csv = [header,...records].map(row=>row.map(cell).join(',')).join('\n');
-    return { id:projectId,name:projectId,tasks:parseProjectCsv(csv).map((task,index)=>({...task,projectId,...Object.fromEntries([['Description','description'],['Comments','comments'],['Completion criteria','completionCriteria'],['Lock reason','lockReason']].filter(([column])=>header.includes(column!)).map(([column,field])=>[field,records[index]![header.indexOf(column!)]!]))})) };
+    return { id:projectId,name:projectId,tasks:parseProjectCsv(csv).map((task,index)=>({...task,projectId,...(header.includes('Checklist')?{checklist:records[index]![header.indexOf('Checklist')]!.split(/\r?\n/).map(text=>text.trim()).filter(Boolean).map(text=>({text,completed:false}))}:{}),...Object.fromEntries([['Description','description'],['Comments','comments'],['Completion criteria','completionCriteria'],['Lock reason','lockReason']].filter(([column])=>header.includes(column!)).map(([column,field])=>[field,records[index]![header.indexOf(column!)]!]))})) };
   });
   return parsePortfolio({id,versionId,asOf:0,settings:{durationUnit:'days'},resources:[...new Set(projects.flatMap(p=>p.tasks.map(t=>t.resource)))],projects});
 }

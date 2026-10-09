@@ -171,3 +171,18 @@ Click **Save workspace** after recalculating. To restore the downloaded file, cl
 notes, progress and calendars, including the recorded schedule start date. The
 file keeps its existing format and older saved workspaces still load. Opening a
 workspace asks before discarding pending edits.
+
+## Task checklists
+
+Open **Task checklists** and select a task. Add, edit, remove or check items and
+review the completed count. Recalculate before **Save workspace**; **Open saved
+workspace** restores the items and their checked state. Checklist completion never
+automatically changes task status or forecasts. Work with its own duration,
+resource or dependency belongs in a separate task.
+
+Housing and software templates contain three draft items per task; revise these
+for the actual project. CSV templates can include a **Checklist** column with one
+item per line in a quoted cell (Excel: Alt+Enter). New project copies inherit the
+text with all items unchecked. Editing a project's checklist changes that copy
+only. Existing saved workspaces keep their existing items; new draft items are
+not injected into previously saved tasks.

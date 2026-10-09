@@ -36,6 +36,7 @@ export function instantiateTemplate(text:string, name:string, existing?:Portfoli
   const predecessors=cell(row,'Depends on');
   const dependsOn=!predecessors||predecessors.toLowerCase()==='none'?[]:predecessors.split(',').map(id=>{const mapped=remap.get(id.trim());if(!mapped)throw new Error(`Template dependency ${id} is outside the selected project or missing`);return mapped;});
   return {id:remap.get(ids[index]!)!,projectId,name:cell(row,'Task'),resource:cell(row,'Resource'),goodCase:numeric(cell(row,'Good days')),poorCase:numeric(cell(row,'Poor days')),dependsOn,priority:index+1,status:'planned' as const,
+   ...(header.includes('Checklist')?{checklist:cell(row,'Checklist').split(/\r?\n/).map(text=>text.trim()).filter(Boolean).map(text=>({text,completed:false}))}:{}),
    ...Object.fromEntries([['Description','description'],['Comments','comments'],['Completion criteria','completionCriteria'],['Lock reason','lockReason']].filter(([column])=>header.includes(column!)).map(([column,field])=>[field,cell(row,column!)]))};
  });
  const resources=[...new Set([...base.resources,...tasks.map(t=>t.resource)])];

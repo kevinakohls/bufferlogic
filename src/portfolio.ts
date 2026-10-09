@@ -14,6 +14,7 @@ export interface ResourceDetails extends Notes {
   readonly role?: string;
 }
 export interface PortfolioTask extends Task, Notes {
+  readonly checklist?: readonly { readonly text:string; readonly completed:boolean }[];
   readonly actualStart?: number;
   readonly completionCriteria?: string;
   readonly lockReason?: string;
@@ -106,6 +107,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
     const tasks = p.tasks.map((t: unknown): PortfolioTask => {
       if (!object(t) || t.projectId !== p.id) throw new Error('Each task must name its single owning projectId');
       if (t.durationMode !== undefined && t.durationMode !== 'working' && t.durationMode !== 'elapsed') throw new Error('durationMode must be working or elapsed');
+      if(t.checklist!==undefined&&(!Array.isArray(t.checklist)||!t.checklist.every((item:unknown)=>object(item)&&text(item.text)&&typeof item.completed==='boolean')))throw new Error('Checklist items require nonempty text and completed true/false');
       if(t.actualStart!==undefined&&!day(t.actualStart))throw new Error('Invalid actualStart');
       const milestone = t.goodCase === 0 && t.poorCase === 0;
       const parsed = parseProject({ tasks: [{ ...t, ...(milestone ? { goodCase: 1, poorCase: 1 } : {}) }] })[0]!;
@@ -117,7 +119,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
         if (milestone !== (t.locked.start === t.locked.finish)) throw new Error('A milestone lock must have zero duration; a work task lock must have positive duration');
         locked = { start: t.locked.start, finish: t.locked.finish };
       }
-      return { ...parsed, ...(t.actualStart===undefined?{}:{actualStart:t.actualStart as number}), ...strings(t,['description','comments','completionCriteria','lockReason']), ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
+      return { ...parsed, ...(t.checklist===undefined?{}:{checklist:(t.checklist as {text:string;completed:boolean}[]).map(item=>({text:item.text,completed:item.completed}))}), ...(t.actualStart===undefined?{}:{actualStart:t.actualStart as number}), ...strings(t,['description','comments','completionCriteria','lockReason']), ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
         ...(t.durationMode === undefined ? {} : { durationMode: t.durationMode }),
         ...(t.allocationPercent === undefined ? {} : { allocationPercent: t.allocationPercent as number }),
         ...(locked === undefined ? {} : { locked }) };
