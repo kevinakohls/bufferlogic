@@ -147,3 +147,13 @@ Completed predecessors must finish before a successor's actual start. Recalculat
 and check project forecasts, critical chains and resource utilization, then save
 review JSON to retain the updates. Existing locked commitments retain their dates.
 Changing status back to Not started clears that task's actuals and remaining estimates.
+
+## Graph resource utilization
+
+Open **Resource utilization**. **All resources** shows a weekly heatmap: dark
+green means 80–100% utilization, red means over capacity, and gray means no
+availability. Select a resource to see weekly scheduled hours stacked by project
+and a dashed available-hours line. Hover or keyboard-focus a cell or bar for exact
+values; the tables and CSV export retain the full detail. First and last weeks
+are clipped to the reporting period. Graphs use the last calculated schedule until
+you recalculate pending edits.
