@@ -28,7 +28,7 @@ try {
     else {
       console.log(`Portfolio: ${result.plan.id} | Version: ${result.plan.versionId} | Days | As of: ${result.plan.asOf}`);
       console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, Completion:p.forecast.deterministicCompletion, ...p.forecast.completionPercentiles, 'Critical chain':p.forecast.criticalChain.join(' -> ') })));
-      console.table(result.tasks.map(t=>({ Project:t.projectId, Task:t.id, Resource:t.resource, 'Allocation %':t.allocationPercent, Start:t.start, Finish:t.finish, Locked:t.locked })));
+      console.table(result.tasks.map(t=>({ Project:t.projectId, Task:t.id, Resource:t.resource, 'Allocation %':t.allocationPercent, Start:t.start, Finish:t.finish, Locked:t.locked, 'Resource waits for':t.resourcePredecessors.join(' -> ') })));
       if (comparison) console.table(comparison.projects.map(p => ({ Project:p.projectId, 'Completion change': p.current ? p.whatIf.deterministicCompletion-p.current.deterministicCompletion : 'new', ...p.percentileDifferences })));
       for (const conflict of result.conflicts) console.log(`CONFLICT: ${conflict.message} [${conflict.taskIds.join(', ')}]`);
       console.log(result.assumptions.join('\n'));
