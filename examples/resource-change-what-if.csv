@@ -1,0 +1,6 @@
+ID,Task,Resource,Depends on,Good days,Poor days,Priority
+A,Design,Bob,none,2,4,1
+B,Build One,Alice,A,6,7,2
+C,Build Two,Bob,A,2,4,3
+D,Build Three,Alice,A,2,3,4
+E,Test,Bob,"B,C,D",4,4,5

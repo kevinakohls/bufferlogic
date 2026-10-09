@@ -1,0 +1,22 @@
+﻿Resource,Row type,Date,Monday hours,Tuesday hours,Wednesday hours,Thursday hours,Friday hours,Saturday hours,Sunday hours,Exception hours,Notes
+Surveyor,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Architect,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Structural Engineer,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+General Contractor,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Excavation Crew,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Concrete Crew,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Waterproofing Crew,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Plumber,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Framing Crew,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Roofer,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Siding Crew,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Electrician,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+HVAC Contractor,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Building Inspector,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Insulation Crew,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Drywall Crew,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Painter,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Cabinet Installer,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Finish Carpenter,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Flooring Installer,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability
+Landscaper,weekly,,8,8,8,8,8,0,0,,Assumed weekday schedule; edit to match actual availability

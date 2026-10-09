@@ -6,6 +6,16 @@
 
 BufferLogic applies **Critical Chain Project Management (CCPM)** and the **Theory of Constraints (TOC)** to AI-powered software development.
 
+**Review the working deterministic P50 milestone:** follow the
+[Reviewer Guide](REVIEWER_GUIDE.md) for Windows commands and expected results.
+The current engine supports JSON/CSV scheduling, scenario comparison,
+approximate whole-project percentiles from the baseline Critical Chain, and
+Excel-compatible exports. The progress engine also forecasts remaining work
+from JSON snapshots with active estimates and completed actuals.
+The buffer management and GitLab/Duo integration
+described below remain future goals. See [Development](DEVELOPMENT.md) for
+the input format and scheduling contract.
+
 As AI agents become capable of coding, reviewing, testing, securing, and deploying software, the next challenge is no longer simply doing more work faster.
 
 The challenge is determining:
@@ -128,3 +138,25 @@ The first milestone is an end-to-end demonstration in which BufferLogic:
 The initial implementation will use TypeScript and the GitLab Duo Agent Platform.
 
 Future development may incorporate historical task-duration distributions and Monte Carlo simulation to estimate the probability of
+
+## Multi-project scheduling
+
+The portfolio engine schedules projects against shared resources, with project order, task overrides, percentage allocations, locked commitments and milestones. Projects own their versioned completion forecasts. See [PORTFOLIO_GUIDE.md](PORTFOLIO_GUIDE.md) for the worked example and conflict rules.
+
+```sh
+npm run portfolio -- examples/portfolio.json --format table
+```
+
+The portfolio command also imports Excel CSV files with a `Project` column. See [HOUSE_BUILD_REVIEW.md](HOUSE_BUILD_REVIEW.md) for the two-house example.
+
+Resource-calendar CSVs now drive dated portfolio schedules. Add `--calendar examples/house-resource-calendars.csv` to the two-house command; start defaults to today. See [RESOURCE_CALENDARS.md](RESOURCE_CALENDARS.md).
+
+Use `--recommend-resources` on a calendar portfolio run to rank additional Saturday hours one resource at a time, without changing the input plan.
+
+## Review UI
+
+Run `npm run ui` and open the printed local address in your browser. Load the two-house example or your CSV/JSON files, edit task estimates and calendars, then recalculate forecasts. See [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md) for Windows instructions and saving reviews.
+
+The UI **Timeline** tab groups tasks by project and highlights the selected project’s critical chain across project boundaries. Select a task for dependency/resource-wait details; locked tasks and milestones are marked.
+
+The UI also creates project copies from CSV templates, retains project/task/resource descriptions and comments, and reports weekly resource utilization. See [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md).
