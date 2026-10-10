@@ -131,3 +131,23 @@ features or waiting for jobs to finish.
   repository and confirm the draft's URLs resolve.
 - **Final text:** remove or resolve checklist uncertainty before presenting
   eligibility and job-level claims as verified facts.
+
+## Readiness check: October 10, 2026
+
+- Frozen dependency installation succeeded locally with `npm ci`.
+- TypeScript build and all 139 tests passed on the documentation branch.
+- The local UI started, and loading/calculating the two-house example returned
+  72 tasks in two projects.
+- The tracked LICENSE begins with MIT License. GitLab About-section recognition
+  in the submission project remains unverified.
+- Anonymous API access confirms `DarkVole/bufferlogic` is public.
+- The supplied submission URL `https://gitlab.com/darkvole1/BufferLogic` redirected
+  this environment to GitLab sign-in; anonymous API lookup returned 404. This
+  conflicts with the user's successful incognito check, so confirm the exact
+  publicly accessible URL before finalizing submission or evidence links.
+- The supplied official-rules URL was inaccessible from this environment.
+  Start Fresh eligibility, timing and treatment of previously developed code
+  remain unverified; obtain the event URL or the relevant rule text.
+- GitLab write authentication is unavailable in the cloud. Documentation is
+  prepared on `hackathon-submission-demo-guide`; transfer from a locally
+  authenticated Git client and merge in the intended submission project.
