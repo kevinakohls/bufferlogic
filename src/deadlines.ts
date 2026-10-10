@@ -12,7 +12,7 @@ function assess(deadline:Deadline,day:number,date?:string):DeadlineAssessment {
  if(typeof deadline==='string'){
   if(!date)return {status:'unavailable',daysLate:null,completion:null};
   const difference=(parseDate(date)-parseDate(deadline))/86400000;
-  return {status:difference>0?'late':'met',daysLate:Math.max(0,difference),completion:date};
+  return {status:difference>=0?'late':'met',daysLate:Math.max(0,difference),completion:date};
  }
  const difference=day-deadline;
  return {status:difference>1e-9?'late':'met',daysLate:Math.max(0,difference),completion:day};
