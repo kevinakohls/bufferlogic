@@ -17,3 +17,25 @@ variables:
   SECRET_DETECTION_ENABLED: 'true'
 secret_detection:
   stage: secret-detection
+
+# Validate the application on both supported Node.js release lines.
+application_tests:
+  stage: test
+  image: node:${NODE_VERSION}-bookworm-slim
+  parallel:
+    matrix:
+      - NODE_VERSION: ['22', '24']
+  timeout: 10m
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+  cache:
+    key:
+      prefix: node-${NODE_VERSION}
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+  script:
+    - npm ci --cache .npm --prefer-offline --no-audit --no-fund
+    - npm test

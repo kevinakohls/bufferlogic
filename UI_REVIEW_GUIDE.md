@@ -186,3 +186,20 @@ item per line in a quoted cell (Excel: Alt+Enter). New project copies inherit th
 text with all items unchecked. Editing a project's checklist changes that copy
 only. Existing saved workspaces keep their existing items; new draft items are
 not injected into previously saved tasks.
+
+## Project and task deadlines
+
+Open **Deadlines**. Enter each desired project or task finish date, then
+**Recalculate schedule**. With calendars, the whole chosen date is allowed;
+without calendars, deadlines are elapsed day numbers from schedule start.
+Project rows assess deterministic completion and P50/P80/P95/P98/P99 separately.
+Project cards summarize P50 and P95. Task rows assess their deterministic finish,
+or recorded finish for completed tasks. Late values are highlighted. These are
+calendar days when dated and elapsed days when numeric, not resource workdays.
+
+Clear a field and recalculate to remove its deadline. **Save workspace** and
+**Open saved workspace** preserve the targets. Deadlines do not change dispatch,
+priorities, forecasts or feasibility; fixed start/finish commitments remain
+separate. A forecast marked infeasible is diagnostic even when it meets a target.
+Date targets without a calendar show **Calendar required**. Older workspaces
+without deadlines continue to load.
