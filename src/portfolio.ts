@@ -1,3 +1,4 @@
+import {assessDeadlines,validateDeadline,type Deadline} from './deadlines.js';
 import { createCalendar, validateCalendarSettings, type CalendarSettings } from './resource-calendars.js';
 import { calculateP50 } from './duration.js';
 import { fitTaskLognormal } from './percentiles.js';
@@ -14,6 +15,7 @@ export interface ResourceDetails extends Notes {
   readonly role?: string;
 }
 export interface PortfolioTask extends Task, Notes {
+  readonly deadline?: Deadline;
   readonly checklist?: readonly { readonly text:string; readonly completed:boolean }[];
   readonly actualStart?: number;
   readonly completionCriteria?: string;
@@ -25,6 +27,7 @@ export interface PortfolioTask extends Task, Notes {
   readonly locked?: { readonly start: number; readonly finish: number };
 }
 export interface Project extends Notes {
+  readonly deadline?: Deadline;
   readonly owner?: string;
   readonly id: string;
   readonly name: string;
@@ -80,6 +83,7 @@ export interface PortfolioVersion {
   readonly projects: readonly (Project & { readonly forecast: ProjectForecast })[];
 }
 export interface PortfolioResult extends PortfolioVersion {
+  readonly deadlineReport: ReturnType<typeof assessDeadlines>;
   readonly previousVersions: readonly PortfolioVersion[];
   readonly forecastMethod: string;
   readonly assumptions: readonly string[];
@@ -119,12 +123,12 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
         if (milestone !== (t.locked.start === t.locked.finish)) throw new Error('A milestone lock must have zero duration; a work task lock must have positive duration');
         locked = { start: t.locked.start, finish: t.locked.finish };
       }
-      return { ...parsed, ...(t.checklist===undefined?{}:{checklist:(t.checklist as {text:string;completed:boolean}[]).map(item=>({text:item.text,completed:item.completed}))}), ...(t.actualStart===undefined?{}:{actualStart:t.actualStart as number}), ...strings(t,['description','comments','completionCriteria','lockReason']), ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
+      return { ...parsed, ...(t.deadline===undefined?{}:{deadline:validateDeadline(t.deadline)}), ...(t.checklist===undefined?{}:{checklist:(t.checklist as {text:string;completed:boolean}[]).map(item=>({text:item.text,completed:item.completed}))}), ...(t.actualStart===undefined?{}:{actualStart:t.actualStart as number}), ...strings(t,['description','comments','completionCriteria','lockReason']), ...(milestone ? { goodCase: 0, poorCase: 0 } : {}), projectId: p.id as string,
         ...(t.durationMode === undefined ? {} : { durationMode: t.durationMode }),
         ...(t.allocationPercent === undefined ? {} : { allocationPercent: t.allocationPercent as number }),
         ...(locked === undefined ? {} : { locked }) };
     });
-    return { id: p.id, name: p.name, tasks, ...strings(p,['description','comments','owner']) };
+    return { id: p.id, name: p.name, tasks, ...(p.deadline===undefined?{}:{deadline:validateDeadline(p.deadline)}), ...strings(p,['description','comments','owner']) };
   });
   let resourceDetails:ResourceDetails[]|undefined;
   if(value.resourceDetails!==undefined){
@@ -341,7 +345,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
       staleTaskIds: p.tasks.filter(t=>t.status==='active'&&t.remaining?.estimateStatus==='stale').map(t=>t.id) } };
   });
   const previousVersions = previous ? structuredClone([...previous.previousVersions, { plan:previous.plan,tasks:previous.tasks,conflicts:previous.conflicts,projects:previous.projects }]) : [];
-  return { plan, tasks:[...entries.values()],conflicts,projects,previousVersions,
+  return { plan, tasks:[...entries.values()],conflicts,projects,previousVersions,deadlineReport:assessDeadlines({plan,tasks:[...entries.values()],conflicts,projects}),
     forecastMethod:'fixed-critical-chain-lognormal-moment-matching',
     assumptions:['Independent task durations; fixed baseline cross-project critical chain', 'Allocation scales duration inversely; tasks run without preemption', 'Locked start/finish are fixed anchors; percentiles are conditional on meeting commitments', 'Infeasible forecasts are diagnostic, not achievable commitments; alternate chains are not simulated', ...(calendar ? ['Daily resource capacity calendars; dates are date-only, not clock-time shifts', 'Calendar percentile dates are approximate: aggregate fixed-chain quantiles distributed by task expected effort'] : ['No resource calendars applied'])] };
 }
