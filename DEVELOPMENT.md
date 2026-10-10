@@ -335,3 +335,19 @@ can use the same typed task model without duplicating scheduling logic.
 ## Templates and utilization
 
 `src/templates.ts` instantiates CSV projects with generated IDs and remapped predecessors. Portfolio parsing retains optional notes and resource details. `src/utilization.ts` reports calendar availability and allocated effort by week/project. UI template endpoints and schedule responses expose these to the browser. No dependencies were added. See [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md).
+
+## GitLab delivery and checks
+
+GitLab is the primary review destination:
+https://gitlab.com/DarkVole/bufferlogic. Start feature branches from its latest
+`main`, push them to the GitLab remote, and create a merge request targeting
+`main`. Cloud checkouts without GitLab write authentication can prepare commits;
+authenticate and push from your local Git client. Do not put credentials in files
+or chat.
+
+The GitLab pipeline runs `npm ci` and `npm test` (including the TypeScript build)
+on Node.js 22 and 24 for branch and merge-request pipelines. Existing SAST and
+secret detection configuration remains enabled. Dependency caches contain npm
+package downloads, not installed dependencies. Check the application test jobs
+as well as security jobs before merging. Account verification and runner access
+must be configured in GitLab.
