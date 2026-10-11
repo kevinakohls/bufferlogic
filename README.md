@@ -54,7 +54,8 @@ The portfolio CLI also supports JSON plans and CSV files with a `Project` column
 npm run portfolio -- examples/portfolio.json --format table
 ```
 
-Resource calendars provide dated schedules; the start date defaults to today.
+Add `--calendar examples/house-resource-calendars.csv` to a portfolio run for
+dated schedules; the start date defaults to today.
 The `--recommend-resources` option evaluates extra Saturday hours for one resource
 at a time.
 
