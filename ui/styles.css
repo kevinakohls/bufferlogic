@@ -11,3 +11,5 @@
 .checklist-editor{padding:0 24px 24px;max-width:1000px}.checklist-editor>p{font-size:12px;color:var(--muted);line-height:1.6}.checklist-editor ul{list-style:none;padding:0}.checklist-editor li{display:flex;align-items:center;gap:12px;margin:12px 0}.checklist-editor input[type=text]{flex:1;min-width:0}.checklist-editor input[type=checkbox]{width:20px;height:20px;flex:none}
 
 .deadline-summary{font-size:12px;color:#765329;line-height:1.6;margin:15px 0 0}.deadline-late{color:#a23d2e;font-weight:600}#project-deadlines input,#task-deadlines input{min-width:145px}
+
+.brand{flex-shrink:0}.brand img{display:block;width:260px;height:54px;object-fit:cover}@media(max-width:520px){.brand img{width:220px;height:46px}header .badge{display:none}}
