@@ -7,12 +7,9 @@ resources. It calculates resource-constrained critical chains and approximate
 project completion forecasts, and provides a local review interface for updating
 plans and actual progress.
 
-For the GitLab hackathon, the demonstrated post-code workflow uses **GitLab Duo
-Agent Platform's Code Review flow** with human approval and GitLab CI validation.
-A controlled deadline regression produced a failing test; Duo identified the
-boundary error and proposed a correction. The approved correction was committed,
-and both the branch and merge-request pipelines passed. This is a supervised
-review-and-fix workflow, not autonomous repair or deployment.
+GitLab Duo Code Review flow supports supervised review of proposed changes.
+GitLab CI validates the application with build, test and security jobs. The
+workflow below explains how to reproduce a controlled deadline-regression demo.
 
 ## Run the prototype
 
@@ -44,23 +41,58 @@ Percentile forecasts use independent lognormal task durations and a fixed critic
 chain; they are approximations, not simulated guarantees. Deadline targets flag
 risk without changing dispatch order or locking dates.
 
-## GitLab automation and demonstration
+## Examples and documentation
 
-GitLab CI builds and tests on Node.js 22 and 24. Security scanning is configured
-through GitLab's SAST and Secret Detection templates. Job execution can differ
-between branch and merge-request pipelines; inspect the actual jobs when checking
-evidence.
+Load the two-house example in the UI to see projects competing for shared crews.
+The **Timeline** highlights a project's critical chain across project boundaries.
+Create project copies from housing or software CSV templates, update progress and
+deadlines, and use **Save workspace** to retain the plan.
 
-The Duo-enabled submission repository is intended to be
-[darkvole1/BufferLogic](https://gitlab.com/darkvole1/BufferLogic).
-The application uses GitLab automation in its development lifecycle; it does not
-currently call Duo from its scheduling engine or dispatch AI agents based on
-critical-chain priorities.
+The portfolio CLI also supports JSON plans and CSV files with a `Project` column:
 
-See [Hackathon submission and demo guide](HACKATHON_SUBMISSION.md) for the draft
-submission text, reproduction steps, evidence checklist and video script.
-See [Development](DEVELOPMENT.md), [Reviewer Guide](REVIEWER_GUIDE.md) and
-[UI Review Guide](UI_REVIEW_GUIDE.md) for detailed commands and behavior.
+```sh
+npm run portfolio -- examples/portfolio.json --format table
+```
+
+Resource calendars provide dated schedules; the start date defaults to today.
+The `--recommend-resources` option evaluates extra Saturday hours for one resource
+at a time.
+
+- [Development](DEVELOPMENT.md): input formats and development workflow.
+- [Reviewer Guide](REVIEWER_GUIDE.md): CLI examples and expected behavior.
+- [UI Review Guide](UI_REVIEW_GUIDE.md): Windows startup, editing and workspace save/open.
+- [Portfolio Guide](PORTFOLIO_GUIDE.md): shared resources and fixed commitments.
+- [House Build Review](HOUSE_BUILD_REVIEW.md): the two-house example.
+- [Resource Calendars](RESOURCE_CALENDARS.md): calendars and availability changes.
+- [Templates and Utilization](TEMPLATES_AND_UTILIZATION.md): templates, notes and reporting.
+
+## GitLab automation
+
+The project repository is [darkvole1/BufferLogic](https://gitlab.com/darkvole1/BufferLogic).
+The CI configuration installs locked dependencies, builds TypeScript and runs
+application tests on Node.js 22 and 24. It also includes GitLab's SAST and Secret
+Detection templates. Job execution can differ between branch and merge-request
+pipelines; inspect the actual jobs and logs for each run.
+
+### Reproduce the supervised review workflow
+
+1. Run `npm test` on the latest `main` and confirm the baseline passes.
+2. Enable GitLab Duo's automated Code Review flow for the project/group, with the
+   required Duo access and CI runners configured.
+3. Create a separate demo branch. In `src/deadlines.ts`, change the calendar-date
+   status comparison from `difference>0` to `difference>=0`. Leave tests unchanged.
+4. Run `npm test`. The test for whole-date calendar deadlines should fail because
+   completion on the deadline date is incorrectly classified as late.
+5. Push the branch and create a merge request clearly marked as a controlled
+   demonstration. Leave auto-merge off and inspect Duo's review activity.
+6. Review and approve a correction that restores inclusive deadline-date behavior
+   without weakening tests. Applying a suggestion commits the approved change.
+7. Inspect the resulting application and security job results. Merge only after
+   validation and human review, preserving the merge request and pipeline history.
+
+This workflow uses agent review, human approval and CI validation. The scheduling
+engine does not currently call Duo or dispatch agents based on critical-chain
+priorities. The deliberate regression is for demonstration only.
 
 ## Future work
 
@@ -72,25 +104,3 @@ scheduling recommendations are also future work.
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-## Multi-project scheduling
-
-The portfolio engine schedules projects against shared resources, with project order, task overrides, percentage allocations, locked commitments and milestones. Projects own their versioned completion forecasts. See [PORTFOLIO_GUIDE.md](PORTFOLIO_GUIDE.md) for the worked example and conflict rules.
-
-```sh
-npm run portfolio -- examples/portfolio.json --format table
-```
-
-The portfolio command also imports Excel CSV files with a `Project` column. See [HOUSE_BUILD_REVIEW.md](HOUSE_BUILD_REVIEW.md) for the two-house example.
-
-Resource-calendar CSVs now drive dated portfolio schedules. Add `--calendar examples/house-resource-calendars.csv` to the two-house command; start defaults to today. See [RESOURCE_CALENDARS.md](RESOURCE_CALENDARS.md).
-
-Use `--recommend-resources` on a calendar portfolio run to rank additional Saturday hours one resource at a time, without changing the input plan.
-
-## Review UI
-
-Run `npm run ui` and open the printed local address in your browser. Load the two-house example or your CSV/JSON files, edit task estimates and calendars, then recalculate forecasts. See [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md) for Windows instructions and saving reviews.
-
-The UI **Timeline** tab groups tasks by project and highlights the selected project’s critical chain across project boundaries. Select a task for dependency/resource-wait details; locked tasks and milestones are marked.
-
-The UI also creates project copies from CSV templates, retains project/task/resource descriptions and comments, and reports weekly resource utilization. See [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md).
