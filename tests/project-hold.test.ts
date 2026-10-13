@@ -32,10 +32,10 @@ test('invalid hold values reject and completed historical tasks remain on a held
 });
 
 const calendar={startDate:'2026-10-09',hoursPerWorkday:8,resources:[{resource:'Alice',weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}]};
-test('withheld calendar forecasts have nullable values, no dates and no resource ranking',()=>{
+test('withheld calendar forecasts have nullable values and are excluded from resource ranking',()=>{
  const input={...base,calendar,projects:[{...base.projects[0]!,onHold:true},base.projects[1]!]};const result=schedulePortfolio(input);const forecast=result.projects[0]!.forecast;
  assert.equal(forecast.deterministicCompletion,null);assert.equal(forecast.completionPercentiles,null);assert.equal(forecast.feasible,null);assert.equal(forecast.completionDates,undefined);
- assert.throws(()=>recommendSaturdayHours(input),/full project|Resume held/);
+ const recommendations=recommendSaturdayHours(input);assert.deepEqual(recommendations.excludedProjects.map(p=>p.projectId),['P1']);assert.ok(recommendations.candidates.every(c=>c.projects.every(p=>p.projectId==='P2')));
 });
 test('holds distinguish suspensions and resumptions from removals and additions',()=>{
  const before=schedulePortfolio(base);const held=schedulePortfolio({...base,projects:[{...base.projects[0]!,onHold:true},base.projects[1]!]});
@@ -59,4 +59,10 @@ test('CLI tables withhold held project completion rather than reporting zero-day
  const dir=await mkdtemp(join(tmpdir(),'hold-cli-'));try{const file=join(dir,'plan.json');await writeFile(file,JSON.stringify({...base,projects:[{...base.projects[0]!,onHold:true},base.projects[1]!]}));
  const output=execFileSync(process.execPath,['dist/src/portfolio-cli.js',file,'--format','table'],{encoding:'utf8'});assert.match(output,/on-hold/);assert.match(output,/withheld/);
  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('unchanged holds are not reported as newly suspended; all-held portfolios get a clear recommendation error',()=>{
+ const held=schedulePortfolio({...base,calendar,projects:base.projects.map(project=>({...project,onHold:true}))});
+ const comparison=comparePortfolioVersions(held,held);assert.deepEqual(comparison.suspendedTaskIds,[]);assert.deepEqual(comparison.unscheduledTaskIds,['A','B']);assert.deepEqual(comparison.removedTaskIds,[]);
+ assert.throws(()=>recommendSaturdayHours(held.plan),/No fully scheduled projects/);
 });

@@ -144,3 +144,12 @@ project forecasts remain unchanged. Accept a recommendation manually by editing 
 weekly Saturday hours, then rerun to find the next best change. No optimal-plan or
 cost-benefit claim is made, and gains from separate candidates must not be added
 together. Dates and gains remain subject to the fixed-chain forecast approximation.
+
+### Recommendations with held projects
+
+Resource improvement scores include only projects with full completion forecasts.
+The output lists held/hold-blocked forecasts in `excludedProjects`; it makes no
+claim about improving their unavailable completion dates. Their active tasks and
+locked appointments still reserve capacity in every scenario. If no project has a
+full forecast, recommendations report a clear error rather than producing an empty
+or misleading ranking.

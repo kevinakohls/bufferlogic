@@ -69,6 +69,7 @@ try {
         console.log(resourceRecommendations.ranking);
         console.table(resourceRecommendations.candidates.flatMap((c,index)=>c.projects.map(p=>({ Rank:index+1,Resource:c.resource,Eligible:c.eligible,'Saturday hours':`${c.originalSaturdayHours} -> ${c.proposedSaturdayHours}`,Project:p.projectName,'Current P95':p.currentP95Date,'Proposed P95':p.proposedP95Date,'P95 days earlier':Number(p.p95DaysEarlier.toFixed(2)),'Date days earlier':p.p95DateDaysEarlier,Reason:c.reason }))));
         console.log(resourceRecommendations.interpretation);
+        if(resourceRecommendations.excludedProjects.length)console.table(resourceRecommendations.excludedProjects);
       }
       console.log(result.assumptions.join('\n'));
     }

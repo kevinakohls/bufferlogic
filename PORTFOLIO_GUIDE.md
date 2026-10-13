@@ -115,7 +115,15 @@ These fields are intended for future dependency and critical-chain visualization
 
 `result.projects[].forecast` contains `scheduleVersionId`, `feasible`,
 `deterministicCompletion`, `criticalChain`, `completionPercentiles` (P50, P80,
-P95, P98, P99), and `staleTaskIds`. Values are completion day numbers, not durations.
+P95, P98, P99), and `staleTaskIds`. For fully scheduled projects, completion values
+are day numbers, not durations, and `feasible` is boolean. Projects with suspended
+work instead return `withheldReason`, `unscheduledTaskIds`, null completion values
+and null feasibility; see **Project holds and incomplete forecasts** below.
+
+**API compatibility change:** consumers that assumed completion fields were always
+numeric must now narrow `ProjectForecast` using `withheldReason`. Ordinary complete
+schedules retain their existing shape. `removedTaskIds` now means removal from the
+plan, not merely absence from the schedule; suspension has separate fields.
 A new run returns new project data; it never mutates its input or an earlier run.
 
 Percentiles use independent lognormal task durations and moment matching on the
@@ -183,10 +191,14 @@ A forecast with unscheduled tasks is a distinct TypeScript union variant:
 Without `withheldReason`, normal numeric forecasts and boolean feasibility retain
 their previous meaning. Deadline assessments use `unavailable` with `reason:
 withheld` for suspended work and `reason: calendar-required` for date targets
-without calendars. Resource recommendations reject incomplete forecasts.
+without calendars. Resource recommendations score only fully scheduled projects and list withheld
+projects in `excludedProjects`. All projects still constrain dispatch through
+active work and locked commitments. If every forecast is withheld, the CLI reports
+that no fully scheduled projects are available.
 
 Version comparisons use `removedTaskIds` only for tasks absent from the new plan.
-`suspendedTaskIds` lists planned tasks without a scheduled entry; `resumedTaskIds`
+`suspendedTaskIds` lists newly suspended tasks relative to the previous schedule;
+`unscheduledTaskIds` lists all current planned tasks without a scheduled entry; `resumedTaskIds`
 lists entries restored from the previous plan. `taskChanges[].status` distinguishes
 `added`, `resumed` and `changed`. Project percentile differences are null if either
 side has a withheld forecast.

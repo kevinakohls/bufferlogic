@@ -405,20 +405,26 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
 /** Compare saved runs without recalculating or changing either version. */
 export function comparePortfolioVersions(current: PortfolioVersion, whatIf: PortfolioVersion) {
   if (current.plan.id !== whatIf.plan.id || current.plan.asOf !== whatIf.plan.asOf || current.plan.calendar?.startDate !== whatIf.plan.calendar?.startDate) throw new Error('Compare the same portfolio at the same asOf day and calendar origin');
+  const currentTasks = new Map(current.tasks.map(task => [task.id, task]));
+  const nextScheduled = new Set(whatIf.tasks.map(task => task.id));
+  const currentPlanned = new Set(current.plan.projects.flatMap(project => project.tasks.map(task => task.id)));
+  const nextPlanned = new Set(whatIf.plan.projects.flatMap(project => project.tasks.map(task => task.id)));
+  const currentForecasts = new Map(current.projects.map(project => [project.id, project.forecast]));
   return {
     portfolioId: current.plan.id, currentVersionId: current.plan.versionId, whatIfVersionId: whatIf.plan.versionId,
     projects: whatIf.projects.map(p => {
-      const before = current.projects.find(c => c.id === p.id)?.forecast;
+      const before = currentForecasts.get(p.id);
       const differences = before&&!before.withheldReason&&!p.forecast.withheldReason ? Object.fromEntries(Object.entries(p.forecast.completionPercentiles).map(([key,value]) => [key,value-before.completionPercentiles[key as keyof typeof before.completionPercentiles]])) : null;
       return { projectId:p.id, current:before ?? null, whatIf:p.forecast, percentileDifferences:differences };
     }),
     taskChanges: whatIf.tasks.flatMap(t => {
-      const before = current.tasks.find(c => c.id === t.id);
-      return !before || before.start !== t.start || before.finish !== t.finish || before.resource !== t.resource || before.allocationPercent !== t.allocationPercent ? [{ taskId:t.id, status:before?'changed':current.plan.projects.some(p=>p.tasks.some(c=>c.id===t.id))?'resumed':'added', current:before ?? null, whatIf:t }] : [];
+      const before = currentTasks.get(t.id);
+      return !before || before.start !== t.start || before.finish !== t.finish || before.resource !== t.resource || before.allocationPercent !== t.allocationPercent ? [{ taskId:t.id, status:before?'changed':currentPlanned.has(t.id)?'resumed':'added', current:before ?? null, whatIf:t }] : [];
     }),
-    removedTaskIds: current.plan.projects.flatMap(p=>p.tasks).filter(t=>!whatIf.plan.projects.some(p=>p.tasks.some(w=>w.id===t.id))).map(t=>t.id),
-    suspendedTaskIds: whatIf.plan.projects.flatMap(p=>p.tasks).filter(t=>!whatIf.tasks.some(w=>w.id===t.id)).map(t=>t.id),
-    resumedTaskIds: whatIf.tasks.filter(t=>!current.tasks.some(c=>c.id===t.id)&&current.plan.projects.some(p=>p.tasks.some(c=>c.id===t.id))).map(t=>t.id),
+    removedTaskIds: [...currentPlanned].filter(id => !nextPlanned.has(id)),
+    suspendedTaskIds: [...nextPlanned].filter(id => currentTasks.has(id) && !nextScheduled.has(id)),
+    unscheduledTaskIds: [...nextPlanned].filter(id => !nextScheduled.has(id)),
+    resumedTaskIds: whatIf.tasks.filter(t=>!currentTasks.has(t.id)&&currentPlanned.has(t.id)).map(t=>t.id),
     removedProjectIds: current.projects.filter(p=>!whatIf.projects.some(w=>w.id===p.id)).map(p=>p.id),
   };
 }

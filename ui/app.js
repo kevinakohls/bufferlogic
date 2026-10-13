@@ -1,3 +1,4 @@
+import {forecastState,holdAction} from './forecast-state.js';
 import { renderTimeline, refreshTimeline } from './timeline.js';
 const $=id=>document.getElementById(id);
 let plan=null,result=null,dirty=false,busy=false,revision=1,exceptions=[],templateText='';
@@ -6,7 +7,7 @@ function today(){const now=new Date();return `${now.getFullYear()}-${String(now.
 $('start-date').value=today();
 function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);if(className)node.className=className;return node;}
 function dateText(value){if(!value)return '—';const [year,month,day]=value.split('-').map(Number);return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month-1,day)));}
-function valueText(f,key){if(f.withheldReason)return f.withheldReason==='on-hold'?'On hold — forecast withheld':'Blocked by held work';return f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
+function valueText(f,key){if(f.withheldReason)return forecastState(f).completionLabel;return f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
 function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan){renderProgress();renderProjectOrder();}}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
@@ -19,7 +20,7 @@ function renderResults(){
  const cards=$('project-cards');cards.replaceChildren();
  for(const project of result.projects){
   const f=project.forecast,card=element('article',undefined,'project-card'),top=element('div',undefined,'card-top');
-  top.append(element('h3',project.name),element('span',f.withheldReason?'Forecast withheld':f.feasible?'Feasible':'Needs attention',`feasible${f.feasible?'':' infeasible'}`));
+  const presentation=forecastState(f);top.append(element('h3',project.name),element('span',presentation.badgeText,presentation.badgeClass));
   card.append(top,element('div','P95 · Conservative completion forecast','p95-label'),element('p',valueText(f,'p95'),'p95-date'),element('p',`Deterministic schedule: ${valueText(f,'deterministic')}`,'deterministic'));
   const values=element('div',undefined,'percentiles');
   for(const key of ['p50','p80','p98','p99']){const item=element('div');item.append(element('div',key.toUpperCase(),'percentile-label'),element('div',valueText(f,key),'percentile-value'));values.append(item);}
@@ -184,7 +185,7 @@ function renderProjectOrder(){
  plan.projects.forEach((project,index)=>{
   const row=element('li'),label=element('span',`${index+1}. ${project.name}`),actions=element('div',undefined,'actions');
   for(const [direction,text] of [[-1,'Move up'],[1,'Move down']]){const button=element('button',text,'secondary');button.type='button';button.dataset.project=project.id;button.dataset.direction=direction;button.setAttribute('aria-label',`${text}: ${project.name}`);button.disabled=busy||(direction<0?index===0:index===plan.projects.length-1);actions.append(button);}
-  const hold=element('button',project.onHold?'Resume project':'Put on hold','secondary');hold.type='button';hold.setAttribute('aria-pressed',String(Boolean(project.onHold)));hold.dataset.holdProject=project.id;hold.setAttribute('aria-label',`${project.onHold?'Resume project':'Put on hold'}: ${project.name}`);hold.disabled=busy;actions.append(hold);if(project.onHold)label.append(element('span',' · On hold','hold-label'));row.append(label,actions);list.append(row);
+  const action=holdAction(project.onHold),hold=element('button',action.label,'secondary');hold.type='button';hold.setAttribute('aria-pressed',action.pressed);hold.dataset.holdProject=project.id;hold.setAttribute('aria-label',`${project.onHold?'Resume project':'Put on hold'}: ${project.name}`);hold.disabled=busy;actions.append(hold);if(project.onHold)label.append(element('span',' · On hold','hold-label'));row.append(label,actions);list.append(row);
  });
 }
 $('project-order').addEventListener('click',event=>{

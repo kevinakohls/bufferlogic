@@ -228,5 +228,7 @@ with only active/locked work can still have a complete schedule and forecast;
 only suspended tasks cause withholding. CLI tables suppress unavailable promises.
 Comparisons distinguish suspended, resumed and removed tasks; percentile changes
 are unavailable while either forecast is withheld. Resource improvement ranking
-requires full project forecasts. A date deadline without a calendar continues to
+uses fully scheduled projects and explicitly lists excluded held or hold-blocked
+projects. Active work and locked commitments still constrain resources. If none
+has a full forecast, recommendations are unavailable. A date deadline without a calendar continues to
 show **Calendar required**; a suspended task or project shows **Forecast unavailable**.

@@ -15,3 +15,5 @@
 .brand{flex-shrink:0}.brand img{display:block;width:260px;height:54px;object-fit:cover}@media(max-width:520px){.brand img{width:220px;height:46px}header .badge{display:none}}
 
 .project-order-panel .actions{flex-wrap:wrap}.hold-label{color:#986027;font-size:12px}
+
+.feasible.withheld{color:#765329;background:#fff0d6}

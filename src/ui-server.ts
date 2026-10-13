@@ -61,7 +61,7 @@ export function createReviewServer() {
       if(request.method==='POST'&&path==='/api/schedule'){
         const data=await body(request);json(reviewResult(data.plan));return;
       }
-      const files:Record<string,{file:string;type:string}>={'/':{file:'index.html',type:'text/html'},'/app.js':{file:'app.js',type:'text/javascript'},'/timeline.js':{file:'timeline.js',type:'text/javascript'},'/styles.css':{file:'styles.css',type:'text/css'},'/bufferlogic-logo.png':{file:'bufferlogic-logo.png',type:'image/png'}};
+      const files:Record<string,{file:string;type:string}>={'/':{file:'index.html',type:'text/html'},'/app.js':{file:'app.js',type:'text/javascript'},'/timeline.js':{file:'timeline.js',type:'text/javascript'},'/forecast-state.js':{file:'forecast-state.js',type:'text/javascript'},'/styles.css':{file:'styles.css',type:'text/css'},'/bufferlogic-logo.png':{file:'bufferlogic-logo.png',type:'image/png'}};
       if(request.method==='GET'&&files[path]){const asset=files[path]!;response.setHeader('Content-Type',asset.type.startsWith('image/')?asset.type:asset.type+'; charset=utf-8');response.end(await readFile(new URL('ui/'+asset.file,root)));return;}
       json({error:'Not found'},404);
     } catch(error){json({error:error instanceof Error?error.message:'Unable to calculate the schedule'},400);}
