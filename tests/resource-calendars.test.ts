@@ -49,8 +49,8 @@ test('deterministic fixed-duration chains have percentile dates matching calenda
 test('uncertain effort produces ordered dates and calendar-aware percentile changes under overtime',()=>{
  const ordinary=schedulePortfolio(plan([task('A',{goodCase:2,poorCase:8})]));
  const extra=schedulePortfolio(plan([task('A',{goodCase:2,poorCase:8})],{...config(),resources:[{resource:'Alice',weeklyHours:[16,16,16,16,16,0,0],exceptions:{}}]}));
- const values=Object.values(ordinary.projects[0]!.forecast.completionPercentiles);assert.ok(values.every((v,i)=>i===0||v>=values[i-1]!));
- assert.ok(extra.projects[0]!.forecast.completionPercentiles.p95<ordinary.projects[0]!.forecast.completionPercentiles.p95);
+ const values=Object.values(ordinary.projects[0]!.forecast.completionPercentiles!);assert.ok(values.every((v,i)=>i===0||v>=values[i-1]!));
+ assert.ok(extra.projects[0]!.forecast.completionPercentiles!.p95<ordinary.projects[0]!.forecast.completionPercentiles!.p95);
 });
 test('calendar settings validate real dates, unique resources, hours and bounded missing availability',()=>{
  assert.throws(()=>parseDate('2026-02-30'),/Invalid/);assert.throws(()=>parseDate('10/09/2026'),/YYYY/);
@@ -99,7 +99,7 @@ test('resource-specific holidays recompute dependencies and deterministic percen
  const r=schedulePortfolio(p),f=r.projects[0]!.forecast;
  assert.equal(r.tasks.find(t=>t.id==='B')!.start,4);
  assert.equal(f.completionDates!.deterministic,'2026-10-13');
- assert.equal(f.completionPercentiles.p95,f.deterministicCompletion);
+ assert.equal(f.completionPercentiles!.p95,f.deterministicCompletion);
 });
 test('calendar revisions retain dates and settings; mixed time axes cannot be compared',()=>{
  const current=schedulePortfolio(plan([task('A')]));

@@ -16,6 +16,7 @@ export function recommendSaturdayHours(plan: PortfolioPlan) {
     const projects = scenario.projects.map(p => {
       const before = baseline.projects.find(b=>b.id===p.id)!.forecast;
       const after = p.forecast;
+      if(before.withheldReason||after.withheldReason)throw new Error('Resource recommendations require full project forecasts');
       const daysEarlier = before.completionPercentiles.p95-after.completionPercentiles.p95;
       const dateDaysEarlier = (parseDate(before.completionDates!.p95)-parseDate(after.completionDates!.p95))/86400000;
       return { projectId:p.id, projectName:p.name, baselineFeasible:before.feasible, scenarioFeasible:after.feasible,

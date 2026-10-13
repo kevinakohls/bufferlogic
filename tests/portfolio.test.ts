@@ -18,7 +18,7 @@ test('project order creates cross-project critical chain and owned percentiles',
   const p=plan([task('A','P1')],[task('B','P2')]);const snapshot=structuredClone(p);const r=schedulePortfolio(p);
   assert.equal(get(r,'A').start,0);assert.equal(get(r,'B').start,2);
   assert.deepEqual(r.projects[1]!.forecast.criticalChain,['A','B']);
-  assert.equal(r.projects[1]!.forecast.completionPercentiles.p99,4);
+  assert.equal(r.projects[1]!.forecast.completionPercentiles!.p99,4);
   assert.equal(r.projects[1]!.forecast.scheduleVersionId,'v1');assert.deepEqual(p,snapshot);
 });
 test('reordering projects and task overrides changes resource preference without new dependencies',()=>{
@@ -59,7 +59,7 @@ test('overlapping locked tasks return capacity conflict; 50% locks can overlap',
 });
 test('completed actuals and active remaining estimates survive portfolio scheduling',()=>{
   const p=plan([task('A','P1',{status:'completed',actuals:{start:0,finish:2}}),task('B','P1',{status:'active',dependsOn:['A'],remaining:{goodCase:2,poorCase:8,estimateStatus:'current'}})]);
-  const r=schedulePortfolio({...p,asOf:3});assert.equal(get(r,'A').finish,2);assert.equal(get(r,'B').finish,7);assert.ok(r.projects[0]!.forecast.completionPercentiles.p95>7);
+  const r=schedulePortfolio({...p,asOf:3});assert.equal(get(r,'A').finish,2);assert.equal(get(r,'B').finish,7);assert.ok(r.projects[0]!.forecast.completionPercentiles!.p95>7);
   assert.throws(()=>schedulePortfolio({...p,asOf:3,projects:[{...p.projects[0]!,tasks:[p.projects[0]!.tasks[0]!,task('B','P1',{status:'active'})]}]}),/remaining/);
 });
 test('fixed anchors do not acquire duration uncertainty; zero milestones and empty projects supported',()=>{
@@ -69,14 +69,14 @@ test('fixed anchors do not acquire duration uncertainty; zero milestones and emp
 test('moment-matched portfolio forecasts include upstream project uncertainty',()=>{
   const r=schedulePortfolio(plan([task('A','P1',{goodCase:2,poorCase:8})],[task('B','P2',{goodCase:2,poorCase:8})]));
   assert.deepEqual(r.projects[1]!.forecast.criticalChain,['A','B']);
-  assert.ok(r.projects[1]!.forecast.completionPercentiles.p95>r.projects[0]!.forecast.completionPercentiles.p95);
-  const half=schedulePortfolio(plan([task('A','P1',{goodCase:2,poorCase:8,allocationPercent:50})]));assert.ok(Math.abs(half.projects[0]!.forecast.completionPercentiles.p95-2*r.projects[0]!.forecast.completionPercentiles.p95)<1e-10);
+  assert.ok(r.projects[1]!.forecast.completionPercentiles!.p95>r.projects[0]!.forecast.completionPercentiles!.p95);
+  const half=schedulePortfolio(plan([task('A','P1',{goodCase:2,poorCase:8,allocationPercent:50})]));assert.ok(Math.abs(half.projects[0]!.forecast.completionPercentiles!.p95-2*r.projects[0]!.forecast.completionPercentiles!.p95)<1e-10);
 });
 test('approved snapshots and their forecasts are retained across revisions and compared',()=>{
   const p={...plan([task('A','P1')],[task('B','P2')]),approvalStatus:'approved' as const};
   const current=schedulePortfolio(p);const before=structuredClone(current);
   const next=schedulePortfolio({...p,versionId:'v2',approvalStatus:'draft',taskOrderOverrides:['B']},current);
-  assert.deepEqual(current,before);assert.equal(next.previousVersions[0]!.plan.approvalStatus,'approved');assert.equal(next.previousVersions[0]!.projects[0]!.forecast.completionPercentiles.p50,2);
+  assert.deepEqual(current,before);assert.equal(next.previousVersions[0]!.plan.approvalStatus,'approved');assert.equal(next.previousVersions[0]!.projects[0]!.forecast.completionPercentiles!.p50,2);
   const comparison=comparePortfolioVersions(current,next);assert.equal(comparison.taskChanges.length,2);assert.equal(comparison.projects[0]!.percentileDifferences!.p50,2);
   const third=schedulePortfolio({...p,versionId:'v3'},next);assert.equal(third.previousVersions.length,2);
   assert.throws(()=>schedulePortfolio(p,next),/new versionId/);
@@ -124,7 +124,7 @@ test('worked contention example extends Project Two completion through Project O
   assert.deepEqual(after.criticalChain, ['P1-build', 'P2-build', 'P2-test']);
   assert.ok(after.feasible);
   assert.equal(shared.conflicts.length, 0);
-  assert.equal(after.completionPercentiles.p95 - before.completionPercentiles.p95, 4);
+  assert.equal(after.completionPercentiles!.p95 - before.completionPercentiles!.p95, 4);
   const consoleResult = execFileSync(process.execPath, ['dist/src/portfolio-cli.js', 'examples/portfolio-contention.json', '--format', 'table'], { encoding: 'utf8' });
   assert.match(consoleResult, /Resource waits for/);
   assert.match(consoleResult, /P1-build -> P2-build -> P2-test/);

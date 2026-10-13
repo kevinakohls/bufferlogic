@@ -157,3 +157,36 @@ See [HOUSE_BUILD_REVIEW.md](HOUSE_BUILD_REVIEW.md) for the 72-task construction 
 ## Working calendars
 
 Use `--calendar examples/house-resource-calendars.csv` to apply calendars to the house CSV. Start defaults to today. See [RESOURCE_CALENDARS.md](RESOURCE_CALENDARS.md) for workday effort, elapsed waiting, holidays, overtime, fixed commitments and reproducible start-date options.
+
+## Project holds and incomplete forecasts
+
+Projects accept optional `onHold: true` (default false). Holding preserves the
+project's position and all task data. Recalculation suspends its unstarted,
+unlocked work and transitively suspends new work depending on those tasks, even
+in other projects. Completed tasks, active work and locked commitments remain in
+the schedule. Active work is nonpreemptive. Locked tasks with suspended
+predecessors retain their dates and report conflicts.
+
+Set `onHold: false` and reschedule to restore dispatch at the existing priorities.
+Save/open preserves the flag. If all remaining work is active or locked, no tasks
+are suspended and a full forecast is still produced despite the hold flag.
+
+A forecast with unscheduled tasks is a distinct TypeScript union variant:
+
+- `withheldReason`: `on-hold` or `blocked-by-hold`.
+- `unscheduledTaskIds`: IDs still in the plan but not dispatched.
+- `deterministicCompletion`, `completionPercentiles`, `feasible`: `null`.
+- `completionDates`: omitted.
+- `scheduleVersionId`, `criticalChain`, `staleTaskIds`: retained; the chain covers
+  scheduled/reserved work and is not a full-project completion promise.
+
+Without `withheldReason`, normal numeric forecasts and boolean feasibility retain
+their previous meaning. Deadline assessments use `unavailable` with `reason:
+withheld` for suspended work and `reason: calendar-required` for date targets
+without calendars. Resource recommendations reject incomplete forecasts.
+
+Version comparisons use `removedTaskIds` only for tasks absent from the new plan.
+`suspendedTaskIds` lists planned tasks without a scheduled entry; `resumedTaskIds`
+lists entries restored from the previous plan. `taskChanges[].status` distinguishes
+`added`, `resumed` and `changed`. Project percentile differences are null if either
+side has a withheld forecast.

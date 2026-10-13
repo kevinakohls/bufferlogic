@@ -221,8 +221,12 @@ unscheduled work show an unavailable forecast rather than a promise.
 Use **Resume project** and recalculate to put the work back into dispatch at its
 existing project position and task priorities. Save/open retains hold status.
 The JSON forecast `withheldReason` and `unscheduledTaskIds` identify incomplete
-schedules; numeric forecast fields in these records describe the scheduled portion
-only and must not be used as full project completion promises. Dated completion
-forecasts are omitted for withheld projects. CLI tables suppress those promises;
-percentile comparisons are unavailable, and resource improvement ranking requires
-held projects to be resumed first.
+schedules. For withheld projects, `deterministicCompletion`,
+`completionPercentiles` and `feasible` are `null`, and `completionDates` is omitted.
+Consumers must check `withheldReason` before using completion values. A held project
+with only active/locked work can still have a complete schedule and forecast;
+only suspended tasks cause withholding. CLI tables suppress unavailable promises.
+Comparisons distinguish suspended, resumed and removed tasks; percentile changes
+are unavailable while either forecast is withheld. Resource improvement ranking
+requires full project forecasts. A date deadline without a calendar continues to
+show **Calendar required**; a suspended task or project shows **Forecast unavailable**.
