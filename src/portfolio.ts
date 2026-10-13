@@ -1,3 +1,4 @@
+import {scheduleFeedingPortfolio,type FeedingReport} from './feeding-scheduling.js';
 import {assessDeadlines,validateDeadline,type Deadline} from './deadlines.js';
 import { createCalendar, validateCalendarSettings, type CalendarSettings } from './resource-calendars.js';
 import { calculateP50 } from './duration.js';
@@ -35,6 +36,7 @@ export interface Project extends Notes {
   readonly tasks: readonly PortfolioTask[];
 }
 export interface PortfolioPlan {
+  readonly feedingTaskIds?: readonly string[];
   readonly id: string;
   readonly versionId: string;
   readonly asOf: number;
@@ -119,6 +121,7 @@ export interface PortfolioVersion {
   readonly projects: readonly (Project & { readonly forecast: ProjectForecast })[];
 }
 export interface PortfolioResult extends PortfolioVersion {
+  readonly feedingReport?: FeedingReport;
   readonly deadlineReport: ReturnType<typeof assessDeadlines>;
   readonly previousVersions: readonly PortfolioVersion[];
   readonly forecastMethod: string;
@@ -176,18 +179,28 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
       seen.add(r.id);return {id:r.id,...strings(r,['name','role','description','comments'])};
     });
   }
+  if(value.feedingTaskIds!==undefined&&(!Array.isArray(value.feedingTaskIds)||!value.feedingTaskIds.every(text)||new Set(value.feedingTaskIds).size!==value.feedingTaskIds.length))throw new Error('feedingTaskIds must contain unique task IDs');
   if (value.taskOrderOverrides !== undefined && (!Array.isArray(value.taskOrderOverrides) || !value.taskOrderOverrides.every(text))) throw new Error('Invalid taskOrderOverrides');
   return { id: value.id, versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days' },
     resources: [...value.resources] as string[], projects,
+    ...(value.feedingTaskIds===undefined?{}:{feedingTaskIds:[...value.feedingTaskIds] as string[]}),
     ...(resourceDetails===undefined?{}:{resourceDetails}),
     ...(value.calendar === undefined ? {} : { calendar: validateCalendarSettings(value.calendar) }),
     ...(value.approvalStatus === undefined ? {} : { approvalStatus: value.approvalStatus }),
     ...(value.taskOrderOverrides === undefined ? {} : { taskOrderOverrides: [...value.taskOrderOverrides] as string[] }) };
 }
 
+/** Internal constraints used by the opt-in feeding scheduler; these do not create user locks. */
+export interface PlacementConstraints {
+  readonly earliestStarts: ReadonlyMap<string, number>;
+  readonly protectedPlacements: ReadonlyMap<string, {start:number;finish:number}>;
+  readonly bufferReservations: readonly {resource:string;start:number;finish:number;allocationPercent:number}[];
+}
+
 /** Non-preemptive capacity scheduling with fixed reservations and immutable schedule history. */
-export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResult): PortfolioResult {
+export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResult, placement?: PlacementConstraints): PortfolioResult {
   const plan = parsePortfolio(input); // detached snapshot, validate typed callers too
+  if(plan.feedingTaskIds?.length&&!placement)return scheduleFeedingPortfolio(plan,previous);
   const calendar = plan.calendar ? createCalendar(plan.calendar) : undefined;
   if (calendar) for (const resource of plan.resources) calendar.available(resource, plan.asOf);
   const tasks = plan.projects.flatMap(p => p.tasks);
@@ -254,15 +267,16 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
       entries.set(t.id, entry(t, plan.asOf, finish));
     }
   }
+  if(placement)for(const [id,slot] of placement.protectedPlacements){const task=byId.get(id);if(task&&!entries.has(id))entries.set(id,entry(task,slot.start,slot.finish));}
   const projectOrder = new Map(plan.projects.map((p, i) => [p.id, i]));
   const overrideOrder = new Map(overrides.map((id, i) => [id, i]));
   const pending = tasks.filter(t => !entries.has(t.id)&&!suspended.has(t.id)).sort((a, b) =>
     (overrideOrder.get(a.id) ?? Infinity) - (overrideOrder.get(b.id) ?? Infinity)
     || projectOrder.get(a.projectId)! - projectOrder.get(b.projectId)! || a.priority - b.priority);
-  function overlaps(e: PortfolioEntry, start: number, finish: number) { return e.start < finish && e.finish > start && e.finish > e.start; }
+  function overlaps(e: Pick<PortfolioEntry,'start'|'finish'>, start: number, finish: number) { return e.start < finish && e.finish > start && e.finish > e.start; }
   function fits(t: PortfolioTask, start: number, finish: number): boolean {
     if (start === finish || t.durationMode === 'elapsed') return true; // milestone requires no resource capacity
-    const existing = [...entries.values()].filter(e => e.resource === t.resource && overlaps(e, start, finish));
+    const existing = [...entries.values(),...(placement?.bufferReservations??[])].filter(e => e.resource === t.resource && overlaps(e, start, finish));
     const events = [start, ...existing.flatMap(e => [Math.max(start, e.start), Math.min(finish, e.finish)])].filter(v => v < finish);
     return events.every(time => existing.filter(e => e.start <= time && e.finish > time).reduce((sum, e) => sum + e.allocationPercent, t.allocationPercent ?? 100) <= 100 + 1e-9);
   }
@@ -272,6 +286,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     let progressed = false;
     for (let i = 0; i < pending.length;) {
       const t = pending[i]!;
+      if((placement?.earliestStarts.get(t.id)??plan.asOf)>time+1e-9){i++;continue;}
       if (!t.dependsOn.every(id => entries.has(id) && entries.get(id)!.finish <= time)) { i++; continue; }
       if (calendar && t.durationMode !== 'elapsed' && duration(t)>0 && calendar.nextWorking(t.resource,time) > time+1e-9) { i++; continue; }
       const finish = taskFinish(t,time);
@@ -282,6 +297,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     if (!pending.length) break;
     if (progressed) continue; // newly completed zero-duration milestones at this event
     const events = [...entries.values()].flatMap(e => [e.start, e.finish]).filter(v => v > time);
+    if(placement){events.push(...[...placement.earliestStarts.values()].filter(value=>value>time));events.push(...placement.bufferReservations.flatMap(slot=>[slot.start,slot.finish]).filter(value=>value>time));}
     if (calendar) for (const t of pending) {
       if (t.durationMode === 'elapsed' || duration(t)===0) continue;
       if (t.dependsOn.every(id=>entries.has(id) && entries.get(id)!.finish<=time)) {

@@ -232,3 +232,33 @@ uses fully scheduled projects and explicitly lists excluded held or hold-blocked
 projects. Active work and locked commitments still constrain resources. If none
 has a full forecast, recommendations are unavailable. A date deadline without a calendar continues to
 show **Calendar required**; a suspended task or project shows **Forecast unavailable**.
+
+## Latest-safe-start feeding protection
+
+Load `examples/feeding-protection.json` through **Project plan → Choose File**.
+Initially task F starts at day 0 and uses the Platform Engineer until day 4, so
+Release Two's environment task L starts at day 4. Open **Feeding tasks**, select
+**F latest safe start**, and recalculate. The feeder moves later, while L starts
+at day 0 and the downstream release-validation start remains day 20.
+
+The report shows original/new starts, task P50 and P99 effort, their difference
+as the feeding buffer, the downstream protected start and actual earlier capacity
+freed. The feeder's allocation is reserved through its P99 window, so other tasks
+cannot start in a gap if they would cross that reservation. The actual task still
+has its P50 planned finish. Buffer reservations are protection, not additional
+work counted in utilization. They are described in the feeding report.
+
+Select only unstarted, unlocked working tasks off their owning project's current
+critical chain. The first version uses individual task P99 values, not aggregate
+feeding-chain percentiles. Select independent feeders; immediate feeder-to-feeder
+links are rejected. Higher-priority project timings, the owner's critical chain,
+active work, user locks and downstream starts stay protected. If P99 slack or
+resource constraints prevent safe placement, the original forward schedule is
+retained with a reason. Multiple conflicting selections can cause the complete
+attempt to be retained as the forward plan; try one feeder at a time.
+
+Calendars and allocation scale the protected working effort. With calendars,
+backward traversal respects weekends and dated exceptions. Clear the checkbox and
+recalculate to return to forward scheduling. Save/open retains selections and
+recomputes the same deterministic result. P99 is a lognormal model estimate,
+not a guarantee or proof of a 99% project completion chance.

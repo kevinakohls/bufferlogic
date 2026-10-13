@@ -17,3 +17,5 @@
 .project-order-panel .actions{flex-wrap:wrap}.hold-label{color:#986027;font-size:12px}
 
 .feasible.withheld{color:#765329;background:#fff0d6}
+
+.feeding-report{padding:0 24px 24px}.feeding-report article{border-top:1px solid var(--line);padding:16px 0}.feeding-report p{font-size:12px;line-height:1.7;color:var(--muted)}

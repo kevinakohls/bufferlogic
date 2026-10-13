@@ -202,3 +202,30 @@ Version comparisons use `removedTaskIds` only for tasks absent from the new plan
 lists entries restored from the previous plan. `taskChanges[].status` distinguishes
 `added`, `resumed` and `changed`. Project percentile differences are null if either
 side has a withheld forecast.
+
+## Opt-in feeding protection
+
+`PortfolioPlan.feedingTaskIds` lists selected unstarted, unlocked working tasks.
+Omit it or use an empty array for the existing forward schedule. With selections,
+the engine first computes a forward baseline, then derives each eligible feeder's
+latest start from its downstream baseline start and its task P99 working effort.
+P99 uses the same P20/P80 lognormal fit; allocation scales P50 and P99 inversely.
+The feeding buffer is P99 minus P50. Resource calendars are traversed backward.
+
+Protected placements are internal scheduling constraints, not saved user locks or
+new fixed percentile anchors. Higher-priority project entries, the feeder owner's
+critical chain and direct downstream starts are preserved. The feeder's resource
+allocation is reserved across its P50 execution and remaining P99 protection
+window. Other work can use earlier capacity only if the entire nonpreemptive task
+fits. Actuals and user locks keep their existing behavior. Unsafe attempts fall
+back to the forward baseline, with task-level reasons.
+
+`result.feedingReport` contains `changes`, `resourceWindows`, `method` and
+`interpretation`. Resource windows describe actual earlier allocation released
+from the baseline task interval, not the entire gap before its delayed start or
+a promise of idle capacity after other work is dispatched. Buffer reservations
+are not additional productive work in utilization. Selections persist in plan
+JSON; the report and placements are recomputed each run. Task-level protection
+is not aggregate feeding-chain probability, and alternate critical chains are
+not simulated. See the UI guide and `examples/feeding-protection.json` for a
+worked example. CLI table output includes the feeding report when enabled.
