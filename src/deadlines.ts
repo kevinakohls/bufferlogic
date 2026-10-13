@@ -19,7 +19,7 @@ function assess(deadline:Deadline,day:number,date?:string):DeadlineAssessment {
 }
 export function assessDeadlines(version:PortfolioVersion){
  return {
-  projects:version.projects.filter(p=>p.deadline!==undefined).map(p=>({projectId:p.id,deadline:p.deadline!,feasible:p.forecast.feasible,assessments:Object.fromEntries(['deterministic','p50','p80','p95','p98','p99'].map(key=>[key,assess(p.deadline!,key==='deterministic'?p.forecast.deterministicCompletion:p.forecast.completionPercentiles[key as keyof typeof p.forecast.completionPercentiles],p.forecast.completionDates?.[key as keyof NonNullable<typeof p.forecast.completionDates>])])) as Record<'deterministic'|'p50'|'p80'|'p95'|'p98'|'p99',DeadlineAssessment>})),
-  tasks:version.plan.projects.flatMap(p=>p.tasks).filter(t=>t.deadline!==undefined).map(t=>{const entry=version.tasks.find(e=>e.id===t.id)!;return {taskId:t.id,projectId:t.projectId,deadline:t.deadline!,assessment:assess(t.deadline!,entry.finish,entry.finishDate)};})
+  projects:version.projects.filter(p=>p.deadline!==undefined).map(p=>({projectId:p.id,deadline:p.deadline!,feasible:p.forecast.feasible,assessments:Object.fromEntries(['deterministic','p50','p80','p95','p98','p99'].map(key=>[key,p.forecast.withheldReason?{status:'unavailable',daysLate:null,completion:null}:assess(p.deadline!,key==='deterministic'?p.forecast.deterministicCompletion:p.forecast.completionPercentiles[key as keyof typeof p.forecast.completionPercentiles],p.forecast.completionDates?.[key as keyof NonNullable<typeof p.forecast.completionDates>])])) as Record<'deterministic'|'p50'|'p80'|'p95'|'p98'|'p99',DeadlineAssessment>})),
+  tasks:version.plan.projects.flatMap(p=>p.tasks).filter(t=>t.deadline!==undefined).map(t=>{const entry=version.tasks.find(e=>e.id===t.id)!;return {taskId:t.id,projectId:t.projectId,deadline:t.deadline!,assessment:entry?assess(t.deadline!,entry.finish,entry.finishDate):{status:'unavailable' as const,daysLate:null,completion:null}};})
  };
 }

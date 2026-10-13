@@ -56,13 +56,13 @@ try {
     if (options.format === 'json') console.log(json.trimEnd());
     else {
       console.log(`Portfolio: ${result.plan.id} | Version: ${result.plan.versionId} | Days | As of: ${result.plan.asOf}`);
-      console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, [result.plan.calendar ? 'Elapsed calendar days' : 'Completion']:p.forecast.deterministicCompletion, ...p.forecast.completionPercentiles, 'Critical chain':p.forecast.criticalChain.join(' -> ') })));
+      console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, Status:p.forecast.withheldReason??'scheduled', [result.plan.calendar ? 'Elapsed calendar days' : 'Completion']:p.forecast.withheldReason?'withheld':p.forecast.deterministicCompletion, ...(p.forecast.withheldReason?{}:p.forecast.completionPercentiles), 'Critical chain':p.forecast.criticalChain.join(' -> ') })));
       if (result.plan.calendar) {
         console.log(`Calendar start: ${result.plan.calendar.startDate}; ${result.plan.calendar.hoursPerWorkday} hours per estimated workday`);
-        console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, ...p.forecast.completionDates })));
+        console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, ...(p.forecast.withheldReason?{Status:p.forecast.withheldReason}:p.forecast.completionDates) })));
       }
       console.table(result.tasks.map(t=>({ Project:t.projectId, Task:t.id, Resource:t.resource, 'Allocation %':t.allocationPercent, Start:t.start, Finish:t.finish, Locked:t.locked, 'Resource waits for':t.resourcePredecessors.join(' -> '), ...(result.plan.calendar ? { 'Start date':t.startDate, 'Finish date':t.finishDate } : {}) })));
-      if (comparison) console.table(comparison.projects.map(p => ({ Project:p.projectId, 'Completion change': p.current ? p.whatIf.deterministicCompletion-p.current.deterministicCompletion : 'new', ...p.percentileDifferences })));
+      if (comparison) console.table(comparison.projects.map(p => ({ Project:p.projectId, 'Completion change': p.whatIf.withheldReason||p.current?.withheldReason?'withheld':p.current ? p.whatIf.deterministicCompletion-p.current.deterministicCompletion : 'new', ...p.percentileDifferences })));
       for (const conflict of result.conflicts) console.log(`CONFLICT: ${conflict.message} [${conflict.taskIds.join(', ')}]`);
       if(resourceRecommendations){
         console.log(`Resource recommendations: ${resourceRecommendations.recommendedResource ?? 'No qualifying improvement'}`);

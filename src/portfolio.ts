@@ -27,6 +27,7 @@ export interface PortfolioTask extends Task, Notes {
   readonly locked?: { readonly start: number; readonly finish: number };
 }
 export interface Project extends Notes {
+  readonly onHold?: boolean;
   readonly deadline?: Deadline;
   readonly owner?: string;
   readonly id: string;
@@ -68,6 +69,9 @@ export interface PortfolioConflict {
   readonly message: string;
 }
 export interface ProjectForecast {
+  /** Numeric values describe reserved/scheduled work only when this is set, not full project completion. */
+  readonly withheldReason?: 'on-hold' | 'blocked-by-hold';
+  readonly unscheduledTaskIds?: readonly string[];
   readonly scheduleVersionId: string;
   readonly feasible: boolean;
   readonly deterministicCompletion: number;
@@ -108,6 +112,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
   if (value.approvalStatus !== undefined && value.approvalStatus !== 'draft' && value.approvalStatus !== 'approved') throw new Error('Invalid approvalStatus');
   const projects = value.projects.map((p: unknown): Project => {
     if (!object(p) || !text(p.id) || !text(p.name) || !Array.isArray(p.tasks)) throw new Error('Invalid project');
+    if(p.onHold!==undefined&&typeof p.onHold!=='boolean')throw new Error('onHold must be true or false');
     const tasks = p.tasks.map((t: unknown): PortfolioTask => {
       if (!object(t) || t.projectId !== p.id) throw new Error('Each task must name its single owning projectId');
       if (t.durationMode !== undefined && t.durationMode !== 'working' && t.durationMode !== 'elapsed') throw new Error('durationMode must be working or elapsed');
@@ -128,7 +133,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
         ...(t.allocationPercent === undefined ? {} : { allocationPercent: t.allocationPercent as number }),
         ...(locked === undefined ? {} : { locked }) };
     });
-    return { id: p.id, name: p.name, tasks, ...(p.deadline===undefined?{}:{deadline:validateDeadline(p.deadline)}), ...strings(p,['description','comments','owner']) };
+    return { id: p.id, name: p.name, tasks, ...(p.onHold===undefined?{}:{onHold:p.onHold as boolean}), ...(p.deadline===undefined?{}:{deadline:validateDeadline(p.deadline)}), ...strings(p,['description','comments','owner']) };
   });
   let resourceDetails:ResourceDetails[]|undefined;
   if(value.resourceDetails!==undefined){
@@ -154,6 +159,9 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   const calendar = plan.calendar ? createCalendar(plan.calendar) : undefined;
   if (calendar) for (const resource of plan.resources) calendar.available(resource, plan.asOf);
   const tasks = plan.projects.flatMap(p => p.tasks);
+  const heldProjects=new Set(plan.projects.filter(p=>p.onHold).map(p=>p.id));
+  const suspended=new Set(tasks.filter(t=>heldProjects.has(t.projectId)&&t.status!=='active'&&t.status!=='completed'&&!t.locked).map(t=>t.id));
+  let suspensionChanged=true;while(suspensionChanged){suspensionChanged=false;for(const t of tasks)if(!suspended.has(t.id)&&t.status!=='active'&&t.status!=='completed'&&!t.locked&&t.dependsOn.some(id=>suspended.has(id))){suspended.add(t.id);suspensionChanged=true;}}
   const byId = new Map(tasks.map(t => [t.id, t]));
   if (byId.size !== tasks.length) throw new Error('Task IDs must be globally unique');
   if (new Set(plan.projects.map(p => p.id)).size !== plan.projects.length) throw new Error('Duplicate project ID');
@@ -218,7 +226,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   }
   const projectOrder = new Map(plan.projects.map((p, i) => [p.id, i]));
   const overrideOrder = new Map(overrides.map((id, i) => [id, i]));
-  const pending = tasks.filter(t => !entries.has(t.id)).sort((a, b) =>
+  const pending = tasks.filter(t => !entries.has(t.id)&&!suspended.has(t.id)).sort((a, b) =>
     (overrideOrder.get(a.id) ?? Infinity) - (overrideOrder.get(b.id) ?? Infinity)
     || projectOrder.get(a.projectId)! - projectOrder.get(b.projectId)! || a.priority - b.priority);
   function overlaps(e: PortfolioEntry, start: number, finish: number) { return e.start < finish && e.finish > start && e.finish > e.start; }
@@ -259,7 +267,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     conflicts.push({ kind, taskIds: [...new Set(ids)], projectIds: [...new Set(ids.map(id => byId.get(id)!.projectId))], message });
   }
   for (const e of scheduled) {
-    for (const id of e.technicalPredecessors) if (entries.get(id)!.finish > e.start) conflict('dependency', [id, e.id], `${id} finishes after ${e.id}'s fixed start`);
+    for (const id of e.technicalPredecessors) if (!entries.has(id)||entries.get(id)!.finish > e.start) conflict('dependency', [id, e.id], entries.has(id)?`${id} finishes after ${e.id}'s fixed start`:`${e.id} has a fixed commitment depending on suspended task ${id}`);
   }
   if (calendar) for (const t of tasks) {
     if (!t.locked || t.status==='completed' || t.durationMode==='elapsed' || t.goodCase===0) continue;
@@ -287,7 +295,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   function chainTo(id: string, seen = new Set<string>()): string[] {
     if (seen.has(id)) return []; // conflicts can make the augmented graph cyclic; retain warnings
     const e = entries.get(id)!;
-    const candidates = [...e.technicalPredecessors, ...e.resourcePredecessors].filter(p => entries.get(p)!.finish <= e.start);
+    const candidates = [...e.technicalPredecessors, ...e.resourcePredecessors].filter(p => entries.has(p)&&entries.get(p)!.finish <= e.start);
     candidates.sort((a,b) => entries.get(b)!.finish - entries.get(a)!.finish);
     return [...(candidates[0] ? chainTo(candidates[0], new Set([...seen,id])) : []), id];
   }
@@ -295,7 +303,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   let changed = true;
   while (changed) { changed = false; for (const e of entries.values()) if (!affected.has(e.id) && [...e.technicalPredecessors,...e.resourcePredecessors].some(id=>affected.has(id))) { affected.add(e.id); changed=true; } }
   const projects = plan.projects.map(p => {
-    const own = p.tasks.map(t => entries.get(t.id)!);
+    const own = p.tasks.filter(t=>entries.has(t.id)).map(t => entries.get(t.id)!);
     own.sort((a,b) => b.finish-a.finish || (calendar ? Number(b.start===b.finish)-Number(a.start===a.finish) : 0));
     const completion = own[0]?.finish ?? plan.asOf;
     const forecastDate = calendar ? (own[0]?.start===own[0]?.finish || own.length===0 ? calendar.date : calendar.completionDate) : undefined;
@@ -339,9 +347,11 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     };
     const completionPercentiles = { p50:quantile(0), p80:quantile(.8416212335729143), p95:quantile(1.6448536269514722), p98:quantile(2.0537489106318225), p99:quantile(2.3263478740408408) };
     if (!Object.values(completionPercentiles).every(Number.isFinite)) throw new Error('Portfolio forecast exceeds numeric range');
-    return { ...p, forecast: { scheduleVersionId: plan.versionId, feasible: !p.tasks.some(t=>affected.has(t.id)), deterministicCompletion: completion, criticalChain,
+    const unscheduledTaskIds=p.tasks.filter(t=>suspended.has(t.id)).map(t=>t.id);
+    const withheldReason=p.onHold&&p.tasks.some(t=>t.status!=='completed')?'on-hold' as const:unscheduledTaskIds.length?'blocked-by-hold' as const:undefined;
+    return { ...p, forecast: { ...(withheldReason?{withheldReason,unscheduledTaskIds}:{}),scheduleVersionId: plan.versionId, feasible: !p.tasks.some(t=>affected.has(t.id)), deterministicCompletion: completion, criticalChain,
       completionPercentiles,
-      ...(calendar ? { completionDates: { deterministic:forecastDate!(completion),p50:forecastDate!(completionPercentiles.p50),p80:forecastDate!(completionPercentiles.p80),p95:forecastDate!(completionPercentiles.p95),p98:forecastDate!(completionPercentiles.p98),p99:forecastDate!(completionPercentiles.p99) } } : {}),
+      ...(calendar&&!withheldReason ? { completionDates: { deterministic:forecastDate!(completion),p50:forecastDate!(completionPercentiles.p50),p80:forecastDate!(completionPercentiles.p80),p95:forecastDate!(completionPercentiles.p95),p98:forecastDate!(completionPercentiles.p98),p99:forecastDate!(completionPercentiles.p99) } } : {}),
       staleTaskIds: p.tasks.filter(t=>t.status==='active'&&t.remaining?.estimateStatus==='stale').map(t=>t.id) } };
   });
   const previousVersions = previous ? structuredClone([...previous.previousVersions, { plan:previous.plan,tasks:previous.tasks,conflicts:previous.conflicts,projects:previous.projects }]) : [];
@@ -357,7 +367,7 @@ export function comparePortfolioVersions(current: PortfolioVersion, whatIf: Port
     portfolioId: current.plan.id, currentVersionId: current.plan.versionId, whatIfVersionId: whatIf.plan.versionId,
     projects: whatIf.projects.map(p => {
       const before = current.projects.find(c => c.id === p.id)?.forecast;
-      const differences = before ? Object.fromEntries(Object.entries(p.forecast.completionPercentiles).map(([key,value]) => [key,value-before.completionPercentiles[key as keyof typeof before.completionPercentiles]])) : null;
+      const differences = before&&!before.withheldReason&&!p.forecast.withheldReason ? Object.fromEntries(Object.entries(p.forecast.completionPercentiles).map(([key,value]) => [key,value-before.completionPercentiles[key as keyof typeof before.completionPercentiles]])) : null;
       return { projectId:p.id, current:before ?? null, whatIf:p.forecast, percentileDifferences:differences };
     }),
     taskChanges: whatIf.tasks.flatMap(t => {

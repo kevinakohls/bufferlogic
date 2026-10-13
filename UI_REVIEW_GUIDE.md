@@ -203,3 +203,26 @@ priorities, forecasts or feasibility; fixed start/finish commitments remain
 separate. A forecast marked infeasible is diagnostic even when it meets a target.
 Date targets without a calendar show **Calendar required**. Older workspaces
 without deadlines continue to load.
+
+## Put a project on hold
+
+Use **Put on hold** beside **Move up / Move down**, then **Recalculate schedule**.
+New unstarted, unlocked tasks are excluded from dispatch and resource utilization.
+Their IDs, estimates, notes, checklists and dependencies stay in the workspace.
+Work already in progress continues nonpreemptively; completed actuals and locked
+appointments are retained. A hold does not release fixed reservations.
+
+Full project completion forecasts are withheld while unfinished work is on hold.
+New tasks in other projects depending on suspended work are also left unscheduled;
+those projects show **Blocked by held work**. Locked commitments depending on
+suspended work retain their dates and generate a conflict. Deadlines for
+unscheduled work show an unavailable forecast rather than a promise.
+
+Use **Resume project** and recalculate to put the work back into dispatch at its
+existing project position and task priorities. Save/open retains hold status.
+The JSON forecast `withheldReason` and `unscheduledTaskIds` identify incomplete
+schedules; numeric forecast fields in these records describe the scheduled portion
+only and must not be used as full project completion promises. Dated completion
+forecasts are omitted for withheld projects. CLI tables suppress those promises;
+percentile comparisons are unavailable, and resource improvement ranking requires
+held projects to be resumed first.

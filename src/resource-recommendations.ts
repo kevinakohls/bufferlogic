@@ -5,6 +5,7 @@ import { schedulePortfolio, type PortfolioPlan } from './portfolio.js';
 export function recommendSaturdayHours(plan: PortfolioPlan) {
   if (!plan.calendar) throw new Error('Resource recommendations require calendars');
   const baseline = schedulePortfolio(plan);
+  if(baseline.projects.some(p=>p.forecast.withheldReason))throw new Error('Resume held projects and resolve held dependencies before ranking resource recommendations');
   const candidates = plan.resources.map(resource => {
     const calendar = baseline.plan.calendar!.resources.find(c => c.resource === resource)!;
     const originalHours = calendar.weeklyHours[5]!;

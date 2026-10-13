@@ -6,7 +6,7 @@ function today(){const now=new Date();return `${now.getFullYear()}-${String(now.
 $('start-date').value=today();
 function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);if(className)node.className=className;return node;}
 function dateText(value){if(!value)return '—';const [year,month,day]=value.split('-').map(Number);return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month-1,day)));}
-function valueText(f,key){return f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
+function valueText(f,key){if(f.withheldReason)return f.withheldReason==='on-hold'?'On hold — forecast withheld':'Blocked by held work';return f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
 function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan){renderProgress();renderProjectOrder();}}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
@@ -19,11 +19,11 @@ function renderResults(){
  const cards=$('project-cards');cards.replaceChildren();
  for(const project of result.projects){
   const f=project.forecast,card=element('article',undefined,'project-card'),top=element('div',undefined,'card-top');
-  top.append(element('h3',project.name),element('span',f.feasible?'Feasible':'Needs attention',`feasible${f.feasible?'':' infeasible'}`));
+  top.append(element('h3',project.name),element('span',f.withheldReason?'Forecast withheld':f.feasible?'Feasible':'Needs attention',`feasible${f.feasible?'':' infeasible'}`));
   card.append(top,element('div','P95 · Conservative completion forecast','p95-label'),element('p',valueText(f,'p95'),'p95-date'),element('p',`Deterministic schedule: ${valueText(f,'deterministic')}`,'deterministic'));
   const values=element('div',undefined,'percentiles');
   for(const key of ['p50','p80','p98','p99']){const item=element('div');item.append(element('div',key.toUpperCase(),'percentile-label'),element('div',valueText(f,key),'percentile-value'));values.append(item);}
-  card.append(values);const deadline=result.deadlineReport?.projects.find(p=>p.projectId===project.id);if(deadline)card.append(element('p',`Deadline: ${deadlineText(deadline.deadline)} · P50 ${deadlineAssessmentText(deadline.assessments.p50)} · P95 ${deadlineAssessmentText(deadline.assessments.p95)}${deadline.feasible?'':' · Forecast is infeasible'}`,'deadline-summary'));if(f.staleTaskIds.length)card.append(element('p',`Remaining estimates need review: ${f.staleTaskIds.join(', ')}`,'timeline-note'));cards.append(card);
+  card.append(values);if(f.withheldReason)card.append(element('p',`${f.unscheduledTaskIds?.length??0} tasks unscheduled. Active work and locked commitments remain reserved. Resume held work and recalculate for a full completion forecast.`,'timeline-note'));const deadline=result.deadlineReport?.projects.find(p=>p.projectId===project.id);if(deadline)card.append(element('p',`Deadline: ${deadlineText(deadline.deadline)} · P50 ${deadlineAssessmentText(deadline.assessments.p50)} · P95 ${deadlineAssessmentText(deadline.assessments.p95)}${deadline.feasible?'':' · Forecast is infeasible'}`,'deadline-summary'));if(f.staleTaskIds.length)card.append(element('p',`Remaining estimates need review: ${f.staleTaskIds.join(', ')}`,'timeline-note'));cards.append(card);
  }
  $('conflicts-panel').classList.toggle('hidden',!result.conflicts.length);$('conflicts').replaceChildren();
  for(const conflict of result.conflicts)$('conflicts').append(element('p',`${conflict.message} · ${conflict.taskIds.map(taskName).join('; ')}`));
@@ -184,10 +184,11 @@ function renderProjectOrder(){
  plan.projects.forEach((project,index)=>{
   const row=element('li'),label=element('span',`${index+1}. ${project.name}`),actions=element('div',undefined,'actions');
   for(const [direction,text] of [[-1,'Move up'],[1,'Move down']]){const button=element('button',text,'secondary');button.type='button';button.dataset.project=project.id;button.dataset.direction=direction;button.setAttribute('aria-label',`${text}: ${project.name}`);button.disabled=busy||(direction<0?index===0:index===plan.projects.length-1);actions.append(button);}
-  row.append(label,actions);list.append(row);
+  const hold=element('button',project.onHold?'Resume project':'Put on hold','secondary');hold.dataset.holdProject=project.id;hold.setAttribute('aria-label',`${project.onHold?'Resume project':'Put on hold'}: ${project.name}`);hold.disabled=busy;actions.append(hold);if(project.onHold)label.append(element('span',' · On hold','hold-label'));row.append(label,actions);list.append(row);
  });
 }
 $('project-order').addEventListener('click',event=>{
+ const hold=event.target.closest('button[data-hold-project]');if(hold&&!busy){const project=plan.projects.find(p=>p.id===hold.dataset.holdProject);project.onHold=!project.onHold;changed();renderProjectOrder();return;}
  const button=event.target.closest('button[data-project]');if(!button||button.disabled||busy)return;
  const index=plan.projects.findIndex(p=>p.id===button.dataset.project),next=index+Number(button.dataset.direction);
  if(next<0||next>=plan.projects.length)return;
@@ -215,7 +216,7 @@ $('checklist-items').addEventListener('change',event=>{const node=event.target,f
 $('checklist-items').addEventListener('click',event=>{const button=event.target.closest('[data-remove-checklist]');if(!button)return;checklistTask().checklist.splice(Number(button.dataset.removeChecklist),1);changed();renderChecklistItems();});
 
 function deadlineText(value){return typeof value==='string'?dateText(value):`Day ${value}`;}
-function deadlineAssessmentText(assessment){if(!assessment)return 'No deadline';if(assessment.status==='unavailable')return 'Calendar required';return assessment.status==='late'?`${Math.ceil(assessment.daysLate)} days late`:'Meets deadline';}
+function deadlineAssessmentText(assessment){if(!assessment)return 'No deadline';if(assessment.status==='unavailable')return 'Forecast unavailable';return assessment.status==='late'?`${Math.ceil(assessment.daysLate)} days late`:'Meets deadline';}
 function deadlineInput(target,label){const value=target.deadline;const node=input(value??'',label,{type:typeof value==='string'||(value===undefined&&plan.calendar)?'date':'number'});if(node.type==='number'){node.min=0;node.step='any';}return node;}
 function renderDeadlines(){
  $('project-deadlines').replaceChildren();$('task-deadlines').replaceChildren();
