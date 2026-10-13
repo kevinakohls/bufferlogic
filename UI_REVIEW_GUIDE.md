@@ -262,3 +262,17 @@ backward traversal respects weekends and dated exceptions. Clear the checkbox an
 recalculate to return to forward scheduling. Save/open retains selections and
 recomputes the same deterministic result. P99 is a lognormal model estimate,
 not a guarantee or proof of a 99% project completion chance.
+
+Feeder selections are evaluated deterministically by project order, task priority
+and original task order, regardless of checkbox click order. A later feeder does
+not overwrite an already moved feeder with a baseline placement. Unknown, duplicate
+or malformed feeding IDs are rejected by `parsePortfolio`, including saved-file
+loads. The helper receives the forward scheduler as a callback, with no runtime
+import cycle.
+
+Resource recommendations intentionally preserve `feedingTaskIds` and recompute
+latest-safe placements for each proposed calendar. The result's
+`feedingProtection: recomputed-per-scenario` makes this policy explicit. This costs
+additional scheduling passes; scores describe the changed calendar plus the same
+feeding policy, not a frozen feeder placement. The existing all-or-nothing safety
+fallback remains: incompatible combined placements retain the forward schedule.

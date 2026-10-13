@@ -180,6 +180,8 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
     });
   }
   if(value.feedingTaskIds!==undefined&&(!Array.isArray(value.feedingTaskIds)||!value.feedingTaskIds.every(text)||new Set(value.feedingTaskIds).size!==value.feedingTaskIds.length))throw new Error('feedingTaskIds must contain unique task IDs');
+  const knownTaskIds=new Set(projects.flatMap(project=>project.tasks.map(task=>task.id)));
+  for(const id of value.feedingTaskIds as string[]|undefined??[])if(!knownTaskIds.has(id))throw new Error(`Unknown feeding task: ${id}`);
   if (value.taskOrderOverrides !== undefined && (!Array.isArray(value.taskOrderOverrides) || !value.taskOrderOverrides.every(text))) throw new Error('Invalid taskOrderOverrides');
   return { id: value.id, versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days' },
     resources: [...value.resources] as string[], projects,
@@ -200,7 +202,7 @@ export interface PlacementConstraints {
 /** Non-preemptive capacity scheduling with fixed reservations and immutable schedule history. */
 export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResult, placement?: PlacementConstraints): PortfolioResult {
   const plan = parsePortfolio(input); // detached snapshot, validate typed callers too
-  if(plan.feedingTaskIds?.length&&!placement)return scheduleFeedingPortfolio(plan,previous);
+  if(plan.feedingTaskIds?.length&&!placement)return scheduleFeedingPortfolio(plan,previous,schedulePortfolio);
   const calendar = plan.calendar ? createCalendar(plan.calendar) : undefined;
   if (calendar) for (const resource of plan.resources) calendar.available(resource, plan.asOf);
   const tasks = plan.projects.flatMap(p => p.tasks);

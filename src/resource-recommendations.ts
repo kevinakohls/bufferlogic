@@ -44,6 +44,7 @@ export function recommendSaturdayHours(plan: PortfolioPlan) {
     ranking:'Eligible changes first, descending sum of fully scheduled project P95 elapsed-calendar-day improvements; ties preserve resource input order',
     interpretation:'The score sums forecast improvements for fully scheduled projects only. Held or hold-blocked forecasts are excluded and listed separately; their active work and locked reservations still constrain the schedule. This is not a joint portfolio percentile or an optimal plan. Accept a change manually and rerun before choosing another.',
     excludedProjects,
+    feedingProtection:plan.feedingTaskIds?.length?'recomputed-per-scenario' as const:'not-enabled' as const,
     baselineVersionId:baseline.plan.versionId, startDate:baseline.plan.calendar!.startDate,
     recommendedResource:candidates.find(c=>c.eligible)?.resource ?? null, candidates };
 }

@@ -55,3 +55,11 @@ test('template API appends unique software projects and includes utilization wit
  assert.equal(second.projects[1].tasks[0].id,'P2-T001');assert.equal(second.projects[0].comments,'Customer review');assert.equal(first.plan.projects.length,1);
  assert.equal(second.utilization.resources.length,12);assert.ok(second.utilization.resources.some((r:{projectHours:{hours:number}[]})=>r.projectHours.every(p=>p.hours>0)));
 }));
+
+test('review API persists feeding selections, applies protection and rejects stale IDs at load',async()=>withServer(async base=>{
+ const source=await readFile('examples/feeding-protection.json','utf8');const loaded=await (await post(base,'/api/load',{projectText:source,format:'json'})).json();
+ const plan={...loaded.plan,feedingTaskIds:['F']};const response=await post(base,'/api/schedule',{plan});assert.equal(response.status,200);const updated=await response.json();assert.equal(updated.feedingReport.changes[0].status,'applied');assert.deepEqual(updated.plan.feedingTaskIds,['F']);assert.equal(updated.tasks.find((task:{id:string})=>task.id==='L').start,0);
+ const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(updated),format:'json'})).json();assert.deepEqual(reopened.tasks,updated.tasks);
+ const bad=await post(base,'/api/load',{projectText:JSON.stringify({...plan,feedingTaskIds:['missing']}),format:'json'});assert.equal(bad.status,400);assert.match((await bad.json()).error,/Unknown feeding task/);
+ const cleared=await (await post(base,'/api/schedule',{plan:{...updated.plan,feedingTaskIds:[]}})).json();assert.equal(cleared.feedingReport,undefined);assert.equal(cleared.tasks.find((task:{id:string})=>task.id==='L').start,4);
+}));
