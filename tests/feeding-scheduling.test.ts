@@ -191,7 +191,7 @@ test("calendar latest starts respect weekends, exceptions and percentage allocat
   );
 });
 
-test("higher-priority work conflicting with a feeder protection window forces safe fallback", () => {
+test("feeding placement moves before higher-priority reservations when a safe earlier slot exists", () => {
   const high = {
     id: "P0",
     name: "Higher",
@@ -208,8 +208,11 @@ test("higher-priority work conflicting with a feeder protection window forces sa
   };
   const { feedingTaskIds, ...forward } = input;
   const after = schedulePortfolio(input);
-  assert.equal(after.feedingReport!.changes[0]!.status, "not-applied");
-  assert.deepEqual(after.tasks, schedulePortfolio(forward).tasks);
+  assert.equal(after.feedingReport!.changes[0]!.status, "applied");
+  assert.ok(after.feedingReport!.changes[0]!.protectionFinish! <= 17 + 1e-9);
+  assert.equal(after.tasks.find((task) => task.id === "H1")!.start, 17);
+  assert.equal(after.tasks.find((task) => task.id === "D")!.start, 20);
+  assert.equal(after.conflicts.length, 0);
 });
 
 test("multiple feeders are independent of selection/click order and moved higher-priority slots stay protected", () => {
@@ -311,4 +314,90 @@ test("resource recommendations intentionally recompute feeder placement under ea
       );
     }
   }
+});
+
+test("a task controlling its own lower-priority project can feed higher-priority work", () => {
+  const projects = base.projects.map((project) => ({
+    ...project,
+    tasks: project.tasks.map((task) =>
+      task.id === "D" ? { ...task, dependsOn: ["C", "F", "L"] } : task,
+    ),
+  }));
+  const input = { ...base, projects, feedingTaskIds: ["L"] },
+    result = schedulePortfolio(input),
+    change = result.feedingReport!.changes[0]!;
+  assert.equal(change.status, "applied");
+  assert.equal(change.feedsHigherPriorityProject, true);
+  assert.equal(change.bufferEffort, 0);
+  assert.equal(change.newStart, 14);
+  assert.equal(change.ownerCompletionBefore, 10);
+  assert.equal(change.ownerCompletionAfter, 20);
+  assert.equal(result.tasks.find((task) => task.id === "D")!.start, 20);
+});
+test("shared-resource cross-project feeders fit together with a zero buffer rather than a fictitious band", () => {
+  const projects = base.projects.map((project) => ({
+    ...project,
+    tasks: project.tasks.map((task) =>
+      task.id === "D" ? { ...task, dependsOn: ["C", "F", "L"] } : task,
+    ),
+  }));
+  const result = schedulePortfolio({
+      ...base,
+      projects,
+      feedingTaskIds: ["F", "L"],
+    }),
+    f = result.feedingReport!.changes.find((change) => change.taskId === "F")!,
+    l = result.feedingReport!.changes.find((change) => change.taskId === "L")!;
+  assert.equal(f.status, "applied");
+  assert.equal(l.status, "applied");
+  assert.ok(Math.abs(l.newFinish - f.newStart) < 1e-9);
+  assert.equal(l.protectionFinish, l.newFinish);
+  assert.equal(l.bufferEffort, 0);
+  assert.equal(result.tasks.find((task) => task.id === "D")!.start, 20);
+  assert.equal(result.conflicts.length, 0);
+});
+test("cross-project feeders receive positive uncertainty buffers when P20 and P80 differ", () => {
+  const projects = base.projects.map((project) => ({
+    ...project,
+    tasks: project.tasks.map((task) =>
+      task.id === "D"
+        ? { ...task, dependsOn: ["C", "F", "L"] }
+        : task.id === "L"
+          ? { ...task, resource: "Charlie", goodCase: 4, poorCase: 9 }
+          : task,
+    ),
+  }));
+  const result = schedulePortfolio({
+    ...base,
+    resources: [...base.resources, "Charlie"],
+    projects,
+    feedingTaskIds: ["L"],
+  });
+  const change = result.feedingReport!.changes[0]!;
+  assert.equal(change.status, "applied");
+  assert.ok(change.bufferEffort > 0);
+  assert.ok(change.protectionFinish! > change.newFinish);
+  assert.equal(result.tasks.find((task) => task.id === "D")!.start, 20);
+});
+test("time display preferences persist but never change scheduling or percentiles", () => {
+  const before = schedulePortfolio(base),
+    input = parsePortfolio({
+      ...base,
+      settings: { durationUnit: "days", displayTime: "days" },
+    }),
+    after = schedulePortfolio(input);
+  assert.equal(
+    parsePortfolio(JSON.parse(JSON.stringify(after.plan))).settings.displayTime,
+    "days",
+  );
+  assert.deepEqual(after.tasks, before.tasks);
+  assert.deepEqual(after.projects, before.projects);
+  assert.throws(
+    () =>
+      parsePortfolio({
+        ...base,
+        settings: { durationUnit: "days", displayTime: "hours" },
+      }),
+    /displayTime/,
+  );
 });

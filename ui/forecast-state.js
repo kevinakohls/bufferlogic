@@ -12,3 +12,7 @@ export function forecastState(forecast) {
 export function holdAction(onHold) {
   return {label: onHold ? 'Resume project' : 'Put on hold', pressed: String(Boolean(onHold))};
 }
+
+export function usesCalendarDates(plan) {
+  return Boolean(plan.calendar) && plan.settings.displayTime !== 'days';
+}

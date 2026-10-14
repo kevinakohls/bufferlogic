@@ -42,7 +42,7 @@ export interface PortfolioPlan {
   readonly asOf: number;
   readonly approvalStatus?: 'draft' | 'approved';
   readonly calendar?: CalendarSettings;
-  readonly settings: { readonly durationUnit: 'days' };
+  readonly settings: { readonly durationUnit: 'days'; readonly displayTime?: 'days' | 'dates' };
   readonly resources: readonly string[];
   readonly resourceDetails?: readonly ResourceDetails[];
   /** Array order is management's resource preference. */
@@ -144,6 +144,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
       || !Array.isArray(value.resources) || !value.resources.every(text) || !Array.isArray(value.projects)) {
     throw new Error('Portfolio requires id, versionId, asOf, settings.durationUnit=days, resources and projects');
   }
+  if(value.settings.displayTime!==undefined&&value.settings.displayTime!=='days'&&value.settings.displayTime!=='dates')throw new Error('displayTime must be days or dates');
   if (value.approvalStatus !== undefined && value.approvalStatus !== 'draft' && value.approvalStatus !== 'approved') throw new Error('Invalid approvalStatus');
   const projects = value.projects.map((p: unknown): Project => {
     if (!object(p) || !text(p.id) || !text(p.name) || !Array.isArray(p.tasks)) throw new Error('Invalid project');
@@ -183,7 +184,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
   const knownTaskIds=new Set(projects.flatMap(project=>project.tasks.map(task=>task.id)));
   for(const id of value.feedingTaskIds as string[]|undefined??[])if(!knownTaskIds.has(id))throw new Error(`Unknown feeding task: ${id}`);
   if (value.taskOrderOverrides !== undefined && (!Array.isArray(value.taskOrderOverrides) || !value.taskOrderOverrides.every(text))) throw new Error('Invalid taskOrderOverrides');
-  return { id: value.id, versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days' },
+  return { id: value.id, versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days',...(value.settings.displayTime===undefined?{}:{displayTime:value.settings.displayTime}) },
     resources: [...value.resources] as string[], projects,
     ...(value.feedingTaskIds===undefined?{}:{feedingTaskIds:[...value.feedingTaskIds] as string[]}),
     ...(resourceDetails===undefined?{}:{resourceDetails}),

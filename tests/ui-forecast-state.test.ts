@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 // Import the exact module served to the browser, without adding browser dependencies.
-const {forecastState,holdAction}=await import(new URL('../../ui/forecast-state.js',import.meta.url).href);
+const {forecastState,holdAction,usesCalendarDates}=await import(new URL('../../ui/forecast-state.js',import.meta.url).href);
 test('held and blocked UI forecasts have unavailable labels without infeasible badges or timeline warnings',()=>{
  for(const withheldReason of ['on-hold','blocked-by-hold']){
   const state=forecastState({withheldReason,feasible:null});
@@ -17,4 +17,12 @@ test('hold control labels and pressed state describe hold/resume transitions',()
  assert.deepEqual(holdAction(undefined),{label:'Put on hold',pressed:'false'});
  assert.deepEqual(holdAction(true),{label:'Resume project',pressed:'true'});
  assert.deepEqual(holdAction(false),{label:'Put on hold',pressed:'false'});
+});
+
+test('days/date display respects the saved preference and requires calendars for dates',()=>{
+ assert.equal(usesCalendarDates({settings:{durationUnit:'days'}}),false);
+ assert.equal(usesCalendarDates({settings:{displayTime:'dates'}}),false);
+ assert.equal(usesCalendarDates({calendar:{},settings:{}}),true);
+ assert.equal(usesCalendarDates({calendar:{},settings:{displayTime:'days'}}),false);
+ assert.equal(usesCalendarDates({calendar:{},settings:{displayTime:'dates'}}),true);
 });

@@ -206,6 +206,8 @@ side has a withheld forecast.
 ## Opt-in feeding protection
 
 `PortfolioPlan.feedingTaskIds` lists selected unstarted, unlocked working tasks.
+An own-critical-chain task is eligible when it directly feeds a higher-priority
+project; lower-priority successor tasks can then reschedule with their project.
 Omit it or use an empty array for the existing forward schedule. With selections,
 the engine first computes a forward baseline, then derives each eligible feeder's
 latest start from its downstream baseline start and its task P99 working effort.
@@ -243,3 +245,24 @@ latest-safe placements for each proposed calendar. The result's
 additional scheduling passes; scores describe the changed calendar plus the same
 feeding policy, not a frozen feeder placement. The existing all-or-nothing safety
 fallback remains: incompatible combined placements retain the forward schedule.
+
+### Cross-project feeding and time display
+
+A feeder that controls a lower-priority project's finish may supply a direct
+successor in a higher-priority project. Its higher-priority successor baseline
+starts and higher-priority task placements are protected; the feeder's own
+completion promise can move later. Feeding changes expose
+`feedsHigherPriorityProject`, `ownerCompletionBefore`, `ownerCompletionAfter` and
+`protectionFinish`. The owner fields are deterministic completion offsets, not
+confidence-level comparisons. `protectionFinish` is the end of the reserved P99
+resource window and may precede `protectedStart` when another protected task
+needs the resource first. Resource reservations and timeline bands end at
+`protectionFinish`, not at the downstream start if extra unreserved slack remains.
+Zero P99−P50 is valid and displayed explicitly; it does not create an extra buffer.
+
+Optional `settings.displayTime` accepts `days` or `dates` and persists a UI display
+preference only. It does not affect calculation. Date display requires a calendar;
+without one the UI falls back to abstract day numbers. With calendars, day numbers
+are elapsed calendar offsets, not workday counts. Existing plans without the
+preference retain the previous date-if-calendared behavior. JSON numeric offsets
+and completion dates remain available independently of the display preference.

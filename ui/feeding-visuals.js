@@ -4,12 +4,13 @@ export function feedingVisuals(result) {
   const tasks = result.plan.projects.flatMap(project => project.tasks);
   return (result.feedingReport?.changes ?? []).flatMap(change => {
     const entry = entries.get(change.taskId);
-    if (change.status !== 'applied' || !entry || change.protectedStart === null || change.protectedStart <= entry.finish + 1e-9) return [];
+    const protectionFinish=change.protectionFinish??change.protectedStart;
+    if (change.status !== 'applied' || !entry || protectionFinish === null || protectionFinish < entry.finish - 1e-9) return [];
     return [{
       taskId: change.taskId,
       resource: entry.resource,
       start: entry.finish,
-      finish: change.protectedStart,
+      finish: protectionFinish,
       bufferEffort: change.bufferEffort,
       originalStart: change.originalStart,
       newStart: entry.start,

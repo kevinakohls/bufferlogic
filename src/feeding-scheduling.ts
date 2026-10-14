@@ -19,6 +19,10 @@ export interface FeedingChange {
   p99Effort: number;
   bufferEffort: number;
   protectedStart: number | null;
+  protectionFinish: number | null;
+  ownerCompletionBefore: number | null;
+  ownerCompletionAfter: number | null;
+  feedsHigherPriorityProject: boolean;
 }
 export interface FeedingReport {
   method: "task-p99-feeding-protection";
@@ -55,6 +59,61 @@ function latestStart(
     time = dayStart;
   }
   return -1;
+}
+
+/** Move left across occupied intervals until the whole P99 window fits. */
+function latestResourceWindow(
+  plan: PortfolioPlan,
+  resource: string,
+  target: number,
+  effort: number,
+  allocation: number,
+  occupied: readonly {
+    resource: string;
+    start: number;
+    finish: number;
+    allocationPercent: number;
+  }[],
+): { start: number; finish: number } {
+  const calendar = plan.calendar ? createCalendar(plan.calendar) : undefined;
+  let boundary = target;
+  for (let attempt = 0; attempt <= occupied.length * 2 + 2; attempt++) {
+    const start = latestStart(plan, resource, boundary, effort);
+    if (start < plan.asOf - 1e-9) return { start: -1, finish: boundary };
+    const finish = calendar
+      ? calendar.finish(resource, start, effort)
+      : start + effort;
+    const blocks = occupied.filter(
+      (slot) =>
+        slot.resource === resource &&
+        slot.start < finish - 1e-9 &&
+        slot.finish > start + 1e-9,
+    );
+    const points = [
+      start,
+      ...blocks.flatMap((slot) => [
+        Math.max(start, slot.start),
+        Math.min(finish, slot.finish),
+      ]),
+    ]
+      .filter((time) => time < finish - 1e-9)
+      .sort((a, b) => a - b);
+    const violation = points.find(
+      (time) =>
+        blocks
+          .filter((slot) => slot.start <= time && slot.finish > time + 1e-9)
+          .reduce((load, slot) => load + slot.allocationPercent, allocation) >
+        100 + 1e-9,
+    );
+    if (violation === undefined) return { start, finish };
+    const active = blocks.filter(
+      (slot) => slot.start <= violation && slot.finish > violation + 1e-9,
+    );
+    const next = Math.max(...active.map((slot) => slot.start));
+    if (next >= boundary - 1e-9) return { start: -1, finish: boundary };
+    boundary = next;
+  }
+  return { start: -1, finish: boundary };
 }
 
 /** Protect baseline targets, fit selected feeder windows, then dispatch other work into safe gaps. */
@@ -132,6 +191,10 @@ export function scheduleFeedingPortfolio(
       p99Effort: 0,
       bufferEffort: 0,
       protectedStart: null,
+      protectionFinish: null,
+      ownerCompletionBefore: owner.forecast.deterministicCompletion,
+      ownerCompletionAfter: owner.forecast.deterministicCompletion,
+      feedsHigherPriorityProject: false,
     };
     report.changes.push(change);
     if (!original || owner.forecast.withheldReason) {
@@ -148,15 +211,24 @@ export function scheduleFeedingPortfolio(
       change.reason = "Only unstarted, unlocked working tasks can be moved";
       continue;
     }
-    if (owner.forecast.criticalChain.includes(id)) {
-      change.reason =
-        "Task is on its project critical chain; this option only moves feeding work";
-      continue;
-    }
     const successors = tasks
       .filter((other) => other.dependsOn.includes(id))
       .map((other) => entries.get(other.id))
       .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+    const ownerIndex = projectOrder.get(task.projectId)!;
+    const higherSuccessors = successors.filter(
+      (successor) => projectOrder.get(successor.projectId)! < ownerIndex,
+    );
+    const crossProjectFeeder = higherSuccessors.length > 0;
+    change.feedsHigherPriorityProject = crossProjectFeeder;
+    if (owner.forecast.criticalChain.includes(id) && !crossProjectFeeder) {
+      change.reason =
+        "Task is on its project critical chain and does not feed a higher-priority project";
+      continue;
+    }
+    const protectedSuccessors = crossProjectFeeder
+      ? higherSuccessors
+      : successors;
     if (!successors.length) {
       change.reason = "No scheduled downstream task to protect";
       continue;
@@ -179,21 +251,53 @@ export function scheduleFeedingPortfolio(
     change.bufferEffort = change.p99Effort - change.p50Effort;
     if (!Number.isFinite(change.p99Effort))
       throw new Error(`Feeding P99 exceeds numeric range: ${id}`);
-    const target = Math.min(...successors.map((successor) => successor.start));
+    const target = Math.min(
+      ...protectedSuccessors.map((successor) => successor.start),
+    );
     change.protectedStart = target;
     if (baseline.conflicts.length) {
       change.reason =
         "Resolve baseline conflicts before applying feeding protection";
       continue;
     }
-    const start = latestStart(plan, task.resource, target, change.p99Effort);
+    const proposedSlots = new Map(protectedSlots);
+    for (const entry of baseline.tasks) {
+      if (entry.id === id || starts.has(entry.id)) continue;
+      if (
+        projectOrder.get(entry.projectId)! < ownerIndex ||
+        (!crossProjectFeeder &&
+          owner.forecast.criticalChain.includes(entry.id)) ||
+        protectedSuccessors.some((successor) => successor.id === entry.id) ||
+        entry.locked ||
+        entry.status === "active" ||
+        entry.status === "completed"
+      )
+        proposedSlots.set(entry.id, {
+          start: entry.start,
+          finish: entry.finish,
+        });
+    }
+    const occupied = [...proposedSlots].map(([id, slot]) => ({
+      ...entries.get(id)!,
+      ...slot,
+    }));
+    const window = latestResourceWindow(
+      plan,
+      task.resource,
+      target,
+      change.p99Effort,
+      task.allocationPercent ?? 100,
+      [...occupied, ...reservations],
+    );
+    const start = window.start;
+    change.protectionFinish = window.finish;
     const ready = Math.max(
       plan.asOf,
       ...task.dependsOn.map((predecessor) => entries.get(predecessor)!.finish),
     );
     if (start < original.start - 1e-9 || start < ready - 1e-9) {
       change.reason =
-        "P99 protection does not fit in existing slack; original schedule retained";
+        "P99 protection does not fit available slack/resource capacity; no backward placement for this task";
       continue;
     }
     if (start <= original.start + 1e-9) {
@@ -204,34 +308,23 @@ export function scheduleFeedingPortfolio(
     const finish = calendar
       ? calendar.finish(task.resource, start, change.p50Effort)
       : start + change.p50Effort;
-    const ownerIndex = plan.projects.findIndex(
-      (project) => project.id === task.projectId,
-    );
-    for (const entry of baseline.tasks)
-      if (
-        !starts.has(entry.id) &&
-        (plan.projects.findIndex((project) => project.id === entry.projectId) <
-          ownerIndex ||
-          owner.forecast.criticalChain.includes(entry.id) ||
-          successors.some((successor) => successor.id === entry.id))
-      )
-        protectedSlots.set(entry.id, {
-          start: entry.start,
-          finish: entry.finish,
-        });
+    for (const [id, slot] of proposedSlots) protectedSlots.set(id, slot);
     protectedSlots.set(id, { start, finish });
     starts.set(id, start);
     reservations.push({
       resource: task.resource,
       start: finish,
-      finish: target,
+      finish: window.finish,
       allocationPercent: task.allocationPercent ?? 100,
     });
     change.newStart = start;
     change.newFinish = finish;
     change.status = "applied";
-    change.reason =
-      "Delayed while protecting downstream start with task P99 effort";
+    change.reason = crossProjectFeeder
+      ? "Cross-project feeder delayed to protect higher-priority delivery; its owning project may finish later"
+      : "Delayed while protecting downstream start with task P99 effort";
+    if (change.bufferEffort < 1e-9)
+      change.reason += "; P20 equals P80, so P99 minus P50 is zero";
   }
   let result: PortfolioResult;
   if (starts.size) {
@@ -306,6 +399,16 @@ export function scheduleFeedingPortfolio(
       result = forwardSchedule(forwardPlan, previous);
     }
   } else result = forwardSchedule(forwardPlan, previous);
+  for (const change of report.changes) {
+    const actual = result.tasks.find((task) => task.id === change.taskId);
+    if (actual) {
+      change.newStart = actual.start;
+      change.newFinish = actual.finish;
+    }
+    change.ownerCompletionAfter = result.projects.find(
+      (project) => project.id === byId.get(change.taskId)!.projectId,
+    )!.forecast.deterministicCompletion;
+  }
   for (const change of report.changes)
     if (change.status === "applied")
       report.resourceWindows.push({

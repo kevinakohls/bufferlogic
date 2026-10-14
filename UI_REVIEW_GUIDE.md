@@ -248,8 +248,9 @@ cannot start in a gap if they would cross that reservation. The actual task stil
 has its P50 planned finish. Buffer reservations are protection, not additional
 work counted in utilization. They are described in the feeding report.
 
-Select only unstarted, unlocked working tasks off their owning project's current
-critical chain. The first version uses individual task P99 values, not aggregate
+Select unstarted, unlocked working tasks. A task on its owning project’s critical
+chain is eligible when it directly feeds a higher-priority project. The report
+shows its owning project’s before/after deterministic completion. The first version uses individual task P99 values, not aggregate
 feeding-chain percentiles. Select independent feeders; immediate feeder-to-feeder
 links are rejected. Higher-priority project timings, the owner's critical chain,
 active work, user locks and downstream starts stay protected. If P99 slack or
@@ -283,7 +284,8 @@ After selecting F and recalculating, open **Timeline**. The default **Critical
 chain & feeders** view includes technical dependencies feeding the critical
 chain, so F → D is visible even though F is not a critical-chain task. Applied
 feeding dependencies use teal arrows. The hatched **P99 buffer** band begins at
-F's P50 finish and ends at the protected downstream start. It is a reservation,
+F's P50 finish and ends at the end of its P99 resource window. This can precede
+the protected downstream start when other reserved work requires an earlier slot. It is a reservation,
 not additional productive task work.
 
 Click the band, select F, or select D to see the buffer's working effort, dates,
@@ -292,3 +294,28 @@ The band is keyboard-accessible. **No links** hides arrows while retaining buffe
 bands. Pending edits do not change the drawing until recalculation; unchecking
 F and recalculating removes the band. Forward-only or rejected placements have
 no protection band.
+
+## Days or calendar dates
+
+Use **Time display** beside **Save workspace** to switch between **Days from
+start** and **Calendar dates**. This changes completion cards, calculated task
+schedule, feeding report and timeline immediately, without recalculation. It does
+not change estimates, deadlines, locks, actuals or forecasts. Save/open retains
+the preference. With calendars, day numbers are elapsed calendar days from the
+schedule origin, including weekends and holidays. Without a resource calendar,
+date view is unavailable; load a calendar to enable it. Progress input, deadline
+editing, resource-calendar editing and weekly utilization retain their calendar
+semantics.
+
+### Cross-project feeding example
+
+In `feeding-protection.json`, add L to D's dependencies, then select F and L under
+**Feeding tasks**. L is allowed to feed higher-priority Release One even though it
+controls Release Two's finish. The scheduler searches backward for a resource-safe
+P99 window before other reservations; it does not overwrite F's protection.
+Release Two may finish later, shown explicitly in the report. L's 6 / 6 estimates
+produce zero uncertainty buffer; a **0d** marker explains this rather than drawing
+a fictitious band. Different P20/P80 estimates produce a positive buffer if they
+fit. A feeder's P99 window can end earlier than D's start because of shared-resource
+reservations. Extra waiting between that window and D is not additional reserved
+feeding buffer.
