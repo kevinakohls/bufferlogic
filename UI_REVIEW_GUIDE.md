@@ -276,3 +276,19 @@ latest-safe placements for each proposed calendar. The result's
 additional scheduling passes; scores describe the changed calendar plus the same
 feeding policy, not a frozen feeder placement. The existing all-or-nothing safety
 fallback remains: incompatible combined placements retain the forward schedule.
+
+### See feeding protection on the timeline
+
+After selecting F and recalculating, open **Timeline**. The default **Critical
+chain & feeders** view includes technical dependencies feeding the critical
+chain, so F → D is visible even though F is not a critical-chain task. Applied
+feeding dependencies use teal arrows. The hatched **P99 buffer** band begins at
+F's P50 finish and ends at the protected downstream start. It is a reservation,
+not additional productive task work.
+
+Click the band, select F, or select D to see the buffer's working effort, dates,
+original/new feeder starts and protected dependency links in the details panel.
+The band is keyboard-accessible. **No links** hides arrows while retaining buffer
+bands. Pending edits do not change the drawing until recalculation; unchecking
+F and recalculating removes the band. Forward-only or rejected placements have
+no protection band.

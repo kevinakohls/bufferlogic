@@ -1,3 +1,4 @@
+import {feedingVisuals} from './feeding-visuals.js';
 import {forecastState} from './forecast-state.js';
 const ns='http://www.w3.org/2000/svg';
 const $=id=>document.getElementById(id);
@@ -21,6 +22,11 @@ function details(){
   panel.append(html('h4',title));if(!ids.length){panel.append(html('p','None','detail-empty'));continue;}
   for(const id of ids){const button=html('button',taskLabel(id),'detail-link');button.type='button';button.addEventListener('click',()=>selectTask(id,true));panel.append(button);}
  }
+ const protections=feedingVisuals(result).filter(buffer=>buffer.taskId===task.id||buffer.downstreamTaskIds.includes(task.id));
+ for(const buffer of protections){
+  panel.append(html('h4',`Feeding buffer · ${buffer.taskId}`),html('p',`P99 − P50 protection: ${Number(buffer.bufferEffort.toFixed(2))} working days at the task's allocation. Buffer interval: ${displayDate(buffer.start)} → ${displayDate(buffer.finish)}. Feeder start moved from ${displayDate(buffer.originalStart)} to ${displayDate(buffer.newStart)}. This reserves capacity; it is not additional task work or a completion guarantee.`,'detail-note'));
+  for(const target of buffer.downstreamTaskIds){const button=html('button',`${buffer.taskId} → ${target} · protected dependency`,'detail-link');button.type='button';button.addEventListener('click',()=>selectTask(task.id===buffer.taskId?target:buffer.taskId,true));panel.append(button);}
+ }
  const resource=result.plan.resourceDetails?.find(r=>r.id===task.resource);
  if(resource?.comments){panel.append(html('h4','Resource comments'),html('p',resource.comments,'detail-note'));}
  const warnings=result.conflicts.filter(c=>c.taskIds.includes(task.id));for(const warning of warnings)panel.append(html('p',warning.message,'detail-warning'));
@@ -31,12 +37,13 @@ function draw(){
  const project=result.projects.find(p=>p.id===projectId);const chain=project.forecast.criticalChain,chainSet=new Set(chain),chainPairs=new Set(chain.slice(1).map((id,i)=>`${chain[i]}\0${id}`));
  const cross=chain.filter(id=>scheduled(id).projectId!==projectId).length;
  $('timeline-summary').textContent=`${project.name}${project.forecast.withheldReason?' · Full completion forecast withheld':''}: ${chain.length} critical-chain tasks${cross?`, including ${cross} from another project`:''}${forecastState(project.forecast).timelineWarning}.`;
- const chart=$('timeline-chart');const restoreFocus=document.activeElement?.classList?.contains('timeline-task');const oldTop=chart.scrollTop,oldLeft=chart.scrollLeft;chart.replaceChildren();
+ const buffers=feedingVisuals(result),bufferByTask=new Map(buffers.map(buffer=>[buffer.taskId,buffer]));
+ const chart=$('timeline-chart');const restoreFocus=document.activeElement?.classList?.contains('timeline-task')||document.activeElement?.classList?.contains('feeding-buffer');const oldTop=chart.scrollTop,oldLeft=chart.scrollLeft;chart.replaceChildren();
  const width=Math.max(680,chart.clientWidth||920)*Number($('timeline-zoom').value),labelWidth=270,end=Math.max(1,...result.tasks.map(t=>t.finish)),plotWidth=width-labelWidth-35,rowHeight=32,positions=new Map();let y=14;
  const groups=[];
  for(const owner of result.projects){const tasks=result.tasks.filter(t=>t.projectId===owner.id).sort((a,b)=>a.start-b.start||a.finish-b.finish);groups.push({owner,y});y+=32;for(const task of tasks){positions.set(task.id,{y});y+=rowHeight;}y+=12;}
  const height=y+12,x=time=>labelWidth+time/end*plotWidth,canvas=svg('svg',{width,height,class:'timeline-canvas',role:'group','aria-label':`Schedule for ${result.projects.length} projects. ${project.name} critical chain highlighted.`});
- const defs=svg('defs');for(const [kind,color]of [['technical','#508caa'],['resource','#8d69ac']]){const marker=svg('marker',{id:`arrow-${kind}`,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:5,markerHeight:5,orient:'auto-start-reverse'});marker.append(svg('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:color}));defs.append(marker);}canvas.append(defs);
+ const defs=svg('defs');for(const [kind,color]of [['technical','#508caa'],['resource','#8d69ac'],['feeding','#138b91']]){const marker=svg('marker',{id:`arrow-${kind}`,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:5,markerHeight:5,orient:'auto-start-reverse'});marker.append(svg('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:color}));defs.append(marker);}const pattern=svg('pattern',{id:'feeding-buffer-hatch',width:6,height:6,patternUnits:'userSpaceOnUse'});pattern.append(svg('rect',{width:6,height:6,fill:'#e4f6f3'}),svg('path',{d:'M -1 1 L 1 -1 M 0 6 L 6 0 M 5 7 L 7 5',stroke:'#8ac9c6','stroke-width':1}));defs.append(pattern);canvas.append(defs);
  canvas.append(svg('rect',{width,height,fill:'#fff'}));
  const axis=svg('svg',{width,height:40,class:'timeline-axis','aria-hidden':'true'});
  const minimumStep=end/plotWidth*100;
@@ -44,15 +51,25 @@ function draw(){
  for(let day=0;day<=end;day+=step){canvas.append(svg('line',{x1:x(day),x2:x(day),y1:0,y2:height,stroke:'#edf1ec'}));axis.append(svg('text',{x:x(day)+4,y:25,class:'axis-label'},displayDate(day)));}
  axis.append(svg('text',{x:16,y:25,class:'axis-label'},'PROJECT / TASK'));
  for(const group of groups){canvas.append(svg('rect',{x:0,y:group.y,width,height:28,fill:group.owner.id===projectId?'#e8f2eb':'#f2f5f0'}),svg('text',{x:16,y:group.y+19,class:'group-label'},group.owner.name));}
+ // Protection is a distinct reservation band after the feeder's P50 task bar.
+ for(const buffer of buffers){
+  const position=positions.get(buffer.taskId);if(!position)continue;
+  const band=svg('g',{class:'feeding-buffer',role:'button',tabindex:0,'data-feeding-buffer':buffer.taskId,'aria-label':`Feeding buffer for ${buffer.taskId}: ${Number(buffer.bufferEffort.toFixed(2))} working days, ${displayDate(buffer.start)} to ${displayDate(buffer.finish)}. Protects ${buffer.downstreamTaskIds.join(', ')}.`});
+  const bandWidth=x(buffer.finish)-x(buffer.start);
+  band.append(svg('rect',{x:x(buffer.start),y:position.y+7,width:bandWidth,height:18,rx:2,fill:'url(#feeding-buffer-hatch)',stroke:'#138b91','stroke-dasharray':'4 2'}));
+  band.append(svg('text',{x:x(buffer.start)+4,y:position.y+20,class:'feeding-buffer-label'},bandWidth>82?'P99 buffer':bandWidth>22?'FB':''));
+  band.append(svg('title',{},`Feeding buffer ${buffer.taskId} → ${buffer.downstreamTaskIds.join(', ')} · P99 − P50: ${Number(buffer.bufferEffort.toFixed(2))} working days. ${displayDate(buffer.start)} to ${displayDate(buffer.finish)}.`));
+  band.addEventListener('click',()=>selectTask(buffer.taskId));band.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectTask(buffer.taskId);}});canvas.append(band);
+ }
  // Links are drawn behind task buttons; each kind remains visually distinct.
  const mode=$('timeline-links').value;
  for(const task of result.tasks){
   for(const [kind,ids]of [['technical',task.technicalPredecessors],['resource',task.resourcePredecessors]])for(const id of ids){
    const before=scheduled(id);if(!before||!positions.has(id)||!positions.has(task.id))continue;
-   const onChain=chainPairs.has(`${id}\0${task.id}`);
-   if(mode==='none'||(mode==='chain'&&!onChain)||(mode==='task'&&task.id!==selectedId&&id!==selectedId))continue;
-   const a=positions.get(id),b=positions.get(task.id),sx=x(before.finish),tx=x(task.start),sy=a.y+16,ty=b.y+16,bend=Math.max(sx+10,tx-12);
-   const edge=svg('path',{d:`M ${sx} ${sy} L ${bend} ${sy} L ${bend} ${ty} L ${tx} ${ty}`,fill:'none',stroke:kind==='resource'?'#8d69ac':'#508caa','stroke-width':onChain?2:1.2,'stroke-dasharray':kind==='resource'?'5 4':'none','marker-end':`url(#arrow-${kind})`,opacity:mode==='all'&&!onChain?.45:.85,class:'timeline-edge'});edge.append(svg('title',{},`${taskLabel(id)} → ${taskLabel(task.id)} · ${kind==='resource'?'resource wait':'dependency'}`));canvas.append(edge);
+   const onChain=chainPairs.has(`${id}\0${task.id}`),feeding=kind==='technical'&&bufferByTask.has(id),feedsChain=kind==='technical'&&chainSet.has(task.id);
+   if(mode==='none'||(mode==='chain'&&!onChain&&!feedsChain&&!feeding)||(mode==='task'&&task.id!==selectedId&&id!==selectedId))continue;
+   const a=positions.get(id),b=positions.get(task.id),sx=x(before.finish),tx=x(task.start),sy=a.y+(feeding?29:16),ty=b.y+16,bend=Math.max(sx+10,tx-12);
+   const edge=svg('path',{d:`M ${sx} ${feeding?a.y+25:sy} L ${sx} ${sy} L ${bend} ${sy} L ${bend} ${ty} L ${tx} ${ty}`,fill:'none',stroke:feeding?'#138b91':kind==='resource'?'#8d69ac':'#508caa','stroke-width':onChain?2:1.2,'stroke-dasharray':kind==='resource'?'5 4':'none','marker-end':`url(#arrow-${feeding?'feeding':kind})`,opacity:mode==='all'&&!onChain?.45:.85,class:'timeline-edge','data-from':id,'data-to':task.id,'data-edge-kind':feeding?'feeding':kind});edge.append(svg('title',{},`${taskLabel(id)} → ${taskLabel(task.id)} · ${feeding?'feeding dependency with P99 protection':kind==='resource'?'resource wait':'dependency'}`));canvas.append(edge);
   }
  }
  for(const task of result.tasks){
