@@ -8,7 +8,7 @@ $('start-date').value=today();
 function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);if(className)node.className=className;return node;}
 function dateText(value){if(!value)return '—';const [year,month,day]=value.split('-').map(Number);return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month-1,day)));}
 function valueText(f,key){if(f.withheldReason)return forecastState(f).completionLabel;return usesCalendarDates(result.plan)&&f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
-function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan){renderProgress();renderProjectOrder();}}
+function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan){renderProgress();renderProjectOrder();if(plan.calendar)renderExceptions();renderTimeDisplay();}}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
 function changed(){if(!plan)return;dirty=true;$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
@@ -18,6 +18,7 @@ function allTasks(){return plan.projects.flatMap(p=>p.tasks);}
 function taskName(id){const t=result.plan.projects.flatMap(p=>p.tasks).find(t=>t.id===id);return t?`${t.id} · ${t.name}`:id;}
 function renderResults(){
  const cards=$('project-cards');cards.replaceChildren();
+ if(result.needsAssignments)cards.append(element('p','Schedule not calculated. Assign a resource to every task, then recalculate.','timeline-note'));
  for(const project of result.projects){
   const f=project.forecast,card=element('article',undefined,'project-card'),top=element('div',undefined,'card-top');
   const presentation=forecastState(f);top.append(element('h3',project.name),element('span',presentation.badgeText,presentation.badgeClass));
@@ -44,7 +45,7 @@ function renderTasks(){
  for(const task of allTasks()){
   if(filter!=='all'&&task.projectId!==filter)continue;count++;
   const row=element('tr');row.dataset.id=task.id;row.append(element('td',task.id,'task-id'),element('td',plan.projects.find(p=>p.id===task.projectId).name));
-  const fields=[['name',input(task.name,`${task.id} task name`,{class:'task-name'})],['resource',select(task.resource,`${task.id} resource`,plan.resources.map(r=>[r,resourceName(r)]))],['dependsOn',input(task.dependsOn.join(', '),`${task.id} dependencies`,{class:'dependencies'})]];
+  const fields=[['name',input(task.name,`${task.id} task name`,{class:'task-name'})],['resource',select(task.resource,`${task.id} resource`,[['','Unassigned — choose a resource'],...plan.resources.map(r=>[r,resourceName(r)])])],['dependsOn',input(task.dependsOn.join(', '),`${task.id} dependencies`,{class:'dependencies'})]];
   const estimates=task.status==='active'?task.remaining:task;
   for(const field of ['goodCase','poorCase'])fields.push([field,input(estimates?.[field]??'',`${task.id} ${task.status==='active'?'remaining ':''}${field}`,{type:'number',min:0,step:'any'})]);
   fields.push(['priority',input(task.priority,`${task.id} priority`,{type:'number',step:'any'})],['allocationPercent',input(task.allocationPercent??100,`${task.id} allocation percent`,{type:'number',min:1,max:100,step:'any'})],['durationMode',select(task.durationMode??'working',`${task.id} duration type`,[['working','Working effort'],['elapsed','Elapsed waiting']])]);
@@ -53,7 +54,44 @@ function renderTasks(){
  }
  $('task-count').textContent=`${count} tasks`;
 }
+function renderResources(){
+ const body=$('resources-body');body.replaceChildren();
+ $('resources-empty').classList.toggle('hidden',plan.resources.length>0);
+ for(const resource of plan.resources){
+  const row=element('tr'),calendar=plan.calendar?.resources.find(c=>c.resource===resource);
+  const count=allTasks().filter(task=>task.resource===resource).length;
+  const remove=element('button','Delete','secondary');remove.type='button';remove.dataset.deleteResource=resource;
+  remove.setAttribute('aria-label',`Delete resource ${resource}`);
+  row.append(element('td',resourceName(resource)),element('td',calendar?calendar.weeklyHours.reduce((sum,h)=>sum+h,0):40),element('td',count),cell(remove));body.append(row);
+ }
+}
+function resourceListChanged(){
+ renderResources();renderCalendars();renderTasks();renderNotes();changed();
+}
+$('add-resource').addEventListener('click',()=>{
+ if(!plan)return;
+ const resource=$('new-resource').value.trim();
+ if(!resource){failure(new Error('Enter a resource name.'));return;}
+ if(plan.resources.includes(resource)){failure(new Error('That resource already exists.'));return;}
+ plan.resources.push(resource);
+ if(plan.calendar)plan.calendar.resources.push({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{}});
+ $('new-resource').value='';resourceListChanged();
+});
+$('resources-body').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-delete-resource]');if(!button||!plan)return;
+ const resource=button.dataset.deleteResource;
+ if(!confirm(`Are you sure? Tasks assigned to this resource will become unassigned. Delete ${resource}?`))return;
+ plan.resources=plan.resources.filter(id=>id!==resource);
+ if(plan.calendar)plan.calendar.resources=plan.calendar.resources.filter(c=>c.resource!==resource);
+ if(plan.resourceDetails)plan.resourceDetails=plan.resourceDetails.filter(detail=>detail.id!==resource);
+ exceptions=exceptions.filter(exception=>exception.resource!==resource);
+ for(const task of allTasks())if(task.resource===resource)task.resource='';
+ resourceListChanged();
+ const unassigned=allTasks().filter(task=>!task.resource);
+ if(unassigned.length)message(`${unassigned.length} tasks unassigned. Choose replacement resources in Tasks before scheduling.`,true);
+});
 function renderCalendars(){
+ renderResources();
  const enabled=Boolean(plan.calendar);$('no-calendars').classList.toggle('hidden',enabled);$('calendar-editor').classList.toggle('hidden',!enabled);if(!enabled)return;
  $('workday-hours').value=plan.calendar.hoursPerWorkday;
  const tbody=$('calendars-body');tbody.replaceChildren();
@@ -61,17 +99,17 @@ function renderCalendars(){
  renderExceptions();
 }
 function renderExceptions(){
- const body=$('exceptions-body');body.replaceChildren();$('exceptions-empty').classList.toggle('hidden',exceptions.length>0);
+ const body=$('exceptions-body');body.replaceChildren();$('exceptions-empty').classList.toggle('hidden',exceptions.length>0);$('add-exception').disabled=busy||!plan.calendar.resources.length;
  exceptions.forEach((exception,index)=>{const row=element('tr');row.dataset.index=index;
  for(const [field,node] of [['resource',select(exception.resource,`Exception ${index+1} resource`,plan.calendar.resources.map(c=>[c.resource,c.resource]))],['date',input(exception.date,`Exception ${index+1} date`,{type:'date'})],['hours',input(exception.hours,`Exception ${index+1} hours`,{type:'number',min:0,max:24,step:'any'})]]){node.dataset.exception=field;row.append(cell(node));}
  const remove=element('button','Remove','remove');remove.dataset.remove=index;remove.type='button';row.append(cell(remove));body.append(row);});
 }
-function loadResult(value){result=value;plan=structuredClone(value.plan);dirty=false;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
+function loadResult(value){result=value.needsAssignments?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
  if(plan.calendar)$('start-date').value=plan.calendar.startDate;
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
  $('workspace').classList.remove('hidden');$('error').classList.add('hidden');$('freshness').textContent='Calculated from the current plan';
  const filter=$('project-filter'),previousFilter=filter.value;filter.replaceChildren();for(const [id,name] of [['all','All projects'],...plan.projects.map(p=>[p.id,p.name])]){const option=element('option',name);option.value=id;filter.append(option);}if([...filter.options].some(o=>o.value===previousFilter))filter.value=previousFilter;
- renderTimeDisplay();renderResults();renderProjectOrder();renderTasks();renderProgress();renderChecklists();renderDeadlines();renderFeeding();renderCalendars();renderNotes();renderUtilization();message(`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`);
+ renderTimeDisplay();renderResults();renderProjectOrder();renderTasks();renderProgress();renderChecklists();renderDeadlines();renderFeeding();renderCalendars();renderNotes();renderUtilization();message(result.needsAssignments?'Assign resources to the unassigned tasks, then recalculate.':`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`,Boolean(result.needsAssignments));if(result.needsAssignments)$('freshness').textContent='Not calculated · tasks need resources';
 }
 $('example').addEventListener('click',async()=>{setBusy(true);message('Loading the two-house example…');try{const response=await fetch('/api/example');if(!response.ok)throw new Error('Unable to load the example');const source=await response.json();loadResult(await request('/api/load',{...source,format:'csv',startDate:$('start-date').value,timeZone:zone}));$('project-file').value='';$('calendar-file').value='';$('project-name').textContent='Two-house example · 72 tasks';$('calendar-name').textContent='Example calendar · 21 resources';}catch(error){failure(error);}finally{setBusy(false);}});
 for(const [id,label] of [['project-file','project-name'],['calendar-file','calendar-name']])$(id).addEventListener('change',()=>{$(label).textContent=$(id).files[0]?.name??'No file selected';});
@@ -88,16 +126,16 @@ $('recalculate').addEventListener('click',async()=>{if(!plan||busy)return;setBus
 $('tasks-body').addEventListener('change',event=>{const node=event.target;if(!node.dataset.field)return;const task=allTasks().find(t=>t.id===node.closest('tr').dataset.id),field=node.dataset.field;
  if(field==='dependsOn')task.dependsOn=node.value.trim()?node.value.split(',').map(s=>s.trim()):[];
  else if(['goodCase','poorCase'].includes(field)&&task.status==='active'){task.remaining[field]=node.valueAsNumber;task.remaining.estimateStatus='current';}
- else task[field]=node.type==='number'?node.valueAsNumber:node.value;changed();});
+ else task[field]=node.type==='number'?node.valueAsNumber:node.value;if(field==='resource')renderResources();changed();});
 $('project-filter').addEventListener('change',renderTasks);
-$('calendars-body').addEventListener('change',event=>{const node=event.target;if(node.dataset.day===undefined)return;const c=plan.calendar.resources.find(c=>c.resource===node.closest('tr').dataset.resource);c.weeklyHours[Number(node.dataset.day)]=node.valueAsNumber;changed();});
+$('calendars-body').addEventListener('change',event=>{const node=event.target;if(node.dataset.day===undefined)return;const c=plan.calendar.resources.find(c=>c.resource===node.closest('tr').dataset.resource);c.weeklyHours[Number(node.dataset.day)]=node.valueAsNumber;renderResources();changed();});
 $('workday-hours').addEventListener('change',()=>{plan.calendar.hoursPerWorkday=$('workday-hours').valueAsNumber;changed();});
 $('start-date').addEventListener('change',changed);
-$('add-exception').addEventListener('click',()=>{exceptions.push({resource:plan.calendar.resources[0].resource,date:'',hours:0});renderExceptions();changed();});
+$('add-exception').addEventListener('click',()=>{if(!plan.calendar?.resources.length)return;exceptions.push({resource:plan.calendar.resources[0].resource,date:'',hours:0});renderExceptions();changed();});
 $('exceptions-body').addEventListener('change',event=>{const node=event.target;if(!node.dataset.exception)return;const entry=exceptions[Number(node.closest('tr').dataset.index)];entry[node.dataset.exception]=node.type==='number'?node.valueAsNumber:node.value;changed();});
 $('exceptions-body').addEventListener('click',event=>{const node=event.target;if(node.dataset.remove===undefined)return;exceptions.splice(Number(node.dataset.remove),1);renderExceptions();changed();});
 for(const button of document.querySelectorAll('[data-tab]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-tab]')){b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button));}for(const name of ['tasks','feeding','deadlines','checklists','progress','calendars','notes','utilization','timeline','schedule'])$(name+'-view').classList.toggle('hidden',name!==button.dataset.tab);if(button.dataset.tab==='timeline')refreshTimeline();});
-$('download').addEventListener('click',()=>{if(dirty){failure(new Error('Recalculate before saving so the plan and forecasts match.'));return;}const blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`bufferlogic-${result.plan.versionId}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+$('download').addEventListener('click',()=>{const unassigned=allTasks().some(task=>!task.resource);if(dirty&&!unassigned){failure(new Error('Recalculate before saving so the plan and forecasts match.'));return;}let saved=result;try{if(unassigned)saved={plan:editablePlan(),needsAssignments:true};}catch(error){failure(error);return;}const blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`bufferlogic-${result.plan.versionId}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 
 function editablePlan(){
  if(plan.calendar && plan.calendar.startDate!==$('start-date').value && allTasks().some(t=>t.locked||t.actuals))throw new Error('This plan contains fixed commitments or actuals. Keep its recorded schedule start date.');
@@ -119,7 +157,7 @@ function renderNoteFields(){const editor=$('notes-editor');editor.replaceChildre
 $('notes-kind').addEventListener('change',renderNotes);$('notes-item').addEventListener('change',renderNoteFields);$('notes-editor').addEventListener('change',event=>{const field=event.target.dataset.note;if(!field)return;noteTarget(true)[field]=event.target.value;changed();});
 function hours(value){return Number(value.toFixed(2)).toLocaleString();}
 function projectsText(row){return row.projectHours.filter(p=>p.hours>1e-9).map(p=>`${p.projectName}: ${hours(p.hours)} h`).join(' · ')||'—';}
-function renderUtilization(){const report=result.utilization;$('utilization-content').classList.toggle('hidden',!report);$('utilization-empty').textContent=report?'':'Load a working calendar to report available and scheduled hours.';if(!report)return;const old=$('utilization-resource').value;$('utilization-resource').replaceChildren();for(const [id,label]of [['all','All resources'],...report.resources.map(r=>[r.resource,resourceName(r.resource,result.plan)])]){const option=element('option',label);option.value=id;$('utilization-resource').append(option);}if([...$('utilization-resource').options].some(o=>o.value===old))$('utilization-resource').value=old;renderUtilizationRows();}
+function renderUtilization(){const report=result.utilization;$('utilization-content').classList.toggle('hidden',!report);$('utilization-empty').textContent=report?'':result.needsAssignments?'Assign resources and recalculate to report utilization.':'Load a working calendar to report available and scheduled hours.';if(!report)return;const old=$('utilization-resource').value;$('utilization-resource').replaceChildren();for(const [id,label]of [['all','All resources'],...report.resources.map(r=>[r.resource,resourceName(r.resource,result.plan)])]){const option=element('option',label);option.value=id;$('utilization-resource').append(option);}if([...$('utilization-resource').options].some(o=>o.value===old))$('utilization-resource').value=old;renderUtilizationRows();}
 function renderUtilizationRows(){const report=result.utilization;if(!report)return;const resource=$('utilization-resource').value;$('utilization-period').textContent=`${dateText(report.startDate)} – ${dateText(report.finishDate)} · Remaining calculated schedule${result.conflicts.length?' · Some commitments are infeasible; inspect conflicts above':''}`;
  $('utilization-summary').replaceChildren();for(const row of report.resources.filter(r=>resource==='all'||r.resource===resource)){const tr=element('tr');for(const value of [resourceName(row.resource,result.plan),hours(row.availableHours),hours(row.scheduledHours),hours(row.remainingHours),row.utilizationPercent===null?'—':hours(row.utilizationPercent)+'%',projectsText(row)])tr.append(element('td',value));$('utilization-summary').append(tr);}
  renderUtilizationGraph(report,resource);$('utilization-weeks').replaceChildren();for(const row of report.weeks.filter(r=>resource==='all'||r.resource===resource)){const tr=element('tr');for(const value of [dateText(row.weekStart),resourceName(row.resource,result.plan),hours(row.availableHours),hours(row.scheduledHours),hours(row.remainingHours),row.utilizationPercent===null?'—':hours(row.utilizationPercent)+'%',projectsText(row),row.taskIds.join(', ')||'—'])tr.append(element('td',value));$('utilization-weeks').append(tr);}}
@@ -231,7 +269,7 @@ function feedingTime(day){if(!usesCalendarDates(result.plan))return `Day ${hours
 function renderFeeding(){
  const body=$('feeding-tasks');body.replaceChildren();
  for(const project of plan.projects)for(const task of project.tasks){const row=element('tr'),check=input('',`${task.id} latest safe start`,{type:'checkbox'});check.checked=plan.feedingTaskIds?.includes(task.id)??false;check.dataset.feedingTask=task.id;row.append(cell(check),element('td',project.name),element('td',`${task.id} · ${task.name}`),element('td',resourceName(task.resource)));body.append(row);}
- const host=$('feeding-report');host.replaceChildren();const report=result.feedingReport;if(!report){host.append(element('p','No feeding tasks selected in the last calculation.'));return;}
+ const host=$('feeding-report');host.replaceChildren();const report=result.feedingReport;if(!report){host.append(element('p',result.needsAssignments?'Assign resources and recalculate to calculate feeding protection.':'No feeding tasks selected in the last calculation.'));return;}
  for(const change of report.changes){const item=element('article');item.append(element('h4',`${taskName(change.taskId)} · ${change.status}`),element('p',change.reason));if(change.protectedStart!==null)item.append(element('p',`Start: ${feedingTime(change.originalStart)} → ${feedingTime(change.newStart)}. P50: ${hours(change.p50Effort)} workdays; P99: ${hours(change.p99Effort)} workdays; buffer: ${hours(change.bufferEffort)} workdays. Protected downstream start: ${feedingTime(change.protectedStart)}.`));const window=report.resourceWindows.find(w=>w.taskId===change.taskId);if(window)item.append(element('p',`${resourceName(window.resource)}: ${window.allocationPercent}% allocation freed from ${feedingTime(window.start)} to ${feedingTime(window.finish)}. Later occupied by this task from ${feedingTime(change.newStart)} to ${feedingTime(change.newFinish)}; protection reserves its allocation until ${feedingTime(change.protectionFinish??change.protectedStart)}. Other work can use safe earlier gaps.`));if(change.feedsHigherPriorityProject)item.append(element('p',`Owning project deterministic completion: ${change.ownerCompletionBefore===null?'unavailable':feedingTime(change.ownerCompletionBefore)} → ${change.ownerCompletionAfter===null?'unavailable':feedingTime(change.ownerCompletionAfter)}. Higher-priority downstream start remains protected.`));host.append(item);}
 }
 $('feeding-tasks').addEventListener('change',event=>{const node=event.target,id=node.dataset.feedingTask;if(!id)return;const ids=new Set(plan.feedingTaskIds??[]);if(node.checked)ids.add(id);else ids.delete(id);plan.feedingTaskIds=[...ids];changed();});

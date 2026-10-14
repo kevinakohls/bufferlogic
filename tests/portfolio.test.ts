@@ -139,3 +139,21 @@ test('worked contention example extends Project Two completion through Project O
  assert.throws(()=>schedulePortfolio({...snapshot,projects:[{...input.projects[0]!,tasks:[input.projects[0]!.tasks[0]!,{...input.projects[0]!.tasks[1]!,actualStart:1}]}]}),/precedes dependency/);
  assert.throws(()=>schedulePortfolio({...snapshot,projects:[{...input.projects[0]!,tasks:[input.projects[0]!.tasks[0]!,{...input.projects[0]!.tasks[1]!,actualStart:6}]}]}),/through asOf/);
  });
+
+test('resource reconciliation preserves idle resources and custom calendars, adds task resources with 40-hour defaults',()=>{
+ const input={...plan([task('A','P1',{resource:'New'})]),resources:['Idle'],calendar:{startDate:'2026-10-12',hoursPerWorkday:8,resources:[{resource:'CalendarOnly',weeklyHours:[4,4,4,4,4,0,0],exceptions:{'2026-10-13':0}}]}};
+ const copy=structuredClone(input),parsed=parsePortfolio(input);
+ assert.deepEqual(parsed.resources,['Idle','New','CalendarOnly']);
+ assert.deepEqual(parsed.calendar!.resources.find(r=>r.resource==='CalendarOnly'),input.calendar.resources[0]);
+ assert.deepEqual(parsed.calendar!.resources.find(r=>r.resource==='New')!.weeklyHours,[8,8,8,8,8,0,0]);
+ const result=schedulePortfolio(input);assert.equal(result.tasks[0]!.resource,'New');
+ assert.deepEqual(parsePortfolio(result.plan),result.plan);assert.deepEqual(input,copy);
+});
+
+test('blank task assignments survive draft parsing but cannot be scheduled or silently recreated',()=>{
+ const input={...plan([task('A','P1',{resource:''})]),resources:[]};
+ const parsed=parsePortfolio(input);assert.deepEqual(parsed.resources,[]);assert.equal(parsed.projects[0]!.tasks[0]!.resource,'');
+ assert.throws(()=>schedulePortfolio(parsed),/Assign a resource before scheduling: A/);
+ const fixed={...parsed,resources:['Replacement'],projects:parsed.projects.map(p=>({...p,tasks:p.tasks.map(t=>({...t,resource:'Replacement'}))}))};
+ assert.equal(schedulePortfolio(fixed).tasks[0]!.resource,'Replacement');
+});

@@ -42,7 +42,7 @@ computer, not the network. Node.js 22 or newer remains required.
 4. Click **Recalculate schedule**. Edited forecasts replace the previous calculation only
    after successful validation. Changes pending and errors explicitly mark previous
    results as out of date. Invalid edits remain available to correct.
-5. In **Resource calendars**, edit weekly availability. For example, give the Framing Crew
+5. In **Resources & calendars**, edit weekly availability. For example, give the Framing Crew
    eight Saturday hours and recalculate. **Add exception** supports dated holidays,
    absences and extra hours; an exception replaces normal hours for that date. Remove
    an exception to restore the weekly rule.
@@ -323,3 +323,13 @@ a fictitious band. Different P20/P80 estimates produce a positive buffer if they
 fit. A feeder's P99 window can end earlier than D's start because of shared-resource
 reservations. Extra waiting between that window and D is not additional reserved
 feeding buffer.
+
+## Manage resources and unassigned tasks
+
+Open **Resources & calendars** to add or delete resources, including when the list is empty. Loading and recalculating reconcile the list with task assignments and existing calendars. Unused resources remain until explicitly deleted. Resources missing a calendar receive eight-hour weekdays (40 hours per week); custom weekly hours and dated exceptions are preserved. Without a calendar, the resource list shows the assumed 40-hour week and scheduling remains in abstract days.
+
+**Delete** asks “Are you sure?” and explains that affected tasks become unassigned. Confirming removes the resource, its calendar, dated exceptions and descriptive details; all affected task resource fields become blank. Cancelling leaves everything intact. Assign replacements in **Tasks**. The engine refuses to schedule any unassigned task, including active, held or completed work; it never invents a replacement resource.
+
+You may **Save workspace** with unassigned tasks before recalculating. That file is a draft containing the edited plan and no calculated forecasts. Reopening it keeps tasks unassigned and displays a request to assign resources. Normal workspaces still require recalculation before saving edited results.
+
+Manual check: load a plan with task resources missing from its resource array; verify they appear. Add an idle resource, reassign tasks, and recalculate; verify it remains. Cancel a deletion, then confirm it; verify the task dropdowns say Unassigned. Save and reopen the draft, add a replacement, reassign the tasks and recalculate. Delete all resources and verify Add resource still works. In calendar mode verify new resources have eight-hour weekdays, custom hours survive, and deleted-resource exceptions are removed.

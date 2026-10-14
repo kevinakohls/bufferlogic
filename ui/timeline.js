@@ -33,7 +33,7 @@ function details(){
 }
 function selectTask(id,scroll=false){selectedId=id;$('timeline-task').value=id;draw();if(scroll){const node=[...$('timeline-chart').querySelectorAll('[data-task]')].find(n=>n.dataset.task===id);node?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});}}
 function draw(){
- if(!result)return;
+ if(!result||!result.projects.length)return;
  const project=result.projects.find(p=>p.id===projectId);const chain=project.forecast.criticalChain,chainSet=new Set(chain),chainPairs=new Set(chain.slice(1).map((id,i)=>`${chain[i]}\0${id}`));
  const cross=chain.filter(id=>scheduled(id).projectId!==projectId).length;
  $('timeline-summary').textContent=`${project.name}${project.forecast.withheldReason?' · Full completion forecast withheld':''}: ${chain.length} critical-chain tasks${cross?`, including ${cross} from another project`:''}${forecastState(project.forecast).timelineWarning}.`;

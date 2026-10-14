@@ -155,7 +155,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
       if(t.checklist!==undefined&&(!Array.isArray(t.checklist)||!t.checklist.every((item:unknown)=>object(item)&&text(item.text)&&typeof item.completed==='boolean')))throw new Error('Checklist items require nonempty text and completed true/false');
       if(t.actualStart!==undefined&&!day(t.actualStart))throw new Error('Invalid actualStart');
       const milestone = t.goodCase === 0 && t.poorCase === 0;
-      const parsed = parseProject({ tasks: [{ ...t, ...(milestone ? { goodCase: 1, poorCase: 1 } : {}) }] })[0]!;
+      const parsed = parseProject({ tasks: [{ ...t, ...(milestone ? { goodCase: 1, poorCase: 1 } : {}) }] }, {allowUnassignedResource: true})[0]!;
       if (t.allocationPercent !== undefined && (typeof t.allocationPercent !== 'number'
           || !Number.isFinite(t.allocationPercent) || t.allocationPercent <= 0 || t.allocationPercent > 100)) throw new Error('Allocation must be greater than 0 and at most 100');
       let locked: PortfolioTask['locked'];
@@ -171,12 +171,30 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
     });
     return { id: p.id, name: p.name, tasks, ...(p.onHold===undefined?{}:{onHold:p.onHold as boolean}), ...(p.deadline===undefined?{}:{deadline:validateDeadline(p.deadline)}), ...strings(p,['description','comments','owner']) };
   });
+  const resources = [...value.resources] as string[];
+  const knownResources = new Set(resources);
+  for (const project of projects) for (const task of project.tasks) {
+    if (task.resource && !knownResources.has(task.resource)) {
+      resources.push(task.resource);
+      knownResources.add(task.resource);
+    }
+  }
+  // Preserve idle resources and calendar-only resources instead of rebuilding from tasks.
+  let calendar = value.calendar === undefined ? undefined : validateCalendarSettings(value.calendar);
+  if (calendar) {
+    for (const entry of calendar.resources) if (!knownResources.has(entry.resource)) {
+      resources.push(entry.resource);
+      knownResources.add(entry.resource);
+    }
+    const calendarIds = new Set(calendar.resources.map(entry => entry.resource));
+    calendar = {...calendar, resources: [...calendar.resources, ...resources.filter(id => !calendarIds.has(id)).map(resource => ({resource, weeklyHours:[8,8,8,8,8,0,0], exceptions:{}}))]};
+  }
   let resourceDetails:ResourceDetails[]|undefined;
   if(value.resourceDetails!==undefined){
     if(!Array.isArray(value.resourceDetails))throw new Error('resourceDetails must be an array');
     const seen=new Set<string>();
     resourceDetails=value.resourceDetails.map((r:unknown)=>{
-      if(!object(r)||!text(r.id)||!(value.resources as string[]).includes(r.id)||seen.has(r.id))throw new Error('Resource details require unique existing resource IDs');
+      if(!object(r)||!text(r.id)||!knownResources.has(r.id)||seen.has(r.id))throw new Error('Resource details require unique existing resource IDs');
       seen.add(r.id);return {id:r.id,...strings(r,['name','role','description','comments'])};
     });
   }
@@ -185,10 +203,10 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
   for(const id of value.feedingTaskIds as string[]|undefined??[])if(!knownTaskIds.has(id))throw new Error(`Unknown feeding task: ${id}`);
   if (value.taskOrderOverrides !== undefined && (!Array.isArray(value.taskOrderOverrides) || !value.taskOrderOverrides.every(text))) throw new Error('Invalid taskOrderOverrides');
   return { id: value.id, versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days',...(value.settings.displayTime===undefined?{}:{displayTime:value.settings.displayTime}) },
-    resources: [...value.resources] as string[], projects,
+    resources, projects,
     ...(value.feedingTaskIds===undefined?{}:{feedingTaskIds:[...value.feedingTaskIds] as string[]}),
     ...(resourceDetails===undefined?{}:{resourceDetails}),
-    ...(value.calendar === undefined ? {} : { calendar: validateCalendarSettings(value.calendar) }),
+    ...(calendar === undefined ? {} : { calendar }),
     ...(value.approvalStatus === undefined ? {} : { approvalStatus: value.approvalStatus }),
     ...(value.taskOrderOverrides === undefined ? {} : { taskOrderOverrides: [...value.taskOrderOverrides] as string[] }) };
 }
@@ -203,6 +221,8 @@ export interface PlacementConstraints {
 /** Non-preemptive capacity scheduling with fixed reservations and immutable schedule history. */
 export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResult, placement?: PlacementConstraints): PortfolioResult {
   const plan = parsePortfolio(input); // detached snapshot, validate typed callers too
+  const unassigned = plan.projects.flatMap(project => project.tasks).filter(task => !task.resource);
+  if (unassigned.length) throw new Error(`Assign a resource before scheduling: ${unassigned.map(task => task.id).join(', ')}`);
   if(plan.feedingTaskIds?.length&&!placement)return scheduleFeedingPortfolio(plan,previous,schedulePortfolio);
   const calendar = plan.calendar ? createCalendar(plan.calendar) : undefined;
   if (calendar) for (const resource of plan.resources) calendar.available(resource, plan.asOf);

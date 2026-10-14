@@ -8,7 +8,11 @@ import { parsePortfolio, schedulePortfolio } from './portfolio.js';
 import { parsePortfolioCsv } from './portfolio-csv.js';
 import { parseResourceCalendarsCsv, todayDate } from './resource-calendars.js';
 
-function reviewResult(plan:unknown){const result=schedulePortfolio(parsePortfolio(plan));return {...result,...(result.plan.calendar?{utilization:resourceUtilization(result)}:{})};}
+function reviewResult(input:unknown){
+ const plan=parsePortfolio(input);
+ const unassignedTaskIds=plan.projects.flatMap(project=>project.tasks).filter(task=>!task.resource).map(task=>task.id);
+ if(unassignedTaskIds.length)return {plan,needsAssignments:true,unassignedTaskIds};
+ const result=schedulePortfolio(plan);return {...result,...(result.plan.calendar?{utilization:resourceUtilization(result)}:{})};}
 const root = new URL('../../', import.meta.url);
 async function body(request:IncomingMessage):Promise<Record<string,unknown>> {
   if (!request.headers['content-type']?.startsWith('application/json')) throw new Error('Send JSON data');

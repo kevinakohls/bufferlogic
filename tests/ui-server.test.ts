@@ -63,3 +63,14 @@ test('review API persists feeding selections, applies protection and rejects sta
  const bad=await post(base,'/api/load',{projectText:JSON.stringify({...plan,feedingTaskIds:['missing']}),format:'json'});assert.equal(bad.status,400);assert.match((await bad.json()).error,/Unknown feeding task/);
  const cleared=await (await post(base,'/api/schedule',{plan:{...updated.plan,feedingTaskIds:[]}})).json();assert.equal(cleared.feedingReport,undefined);assert.equal(cleared.tasks.find((task:{id:string})=>task.id==='L').start,4);
 }));
+
+test('unassigned workspaces reopen as editable drafts with no misleading forecasts, then schedule after assignment',async()=>withServer(async base=>{
+ const source=JSON.parse(await readFile('examples/feeding-protection.json','utf8'));
+ source.resources=[];for(const project of source.projects)for(const task of project.tasks)task.resource='';
+ const loadedResponse=await post(base,'/api/load',{projectText:JSON.stringify(source),format:'json'});assert.equal(loadedResponse.status,200);
+ const loaded=await loadedResponse.json();assert.equal(loaded.needsAssignments,true);assert.equal(loaded.unassignedTaskIds.length,4);assert.deepEqual(loaded.plan.resources,[]);assert.equal(loaded.projects,undefined);assert.equal(loaded.tasks,undefined);
+ const rescheduled=await (await post(base,'/api/schedule',{plan:loaded.plan})).json();assert.equal(rescheduled.needsAssignments,true);assert.deepEqual(rescheduled.plan.resources,[]);
+ const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(loaded),format:'json'})).json();assert.deepEqual(reopened.plan,loaded.plan);
+ for(const project of reopened.plan.projects)for(const task of project.tasks)task.resource='New';
+ const scheduled=await (await post(base,'/api/schedule',{plan:reopened.plan})).json();assert.equal(scheduled.needsAssignments,undefined);assert.equal(scheduled.tasks.length,4);assert.deepEqual(scheduled.plan.resources,['New']);
+}));

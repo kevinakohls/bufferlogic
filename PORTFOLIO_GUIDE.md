@@ -270,3 +270,11 @@ without one the UI falls back to abstract day numbers. With calendars, day numbe
 are elapsed calendar offsets, not workday counts. Existing plans without the
 preference retain the previous date-if-calendared behavior. JSON numeric offsets
 and completion dates remain available independently of the display preference.
+
+## Resource list reconciliation and draft assignments
+
+`parsePortfolio` and `schedulePortfolio` preserve explicitly listed idle resources and add missing nonempty task resource IDs and calendar-only IDs to `resources`. Existing resource calendars are preserved; missing entries in an existing calendar default to `[8,8,8,8,8,0,0]` with no exceptions. A plan without a calendar remains on the abstract-day axis.
+
+A portfolio task may have `resource: ""` in an editable JSON draft. Parsing preserves it without adding an empty resource to the list. `schedulePortfolio` rejects these plans with the task IDs requiring assignments. The review API returns `{plan, needsAssignments: true, unassignedTaskIds}` instead of calculated tasks or forecasts for such drafts. Consumers must check this draft response before reading forecast fields. Legacy single-project parsing remains strict by default.
+
+The UI deletes a resource only after confirmation, clears all its task assignments, and removes its calendar and descriptive details. Reassignment does not remove the previous resource automatically.

@@ -57,7 +57,7 @@ test('calendar settings validate real dates, unique resources, hours and bounded
  assert.throws(()=>validateCalendarSettings({...config(),hoursPerWorkday:0}),/hoursPerWorkday/);
  assert.throws(()=>validateCalendarSettings({...config(),resources:[...config().resources,...config().resources]}),/unique/);
  assert.throws(()=>validateCalendarSettings({...config(),resources:[{resource:'Alice',weeklyHours:[25,0,0,0,0,0,0],exceptions:{}}]}),/weekly/);
- assert.throws(()=>schedulePortfolio({...plan([task('A')]),resources:['Alice','Bob']}),/Missing resource/);
+ assert.deepEqual(schedulePortfolio({...plan([task('A')]),resources:['Alice','Bob']}).plan.calendar!.resources.find(r=>r.resource==='Bob')!.weeklyHours,[8,8,8,8,8,0,0]);
  assert.throws(()=>createCalendar({...config(),resources:[{resource:'Alice',weeklyHours:[0,0,0,0,0,0,0],exceptions:{}}]}).finish('Alice',0,1),/No working/);
 });
 test('calendar CSV loads weekly schedules and exceptions; rejects duplicate or malformed rows',async()=>{
