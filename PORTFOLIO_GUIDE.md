@@ -215,8 +215,12 @@ P99 uses the same P20/P80 lognormal fit; allocation scales P50 and P99 inversely
 The feeding buffer is P99 minus P50. Resource calendars are traversed backward.
 
 Protected placements are internal scheduling constraints, not saved user locks or
-new fixed percentile anchors. Higher-priority project entries, the feeder owner's
-critical chain and direct downstream starts are preserved. The feeder's resource
+new fixed percentile anchors. Ordinary feeding preserves higher-priority project
+entries, the feeder owner's critical chain and all direct downstream starts.
+For a cross-project feeder supplying higher-priority work, protection preserves
+higher-priority project entries and higher-priority direct downstream starts;
+the owner's critical chain and lower-priority successors may move later.
+Active work and user locks remain protected in both cases. The feeder's resource
 allocation is reserved across its P50 execution and remaining P99 protection
 window. Other work can use earlier capacity only if the entire nonpreemptive task
 fits. Actuals and user locks keep their existing behavior. Unsafe attempts fall

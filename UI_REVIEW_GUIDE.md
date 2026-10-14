@@ -100,7 +100,8 @@ Open the **Timeline** tab after loading or calculating a plan.
   stay visible, and amber task bars include controlling work belonging to the other
   project. The summary reports how many chain tasks belong to another project.
 - Solid blue links represent technical dependencies; dashed purple links represent
-  resource waits. By default, only links along the selected critical chain are shown.
+  resource waits. The default view includes the selected critical chain and its
+  feeding dependencies; applied feeding dependencies use teal arrows.
   **Show links** can instead show connections for the selected task, all links, or none.
 - Click a task bar or its label to open its resource, timing, allocation, estimates,
   predecessors and commitment details. Predecessor buttons navigate to those tasks.
@@ -252,8 +253,11 @@ Select unstarted, unlocked working tasks. A task on its owning project’s criti
 chain is eligible when it directly feeds a higher-priority project. The report
 shows its owning project’s before/after deterministic completion. The first version uses individual task P99 values, not aggregate
 feeding-chain percentiles. Select independent feeders; immediate feeder-to-feeder
-links are rejected. Higher-priority project timings, the owner's critical chain,
-active work, user locks and downstream starts stay protected. If P99 slack or
+links are rejected. Ordinary feeding protects the owner's critical chain and all
+direct downstream starts. For a cross-project feeder supplying higher-priority
+work, higher-priority project timings and higher-priority direct downstream starts
+stay protected; the owner's critical chain and lower-priority successors may move
+later. Active work and user locks remain protected in both cases. If P99 slack or
 resource constraints prevent safe placement, the original forward schedule is
 retained with a reason. Multiple conflicting selections can cause the complete
 attempt to be retained as the forward plan; try one feeder at a time.
