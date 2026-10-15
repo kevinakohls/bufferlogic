@@ -1,0 +1,436 @@
+{
+  "id": "bufferlogic-manual-functional-review",
+  "versionId": "manual-review-v1",
+  "asOf": 0,
+  "approvalStatus": "draft",
+  "settings": {
+    "durationUnit": "days",
+    "displayTime": "dates"
+  },
+  "resources": [
+    "Kevin Kohls"
+  ],
+  "resourceDetails": [
+    {
+      "id": "Kevin Kohls",
+      "name": "Kevin Kohls",
+      "role": "Manual functionality reviewer"
+    }
+  ],
+  "calendar": {
+    "startDate": "2026-10-15",
+    "timeZone": "America/New_York",
+    "hoursPerWorkday": 8,
+    "resources": [
+      {
+        "resource": "Kevin Kohls",
+        "weeklyHours": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          0,
+          0
+        ],
+        "exceptions": {}
+      }
+    ]
+  },
+  "projects": [
+    {
+      "id": "MANUAL-REVIEW",
+      "name": "BufferLogic manual functionality review",
+      "owner": "Kevin Kohls",
+      "description": "Nine ordered review sections. Open this tracker in one browser window and perform the tests in a separate window/workspace. Save both separately so test actions do not overwrite the review tracker.",
+      "tasks": [
+        {
+          "id": "REVIEW-01",
+          "projectId": "MANUAL-REVIEW",
+          "name": "1. Create a project",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [],
+          "priority": 1,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "In a separate test workspace, click New project, name it Release One, and create it.",
+              "completed": false
+            },
+            {
+              "text": "Confirm the project appears with No tasks yet rather than a completion forecast.",
+              "completed": false
+            },
+            {
+              "text": "Confirm the schedule start date is correct.",
+              "completed": false
+            },
+            {
+              "text": "Save the empty test workspace and reopen it. Confirm the project remains.",
+              "completed": false
+            }
+          ]
+        },
+        {
+          "id": "REVIEW-02",
+          "projectId": "MANUAL-REVIEW",
+          "name": "2. Add resources",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [
+            "REVIEW-01"
+          ],
+          "priority": 2,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "In the test workspace, add Developer and Tester in Resources & calendars.",
+              "completed": false
+            },
+            {
+              "text": "Confirm each defaults to 40 hours: eight hours Monday\u2013Friday.",
+              "completed": false
+            },
+            {
+              "text": "Try adding Developer again. Confirm a duplicate is rejected.",
+              "completed": false
+            },
+            {
+              "text": "Change Tester to four hours each weekday. Confirm its weekly total is 20 hours.",
+              "completed": false
+            }
+          ]
+        },
+        {
+          "id": "REVIEW-03",
+          "projectId": "MANUAL-REVIEW",
+          "name": "3. Add tasks and dependencies",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [
+            "REVIEW-02"
+          ],
+          "priority": 3,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "Create Design: Developer, good/P20 1 day, poor/P80 2 days, no predecessors.",
+              "completed": false
+            },
+            {
+              "text": "Create Build: Developer, good/P20 3 days, poor/P80 5 days, depending on Design using its generated ID.",
+              "completed": false
+            },
+            {
+              "text": "Create Test: Tester, good/P20 1 day, poor/P80 2 days, depending on Build using its generated ID.",
+              "completed": false
+            },
+            {
+              "text": "Confirm unique IDs, the correct project, and correct names, resources, estimates and dependencies.",
+              "completed": false
+            },
+            {
+              "text": "Try an unknown dependency ID. Confirm an understandable error.",
+              "completed": false
+            },
+            {
+              "text": "Add a fourth task with no resource. Confirm it visibly shows Unassigned.",
+              "completed": false
+            },
+            {
+              "text": "Save and reopen that draft. Confirm the fourth task remains unassigned.",
+              "completed": false
+            },
+            {
+              "text": "Assign the fourth task to Developer and recalculate.",
+              "completed": false
+            }
+          ]
+        },
+        {
+          "id": "REVIEW-04",
+          "projectId": "MANUAL-REVIEW",
+          "name": "4. Review the schedule",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [
+            "REVIEW-03"
+          ],
+          "priority": 4,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "Confirm Design finishes before Build starts, and Build finishes before Test starts.",
+              "completed": false
+            },
+            {
+              "text": "Confirm the timeline shows Design \u2192 Build \u2192 Test dependency links.",
+              "completed": false
+            },
+            {
+              "text": "Confirm Developer tasks do not overlap at 100% allocation.",
+              "completed": false
+            },
+            {
+              "text": "Confirm P50 \u2264 P80 \u2264 P95 \u2264 P98 \u2264 P99 for the completion forecast.",
+              "completed": false
+            },
+            {
+              "text": "Switch Time display between days and dates. Confirm assignments do not change.",
+              "completed": false
+            },
+            {
+              "text": "Increase Build estimates and recalculate. Confirm duration and downstream forecasts respond.",
+              "completed": false
+            }
+          ]
+        },
+        {
+          "id": "REVIEW-05",
+          "projectId": "MANUAL-REVIEW",
+          "name": "5. Update task checklists",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [
+            "REVIEW-04"
+          ],
+          "priority": 5,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "Select Build in Task checklists and add two checklist items.",
+              "completed": false
+            },
+            {
+              "text": "Edit one checklist item and mark the other complete.",
+              "completed": false
+            },
+            {
+              "text": "Remove one checklist item.",
+              "completed": false
+            },
+            {
+              "text": "Confirm checking an item does not automatically complete the task or change its duration.",
+              "completed": false
+            },
+            {
+              "text": "Recalculate, save and reopen. Confirm checklist edits remain.",
+              "completed": false
+            }
+          ]
+        },
+        {
+          "id": "REVIEW-06",
+          "projectId": "MANUAL-REVIEW",
+          "name": "6. Test resource reassignment and deletion",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [
+            "REVIEW-05"
+          ],
+          "priority": 6,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "Add an unused resource named Backup.",
+              "completed": false
+            },
+            {
+              "text": "Recalculate. Confirm Backup remains listed.",
+              "completed": false
+            },
+            {
+              "text": "Reassign a task from Developer to Backup. Confirm Developer remains listed.",
+              "completed": false
+            },
+            {
+              "text": "Click Delete for Backup, then Cancel. Confirm nothing changes.",
+              "completed": false
+            },
+            {
+              "text": "Delete Backup and confirm. Verify its affected task becomes Unassigned.",
+              "completed": false
+            },
+            {
+              "text": "Recalculate. Confirm assignments are requested and no new completion forecast is provided.",
+              "completed": false
+            },
+            {
+              "text": "Reassign the task to an existing resource and recalculate successfully.",
+              "completed": false
+            }
+          ]
+        },
+        {
+          "id": "REVIEW-07",
+          "projectId": "MANUAL-REVIEW",
+          "name": "7. Test multiple projects and priorities",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [
+            "REVIEW-06"
+          ],
+          "priority": 7,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "Create Release Two. Confirm Release One and its tasks remain intact.",
+              "completed": false
+            },
+            {
+              "text": "Add an independent task in Release Two using Developer.",
+              "completed": false
+            },
+            {
+              "text": "Recalculate and note the task order.",
+              "completed": false
+            },
+            {
+              "text": "Move Release Two above Release One and recalculate. Confirm eligible shared-resource work responds to project priority.",
+              "completed": false
+            },
+            {
+              "text": "Put Release Two on hold and recalculate. Confirm unstarted, unlocked work is suspended and capacity becomes available.",
+              "completed": false
+            },
+            {
+              "text": "Resume Release Two and recalculate. Confirm its work returns.",
+              "completed": false
+            }
+          ]
+        },
+        {
+          "id": "REVIEW-08",
+          "projectId": "MANUAL-REVIEW",
+          "name": "8. Test progress, deadlines and calendars",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [
+            "REVIEW-07"
+          ],
+          "priority": 8,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "Mark a task In progress; enter a valid actual start and remaining estimates; recalculate.",
+              "completed": false
+            },
+            {
+              "text": "Mark that task Complete with valid actual dates. Confirm dependent work respects its actual finish.",
+              "completed": false
+            },
+            {
+              "text": "Set an early project deadline. Confirm a warning appears without automatically moving tasks.",
+              "completed": false
+            },
+            {
+              "text": "Add a zero-hour calendar exception on a future working day and recalculate. Confirm affected work moves around it.",
+              "completed": false
+            },
+            {
+              "text": "Confirm custom weekly hours remain after recalculating and reopening.",
+              "completed": false
+            }
+          ]
+        },
+        {
+          "id": "REVIEW-09",
+          "projectId": "MANUAL-REVIEW",
+          "name": "9. Final save and reopen",
+          "resource": "Kevin Kohls",
+          "goodCase": 0.125,
+          "poorCase": 0.25,
+          "dependsOn": [
+            "REVIEW-08"
+          ],
+          "priority": 9,
+          "allocationPercent": 100,
+          "durationMode": "working",
+          "status": "planned",
+          "description": "Run these checks in a separate test workspace. Keep this workspace as the review tracker. Estimates default to 1\u20132 working hours per section; adjust to your needs.",
+          "completionCriteria": "All checks reviewed; failures documented in task comments with expected and actual results, screenshot reference, and saved reproducing workspace.",
+          "comments": "Results: record PASS / FAIL / NOT TESTED here. Leave failed or untested checklist items unchecked; mark a task Complete in Progress only when ready.",
+          "checklist": [
+            {
+              "text": "Recalculate and save the finished test workspace.",
+              "completed": false
+            },
+            {
+              "text": "Refresh the test browser window and reopen the saved test workspace.",
+              "completed": false
+            },
+            {
+              "text": "Confirm project names, order and hold status remain.",
+              "completed": false
+            },
+            {
+              "text": "Confirm task names, assignments, dependencies and estimates remain.",
+              "completed": false
+            },
+            {
+              "text": "Confirm checklists, progress, deadlines and calendars remain.",
+              "completed": false
+            },
+            {
+              "text": "Confirm scheduling still works after reopening.",
+              "completed": false
+            },
+            {
+              "text": "Save this manual-review tracking workspace with its checklist results and comments.",
+              "completed": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
