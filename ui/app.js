@@ -18,8 +18,10 @@ function allTasks(){return plan.projects.flatMap(p=>p.tasks);}
 function taskName(id){const t=result.plan.projects.flatMap(p=>p.tasks).find(t=>t.id===id);return t?`${t.id} · ${t.name}`:id;}
 function renderResults(){
  const cards=$('project-cards');cards.replaceChildren();
+ if(result.needsTasks)cards.append(element('p','No tasks yet. Add resources in Resources & calendars, then use Add task in Tasks.','timeline-note'));
  if(result.needsAssignments)cards.append(element('p','Schedule not calculated. Assign a resource to every task, then recalculate.','timeline-note'));
  for(const project of result.projects){
+  if(!result.plan.projects.find(p=>p.id===project.id)?.tasks.length){const empty=element('article',undefined,'project-card');empty.append(element('h3',project.name),element('p','No tasks yet. Add tasks to calculate a forecast.'));cards.append(empty);continue;}
   const f=project.forecast,card=element('article',undefined,'project-card'),top=element('div',undefined,'card-top');
   const presentation=forecastState(f);top.append(element('h3',project.name),element('span',presentation.badgeText,presentation.badgeClass));
   card.append(top,element('div','P95 · Conservative completion forecast','p95-label'),element('p',valueText(f,'p95'),'p95-date'),element('p',`Deterministic schedule: ${valueText(f,'deterministic')}`,'deterministic'));
@@ -66,7 +68,7 @@ function renderResources(){
  }
 }
 function resourceListChanged(){
- renderResources();renderCalendars();renderTasks();renderNotes();changed();
+ renderResources();renderCalendars();renderTasks();renderNotes();if(!$('add-task-panel').classList.contains('hidden'))renderNewTaskFields();changed();
 }
 $('add-resource').addEventListener('click',()=>{
  if(!plan)return;
@@ -104,12 +106,12 @@ function renderExceptions(){
  for(const [field,node] of [['resource',select(exception.resource,`Exception ${index+1} resource`,plan.calendar.resources.map(c=>[c.resource,c.resource]))],['date',input(exception.date,`Exception ${index+1} date`,{type:'date'})],['hours',input(exception.hours,`Exception ${index+1} hours`,{type:'number',min:0,max:24,step:'any'})]]){node.dataset.exception=field;row.append(cell(node));}
  const remove=element('button','Remove','remove');remove.dataset.remove=index;remove.type='button';row.append(cell(remove));body.append(row);});
 }
-function loadResult(value){result=value.needsAssignments?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
+function loadResult(value){result=(value.needsAssignments||value.needsTasks)?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
  if(plan.calendar)$('start-date').value=plan.calendar.startDate;
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
  $('workspace').classList.remove('hidden');$('error').classList.add('hidden');$('freshness').textContent='Calculated from the current plan';
  const filter=$('project-filter'),previousFilter=filter.value;filter.replaceChildren();for(const [id,name] of [['all','All projects'],...plan.projects.map(p=>[p.id,p.name])]){const option=element('option',name);option.value=id;filter.append(option);}if([...filter.options].some(o=>o.value===previousFilter))filter.value=previousFilter;
- renderTimeDisplay();renderResults();renderProjectOrder();renderTasks();renderProgress();renderChecklists();renderDeadlines();renderFeeding();renderCalendars();renderNotes();renderUtilization();message(result.needsAssignments?'Assign resources to the unassigned tasks, then recalculate.':`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`,Boolean(result.needsAssignments));if(result.needsAssignments)$('freshness').textContent='Not calculated · tasks need resources';
+ renderTimeDisplay();renderResults();renderProjectOrder();renderTasks();if(!$('add-task-panel').classList.contains('hidden'))renderNewTaskFields();renderProgress();renderChecklists();renderDeadlines();renderFeeding();renderCalendars();renderNotes();renderUtilization();message(result.needsTasks?'Project created. Add resources and tasks to get started.':result.needsAssignments?'Assign resources to the unassigned tasks, then recalculate.':`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`,Boolean(result.needsAssignments||result.needsTasks));if(result.needsTasks)$('freshness').textContent='Not calculated · add tasks to get started';if(result.needsAssignments)$('freshness').textContent='Not calculated · tasks need resources';
 }
 $('example').addEventListener('click',async()=>{setBusy(true);message('Loading the two-house example…');try{const response=await fetch('/api/example');if(!response.ok)throw new Error('Unable to load the example');const source=await response.json();loadResult(await request('/api/load',{...source,format:'csv',startDate:$('start-date').value,timeZone:zone}));$('project-file').value='';$('calendar-file').value='';$('project-name').textContent='Two-house example · 72 tasks';$('calendar-name').textContent='Example calendar · 21 resources';}catch(error){failure(error);}finally{setBusy(false);}});
 for(const [id,label] of [['project-file','project-name'],['calendar-file','calendar-name']])$(id).addEventListener('change',()=>{$(label).textContent=$(id).files[0]?.name??'No file selected';});
@@ -135,7 +137,7 @@ $('add-exception').addEventListener('click',()=>{if(!plan.calendar?.resources.le
 $('exceptions-body').addEventListener('change',event=>{const node=event.target;if(!node.dataset.exception)return;const entry=exceptions[Number(node.closest('tr').dataset.index)];entry[node.dataset.exception]=node.type==='number'?node.valueAsNumber:node.value;changed();});
 $('exceptions-body').addEventListener('click',event=>{const node=event.target;if(node.dataset.remove===undefined)return;exceptions.splice(Number(node.dataset.remove),1);renderExceptions();changed();});
 for(const button of document.querySelectorAll('[data-tab]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-tab]')){b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button));}for(const name of ['tasks','feeding','deadlines','checklists','progress','calendars','notes','utilization','timeline','schedule'])$(name+'-view').classList.toggle('hidden',name!==button.dataset.tab);if(button.dataset.tab==='timeline')refreshTimeline();});
-$('download').addEventListener('click',()=>{const unassigned=allTasks().some(task=>!task.resource);if(dirty&&!unassigned){failure(new Error('Recalculate before saving so the plan and forecasts match.'));return;}let saved=result;try{if(unassigned)saved={plan:editablePlan(),needsAssignments:true};}catch(error){failure(error);return;}const blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`bufferlogic-${result.plan.versionId}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+$('download').addEventListener('click',()=>{const unassigned=allTasks().some(task=>!task.resource),empty=!allTasks().length;if(dirty&&!unassigned&&!empty){failure(new Error('Recalculate before saving so the plan and forecasts match.'));return;}let saved=result;try{if(unassigned||empty)saved={plan:editablePlan(),...(empty?{needsTasks:true}:{needsAssignments:true})};}catch(error){failure(error);return;}const blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`bufferlogic-${result.plan.versionId}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 
 function editablePlan(){
  if(plan.calendar && plan.calendar.startDate!==$('start-date').value && allTasks().some(t=>t.locked||t.actuals))throw new Error('This plan contains fixed commitments or actuals. Keep its recorded schedule start date.');
@@ -157,7 +159,7 @@ function renderNoteFields(){const editor=$('notes-editor');editor.replaceChildre
 $('notes-kind').addEventListener('change',renderNotes);$('notes-item').addEventListener('change',renderNoteFields);$('notes-editor').addEventListener('change',event=>{const field=event.target.dataset.note;if(!field)return;noteTarget(true)[field]=event.target.value;changed();});
 function hours(value){return Number(value.toFixed(2)).toLocaleString();}
 function projectsText(row){return row.projectHours.filter(p=>p.hours>1e-9).map(p=>`${p.projectName}: ${hours(p.hours)} h`).join(' · ')||'—';}
-function renderUtilization(){const report=result.utilization;$('utilization-content').classList.toggle('hidden',!report);$('utilization-empty').textContent=report?'':result.needsAssignments?'Assign resources and recalculate to report utilization.':'Load a working calendar to report available and scheduled hours.';if(!report)return;const old=$('utilization-resource').value;$('utilization-resource').replaceChildren();for(const [id,label]of [['all','All resources'],...report.resources.map(r=>[r.resource,resourceName(r.resource,result.plan)])]){const option=element('option',label);option.value=id;$('utilization-resource').append(option);}if([...$('utilization-resource').options].some(o=>o.value===old))$('utilization-resource').value=old;renderUtilizationRows();}
+function renderUtilization(){const report=result.utilization;$('utilization-content').classList.toggle('hidden',!report);$('utilization-empty').textContent=report?'':result.needsTasks?'Add tasks to calculate resource utilization.':result.needsAssignments?'Assign resources and recalculate to report utilization.':'Load a working calendar to report available and scheduled hours.';if(!report)return;const old=$('utilization-resource').value;$('utilization-resource').replaceChildren();for(const [id,label]of [['all','All resources'],...report.resources.map(r=>[r.resource,resourceName(r.resource,result.plan)])]){const option=element('option',label);option.value=id;$('utilization-resource').append(option);}if([...$('utilization-resource').options].some(o=>o.value===old))$('utilization-resource').value=old;renderUtilizationRows();}
 function renderUtilizationRows(){const report=result.utilization;if(!report)return;const resource=$('utilization-resource').value;$('utilization-period').textContent=`${dateText(report.startDate)} – ${dateText(report.finishDate)} · Remaining calculated schedule${result.conflicts.length?' · Some commitments are infeasible; inspect conflicts above':''}`;
  $('utilization-summary').replaceChildren();for(const row of report.resources.filter(r=>resource==='all'||r.resource===resource)){const tr=element('tr');for(const value of [resourceName(row.resource,result.plan),hours(row.availableHours),hours(row.scheduledHours),hours(row.remainingHours),row.utilizationPercent===null?'—':hours(row.utilizationPercent)+'%',projectsText(row)])tr.append(element('td',value));$('utilization-summary').append(tr);}
  renderUtilizationGraph(report,resource);$('utilization-weeks').replaceChildren();for(const row of report.weeks.filter(r=>resource==='all'||r.resource===resource)){const tr=element('tr');for(const value of [dateText(row.weekStart),resourceName(row.resource,result.plan),hours(row.availableHours),hours(row.scheduledHours),hours(row.remainingHours),row.utilizationPercent===null?'—':hours(row.utilizationPercent)+'%',projectsText(row),row.taskIds.join(', ')||'—'])tr.append(element('td',value));$('utilization-weeks').append(tr);}}
@@ -269,10 +271,46 @@ function feedingTime(day){if(!usesCalendarDates(result.plan))return `Day ${hours
 function renderFeeding(){
  const body=$('feeding-tasks');body.replaceChildren();
  for(const project of plan.projects)for(const task of project.tasks){const row=element('tr'),check=input('',`${task.id} latest safe start`,{type:'checkbox'});check.checked=plan.feedingTaskIds?.includes(task.id)??false;check.dataset.feedingTask=task.id;row.append(cell(check),element('td',project.name),element('td',`${task.id} · ${task.name}`),element('td',resourceName(task.resource)));body.append(row);}
- const host=$('feeding-report');host.replaceChildren();const report=result.feedingReport;if(!report){host.append(element('p',result.needsAssignments?'Assign resources and recalculate to calculate feeding protection.':'No feeding tasks selected in the last calculation.'));return;}
+ const host=$('feeding-report');host.replaceChildren();const report=result.feedingReport;if(!report){host.append(element('p',result.needsTasks?'Add tasks to calculate feeding protection.':result.needsAssignments?'Assign resources and recalculate to calculate feeding protection.':'No feeding tasks selected in the last calculation.'));return;}
  for(const change of report.changes){const item=element('article');item.append(element('h4',`${taskName(change.taskId)} · ${change.status}`),element('p',change.reason));if(change.protectedStart!==null)item.append(element('p',`Start: ${feedingTime(change.originalStart)} → ${feedingTime(change.newStart)}. P50: ${hours(change.p50Effort)} workdays; P99: ${hours(change.p99Effort)} workdays; buffer: ${hours(change.bufferEffort)} workdays. Protected downstream start: ${feedingTime(change.protectedStart)}.`));const window=report.resourceWindows.find(w=>w.taskId===change.taskId);if(window)item.append(element('p',`${resourceName(window.resource)}: ${window.allocationPercent}% allocation freed from ${feedingTime(window.start)} to ${feedingTime(window.finish)}. Later occupied by this task from ${feedingTime(change.newStart)} to ${feedingTime(change.newFinish)}; protection reserves its allocation until ${feedingTime(change.protectionFinish??change.protectedStart)}. Other work can use safe earlier gaps.`));if(change.feedsHigherPriorityProject)item.append(element('p',`Owning project deterministic completion: ${change.ownerCompletionBefore===null?'unavailable':feedingTime(change.ownerCompletionBefore)} → ${change.ownerCompletionAfter===null?'unavailable':feedingTime(change.ownerCompletionAfter)}. Higher-priority downstream start remains protected.`));host.append(item);}
 }
 $('feeding-tasks').addEventListener('change',event=>{const node=event.target,id=node.dataset.feedingTask;if(!id)return;const ids=new Set(plan.feedingTaskIds??[]);if(node.checked)ids.add(id);else ids.delete(id);plan.feedingTaskIds=[...ids];changed();});
 
 function renderTimeDisplay(){const control=$('time-display');control.value=usesCalendarDates(result.plan)?'dates':'days';const dates=control.querySelector('[value="dates"]');dates.disabled=!result.plan.calendar;dates.textContent=result.plan.calendar?'Calendar dates':'Dates (calendar required)';$('time-display-note').textContent=result.plan.calendar?(usesCalendarDates(result.plan)?'Calendar dates use resource availability. Estimates remain working days.':'Day numbers are elapsed calendar days from schedule start, including weekends and holidays.'):'Abstract day numbers. Load a resource calendar to view completion dates.';}
 $('time-display').addEventListener('change',()=>{if(!plan)return;const mode=$('time-display').value;plan.settings.displayTime=mode;result.plan.settings.displayTime=mode;renderTimeDisplay();renderResults();renderFeeding();});
+
+// File-free project and task entry. Existing edits are included in each request.
+$('show-new-project').addEventListener('click',()=>{$('new-project-panel').classList.remove('hidden');$('new-project-name').focus();});
+$('cancel-new-project').addEventListener('click',()=>$('new-project-panel').classList.add('hidden'));
+$('create-blank-project').addEventListener('click',async()=>{
+ if(busy)return;setBusy(true);
+ try{
+  const data={name:$('new-project-name').value,startDate:$('start-date').value,timeZone:zone};
+  if(plan)data.plan=editablePlan();
+  loadResult(await request('/api/project',data));
+  const project=plan.projects[plan.projects.length-1];
+  $('project-filter').value=project.id;renderTasks();
+  $('new-project-panel').classList.add('hidden');$('new-project-name').value='';
+  document.querySelector('[data-tab="tasks"]').click();
+  message(`Created ${project.name}. Add resources in Resources & calendars, then add tasks.`);
+ }catch(error){failure(error);}finally{setBusy(false);}
+});
+function renderNewTaskFields(){
+ const projects=$('new-task-project'),previous=projects.value,filter=$('project-filter').value;
+ projects.replaceChildren();for(const project of plan.projects){const option=element('option',project.name);option.value=project.id;projects.append(option);}
+ projects.value=plan.projects.some(p=>p.id===filter)?filter:plan.projects.some(p=>p.id===previous)?previous:plan.projects[0]?.id??'';
+ const resources=$('new-task-resource'),old=resources.value;resources.replaceChildren();
+ for(const [id,label]of [['','Unassigned — choose later'],...plan.resources.map(id=>[id,resourceName(id)])]){const option=element('option',label);option.value=id;resources.append(option);}
+ if(plan.resources.includes(old))resources.value=old;
+}
+$('show-add-task').addEventListener('click',()=>{renderNewTaskFields();$('add-task-panel').classList.remove('hidden');$('new-task-name').focus();});
+$('cancel-add-task').addEventListener('click',()=>$('add-task-panel').classList.add('hidden'));
+$('create-task').addEventListener('click',async()=>{
+ if(busy||!plan)return;setBusy(true);
+ try{
+  const projectId=$('new-task-project').value;
+  const data={plan:editablePlan(),projectId,name:$('new-task-name').value,resource:$('new-task-resource').value,goodCase:$('new-task-good').valueAsNumber,poorCase:$('new-task-poor').valueAsNumber,dependsOn:$('new-task-dependencies').value.trim()?$('new-task-dependencies').value.split(',').map(id=>id.trim()):[]};
+  loadResult(await request('/api/task',data));$('project-filter').value=projectId;renderTasks();
+  $('add-task-panel').classList.add('hidden');$('new-task-name').value='';$('new-task-dependencies').value='';
+ }catch(error){failure(error);}finally{setBusy(false);}
+});

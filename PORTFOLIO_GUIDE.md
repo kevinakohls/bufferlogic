@@ -278,3 +278,9 @@ and completion dates remain available independently of the display preference.
 A portfolio task may have `resource: ""` in an editable JSON draft. Parsing preserves it without adding an empty resource to the list. `schedulePortfolio` rejects these plans with the task IDs requiring assignments. The review API returns `{plan, needsAssignments: true, unassignedTaskIds}` instead of calculated tasks or forecasts for such drafts. Consumers must check this draft response before reading forecast fields. Legacy single-project parsing remains strict by default.
 
 The UI deletes a resource only after confirmation, clears all its task assignments, and removes its calendar and descriptive details. Reassignment does not remove the previous resource automatically.
+
+## Manual project and task creation
+
+The review API supports `POST /api/project` with `name`, optional existing `plan`, and `startDate`/`timeZone` for a new workspace. It appends a blank project with a unique ID, preserving an existing portfolio's calendar and start date. `POST /api/task` accepts `plan`, `projectId`, `name`, `resource` (empty for a draft assignment), numeric `goodCase`/`poorCase`, and `dependsOn` (existing task IDs). Task IDs and priorities are generated; tasks default to planned working effort at 100% allocation. Estimates require positive good days and poor days at least as large, or two zeros for a milestone.
+
+An entirely empty workspace returns `{plan, needsTasks: true}` with no calculated forecasts. Unassigned work still returns the `needsAssignments` draft response. These drafts can be saved and reopened. Once tasks and assignments exist, the response uses the normal calculated result shape.

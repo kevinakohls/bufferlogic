@@ -1,3 +1,4 @@
+import { createBlankProject, appendTask } from './project-editor.js';
 import { instantiateTemplate, templateProjects } from './templates.js';
 import { resourceUtilization } from './utilization.js';
 import { createServer, type IncomingMessage } from 'node:http';
@@ -10,6 +11,7 @@ import { parseResourceCalendarsCsv, todayDate } from './resource-calendars.js';
 
 function reviewResult(input:unknown){
  const plan=parsePortfolio(input);
+ if(!plan.projects.some(project=>project.tasks.length))return {plan,needsTasks:true};
  const unassignedTaskIds=plan.projects.flatMap(project=>project.tasks).filter(task=>!task.resource).map(task=>task.id);
  if(unassignedTaskIds.length)return {plan,needsAssignments:true,unassignedTaskIds};
  const result=schedulePortfolio(plan);return {...result,...(result.plan.calendar?{utilization:resourceUtilization(result)}:{})};}
@@ -37,6 +39,17 @@ export function createReviewServer() {
       if(request.method==='GET'&&path==='/api/software-template'){json({csvText:await readFile(new URL('examples/software-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/example'){
         json({projectText:await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8'),calendarText:await readFile(new URL('examples/house-resource-calendars.csv',root),'utf8')});return;
+      }
+      if(request.method==='POST'&&path==='/api/project'){
+        const data=await body(request);
+        if(typeof data.name!=='string')throw new Error('Give the new project a name');
+        json(reviewResult(createBlankProject(data.name,data.plan===undefined?undefined:parsePortfolio(data.plan),typeof data.startDate==='string'?data.startDate:undefined,typeof data.timeZone==='string'?data.timeZone:undefined)));return;
+      }
+      if(request.method==='POST'&&path==='/api/task'){
+        const data=await body(request);
+        if(typeof data.projectId!=='string'||typeof data.name!=='string'||typeof data.resource!=='string'
+            ||typeof data.goodCase!=='number'||typeof data.poorCase!=='number'||!Array.isArray(data.dependsOn)||!data.dependsOn.every(id=>typeof id==='string'))throw new Error('Provide the task project, name, resource, estimates and dependencies');
+        json(reviewResult(appendTask(parsePortfolio(data.plan),{projectId:data.projectId,name:data.name,resource:data.resource,goodCase:data.goodCase,poorCase:data.poorCase,dependsOn:data.dependsOn})));return;
       }
       if(request.method==='POST'&&path==='/api/template-info'){
         const data=await body(request);if(typeof data.csvText!=='string')throw new Error('Choose a template CSV');json({projects:templateProjects(data.csvText)});return;

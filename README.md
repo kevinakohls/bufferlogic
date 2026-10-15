@@ -25,6 +25,8 @@ On Windows PowerShell, use `npm.cmd` in place of `npm`. Leave the server running
 and open `http://localhost:3000`. Stop it with Ctrl+C. The interface processes
 loaded plans locally; save the workspace to retain edits between sessions.
 
+To build a plan without importing a file, choose **New project** in the review UI, add resources in **Resources & calendars**, then use **Add task** in **Tasks**. Blank and unassigned workspaces can be saved as drafts.
+
 ## Implemented features
 
 - Projects sharing resources, project order and task order exceptions.

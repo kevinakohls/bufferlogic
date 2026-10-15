@@ -74,3 +74,17 @@ test('unassigned workspaces reopen as editable drafts with no misleading forecas
  for(const project of reopened.plan.projects)for(const task of project.tasks)task.resource='New';
  const scheduled=await (await post(base,'/api/schedule',{plan:reopened.plan})).json();assert.equal(scheduled.needsAssignments,undefined);assert.equal(scheduled.tasks.length,4);assert.deepEqual(scheduled.plan.resources,['New']);
 }));
+
+test('file-free project and task entry supports empty drafts, assignment, dependencies and multiple projects',async()=>withServer(async base=>{
+ const created=await post(base,'/api/project',{name:'New release',startDate:'2026-10-12',timeZone:'America/New_York'});assert.equal(created.status,200);
+ const blank=await created.json();assert.equal(blank.needsTasks,true);assert.equal(blank.projects,undefined);assert.deepEqual(blank.plan.resources,[]);
+ const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(blank),format:'json'})).json();assert.deepEqual(reopened.plan,blank.plan);
+ const input={projectId:'P1',name:'Build',resource:'',goodCase:2,poorCase:4,dependsOn:[]};
+ const draft=await (await post(base,'/api/task',{plan:blank.plan,...input})).json();assert.equal(draft.needsAssignments,true);
+ draft.plan.resources=['Developer'];draft.plan.projects[0].tasks[0].resource='Developer';
+ const id=draft.plan.projects[0].tasks[0].id;
+ const scheduled=await (await post(base,'/api/task',{plan:draft.plan,...input,name:'Test',resource:'Developer',dependsOn:[id]})).json();assert.equal(scheduled.tasks.length,2);assert.ok(scheduled.tasks[1].start>=scheduled.tasks[0].finish);
+ const expanded=await (await post(base,'/api/project',{plan:scheduled.plan,name:'Second release',startDate:'2030-01-01'})).json();assert.equal(expanded.plan.projects.length,2);assert.deepEqual(expanded.plan.projects[0],scheduled.plan.projects[0]);assert.equal(expanded.plan.calendar.startDate,'2026-10-12');
+ assert.equal((await post(base,'/api/task',{plan:scheduled.plan,...input,dependsOn:['missing']})).status,400);
+ assert.equal((await post(base,'/api/project',{name:' '})).status,400);
+}));

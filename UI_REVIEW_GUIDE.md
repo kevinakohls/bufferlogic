@@ -333,3 +333,13 @@ Open **Resources & calendars** to add or delete resources, including when the li
 You may **Save workspace** with unassigned tasks before recalculating. That file is a draft containing the edited plan and no calculated forecasts. Reopening it keeps tasks unassigned and displays a request to assign resources. Normal workspaces still require recalculation before saving edited results.
 
 Manual check: load a plan with task resources missing from its resource array; verify they appear. Add an idle resource, reassign tasks, and recalculate; verify it remains. Cancel a deletion, then confirm it; verify the task dropdowns say Unassigned. Save and reopen the draft, add a replacement, reassign the tasks and recalculate. Delete all resources and verify Add resource still works. In calendar mode verify new resources have eight-hour weekdays, custom hours survive, and deleted-resource exceptions are removed.
+
+## Create a project without importing files
+
+Click **New project**, enter a name, and click **Create project**. In a fresh workspace, **Schedule starts** sets the calendar origin; the calendar uses eight hours per estimated workday. An empty project displays “No tasks yet” instead of a zero-day completion forecast. Adding another project appends it to the existing portfolio without changing its start date, resources, tasks or custom calendars.
+
+Open **Resources & calendars** and add the people or resource types you need (40-hour weekdays by default). In **Tasks**, click **Add task**. Choose its project, enter a name, good/P20 and poor/P80 days, resource, and optional comma-separated predecessor IDs from the task table. IDs are generated uniquely across the portfolio and tasks get increasing priorities within the project. New tasks start as planned working effort at 100% allocation; edit those fields afterward as needed. Two zero estimates create a milestone. Predecessors may belong to another project but must already exist.
+
+You can add tasks before assigning resources. Save/reopen preserves the draft; scheduling waits until every task has a resource. Empty workspaces are also saveable. Adding a task or project submits current edits and refreshes the calculation when assignments are complete. Use **Recalculate schedule** after later table edits.
+
+Manual check: create a blank project, save/reopen it, add an unassigned task, and save/reopen again. Add a resource, assign it, and add a dependent task. Check the resulting timeline and forecasts. Add a second blank project, confirm the first remains unchanged, and add another task sharing the resource. Check Cancel and invalid names, estimates and dependency IDs.
