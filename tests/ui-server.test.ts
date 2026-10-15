@@ -102,3 +102,12 @@ test('blank-project dates default to today in the client timezone when missing o
  const invalid=await post(base,'/api/project',{name:'New release',startDate:'2026-02-30'});
  assert.equal(invalid.status,400);assert.match((await invalid.json()).error,/Invalid date/);
 }));
+
+test('workspace names survive save/load and the browser icon is served safely',async()=>withServer(async base=>{
+ const blank=await (await post(base,'/api/project',{name:'Release One',startDate:'2026-10-15'})).json();
+ blank.plan.name='Kevin functionality review';
+ const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(blank),format:'json'})).json();assert.equal(reopened.plan.name,'Kevin functionality review');
+ const second=await (await post(base,'/api/project',{plan:reopened.plan,name:'Release Two'})).json();assert.equal(second.plan.name,'Kevin functionality review');assert.deepEqual(second.plan.projects[0],blank.plan.projects[0]);
+ const icon=await fetch(base+'/favicon.svg');assert.equal(icon.status,200);assert.equal(icon.headers.get('content-type'),'image/svg+xml');assert.match(await icon.text(),/<svg/);
+ const page=await (await fetch(base)).text();assert.match(page,/rel="icon"/);assert.match(page,/id="add-blank-project"/);
+}));

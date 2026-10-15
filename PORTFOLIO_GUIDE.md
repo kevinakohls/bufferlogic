@@ -284,3 +284,7 @@ The UI deletes a resource only after confirmation, clears all its task assignmen
 The review API supports `POST /api/project` with `name`, optional existing `plan`, and `startDate`/`timeZone` for a new workspace. It appends a blank project with a unique ID, preserving an existing portfolio's calendar and start date. `POST /api/task` accepts `plan`, `projectId`, `name`, `resource` (empty for a draft assignment), numeric `goodCase`/`poorCase`, and `dependsOn` (existing task IDs). Task IDs and priorities are generated; tasks default to planned working effort at 100% allocation. Estimates require positive good days and poor days at least as large, or two zeros for a milestone.
 
 An entirely empty workspace returns `{plan, needsTasks: true}` with no calculated forecasts. Unassigned work still returns the `needsAssignments` draft response. These drafts can be saved and reopened. Once tasks and assignments exist, the response uses the normal calculated result shape.
+
+### Workspace name
+
+The optional top-level `name` is the workspace display name, separate from stable portfolio `id`, project names and schedule `versionId`. `parsePortfolio` preserves trimmed nonempty names and supplies a default for older plans: the first project name plus “workspace”, or “Untitled workspace”. New projects and recalculation preserve an existing name. The UI saves this field and uses a filename-safe name plus timestamp for downloaded workspaces.

@@ -343,3 +343,9 @@ Open **Resources & calendars** and add the people or resource types you need (40
 You can add tasks before assigning resources. Save/reopen preserves the draft; scheduling waits until every task has a resource. Empty workspaces are also saveable. Adding a task or project submits current edits and refreshes the calculation when assignments are complete. Use **Recalculate schedule** after later table edits.
 
 Manual check: create a blank project, save/reopen it, add an unassigned task, and save/reopen again. Add a resource, assign it, and add a dependent task. Check the resulting timeline and forecasts. Add a second blank project, confirm the first remains unchanged, and add another task sharing the resource. Check Cancel and invalid names, estimates and dependency IDs.
+
+## Workspace names and manual project entry
+
+Use **Add blank project** beside **Project order** (or **Add project** at the top) to create Release Two manually. The manual form hides the template form and has a distinct **Create blank project** button. **Create from template** remains the CSV-template workflow, with a **Start a blank project instead** shortcut. Adding a blank project keeps existing tasks, resources, calendar and workspace name.
+
+The editable **Workspace name** defaults to the first project name followed by “workspace”, or “Untitled workspace” when there are no projects. Renaming updates the browser-tab title and saved plan metadata without recalculating. Downloads include the workspace name and a timestamp, with filename-unsafe characters replaced. Reopening restores the name. The browser tab also uses the BufferLogic link-symbol icon.

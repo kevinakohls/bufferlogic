@@ -1,3 +1,4 @@
+import {workspaceFilename} from './workspace-name.js';
 import {forecastState,holdAction,usesCalendarDates} from './forecast-state.js';
 import { renderTimeline, refreshTimeline } from './timeline.js';
 const $=id=>document.getElementById(id);
@@ -107,6 +108,7 @@ function renderExceptions(){
  const remove=element('button','Remove','remove');remove.dataset.remove=index;remove.type='button';row.append(cell(remove));body.append(row);});
 }
 function loadResult(value){result=(value.needsAssignments||value.needsTasks)?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
+ $('workspace-name').value=plan.name??'Untitled workspace';document.title=`${$('workspace-name').value} · BufferLogic`;$('show-new-project').textContent='Add project';
  if(plan.calendar)$('start-date').value=plan.calendar.startDate;
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
  $('workspace').classList.remove('hidden');$('error').classList.add('hidden');$('freshness').textContent='Calculated from the current plan';
@@ -137,7 +139,7 @@ $('add-exception').addEventListener('click',()=>{if(!plan.calendar?.resources.le
 $('exceptions-body').addEventListener('change',event=>{const node=event.target;if(!node.dataset.exception)return;const entry=exceptions[Number(node.closest('tr').dataset.index)];entry[node.dataset.exception]=node.type==='number'?node.valueAsNumber:node.value;changed();});
 $('exceptions-body').addEventListener('click',event=>{const node=event.target;if(node.dataset.remove===undefined)return;exceptions.splice(Number(node.dataset.remove),1);renderExceptions();changed();});
 for(const button of document.querySelectorAll('[data-tab]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-tab]')){b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button));}for(const name of ['tasks','feeding','deadlines','checklists','progress','calendars','notes','utilization','timeline','schedule'])$(name+'-view').classList.toggle('hidden',name!==button.dataset.tab);if(button.dataset.tab==='timeline')refreshTimeline();});
-$('download').addEventListener('click',()=>{const unassigned=allTasks().some(task=>!task.resource),empty=!allTasks().length;if(dirty&&!unassigned&&!empty){failure(new Error('Recalculate before saving so the plan and forecasts match.'));return;}let saved=result;try{if(unassigned||empty)saved={plan:editablePlan(),...(empty?{needsTasks:true}:{needsAssignments:true})};}catch(error){failure(error);return;}const blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`bufferlogic-${result.plan.versionId}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+$('download').addEventListener('click',()=>{const unassigned=allTasks().some(task=>!task.resource),empty=!allTasks().length;if(dirty&&!unassigned&&!empty){failure(new Error('Recalculate before saving so the plan and forecasts match.'));return;}let saved=result;try{if(unassigned||empty)saved={plan:editablePlan(),...(empty?{needsTasks:true}:{needsAssignments:true})};}catch(error){failure(error);return;}const blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=workspaceFilename(plan.name);link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 
 function editablePlan(){
  if(plan.calendar && plan.calendar.startDate!==$('start-date').value && allTasks().some(t=>t.locked||t.actuals))throw new Error('This plan contains fixed commitments or actuals. Keep its recorded schedule start date.');
@@ -147,7 +149,7 @@ function editablePlan(){
 }
 
 async function inspectTemplate(text,label){templateText='';const info=await request('/api/template-info',{csvText:text});templateText=text;$('template-file-name').textContent=label;$('template-source').replaceChildren();for(const source of info.projects){const option=element('option',source);option.value=source;$('template-source').append(option);}if(!$('template-name').value)$('template-name').value=label.replace(/\.csv$/i,'').replaceAll('_',' ');}
-$('show-template').addEventListener('click',()=>{$('template-panel').classList.toggle('hidden');});
+$('show-template').addEventListener('click',()=>{$('new-project-panel').classList.add('hidden');$('template-panel').classList.toggle('hidden');if(!$('template-panel').classList.contains('hidden'))$('template-panel').scrollIntoView({block:'start'});});
 $('housing-template').addEventListener('click',async()=>{setBusy(true);try{const response=await fetch('/api/housing-template');if(!response.ok)throw new Error('Unable to load housing template');const source=await response.json();await inspectTemplate(source.csvText,'Housing project');$('template-file').value='';}catch(error){failure(error);}finally{setBusy(false);}});
 $('software-template').addEventListener('click',async()=>{setBusy(true);try{const response=await fetch('/api/software-template');if(!response.ok)throw new Error('Unable to load software template');const source=await response.json();await inspectTemplate(source.csvText,'Software project');$('template-file').value='';}catch(error){failure(error);}finally{setBusy(false);}});
 $('template-file').addEventListener('change',async()=>{const file=$('template-file').files[0];if(!file)return;setBusy(true);try{await inspectTemplate(await file.text(),file.name);}catch(error){failure(error);}finally{setBusy(false);}});
@@ -280,7 +282,15 @@ function renderTimeDisplay(){const control=$('time-display');control.value=usesC
 $('time-display').addEventListener('change',()=>{if(!plan)return;const mode=$('time-display').value;plan.settings.displayTime=mode;result.plan.settings.displayTime=mode;renderTimeDisplay();renderResults();renderFeeding();});
 
 // File-free project and task entry. Existing edits are included in each request.
-$('show-new-project').addEventListener('click',()=>{$('new-project-panel').classList.remove('hidden');$('new-project-name').focus();});
+function openBlankProject(){
+ $('template-panel').classList.add('hidden');$('new-project-panel').classList.remove('hidden');
+ $('new-project-panel').scrollIntoView({block:'start'});$('new-project-name').focus();
+}
+for(const id of ['show-new-project','add-blank-project','template-start-blank'])$(id).addEventListener('click',openBlankProject);
+$('workspace-name').addEventListener('change',()=>{
+ const name=$('workspace-name').value.trim()||'Untitled workspace';
+ $('workspace-name').value=name;plan.name=name;result.plan.name=name;document.title=`${name} · BufferLogic`;
+});
 $('cancel-new-project').addEventListener('click',()=>$('new-project-panel').classList.add('hidden'));
 $('create-blank-project').addEventListener('click',async()=>{
  if(busy)return;setBusy(true);
