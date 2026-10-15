@@ -1,5 +1,5 @@
 import {feedingVisuals} from './feeding-visuals.js';
-import {forecastState,usesCalendarDates} from './forecast-state.js';
+import {forecastState,usesCalendarDates,criticalChainSummary} from './forecast-state.js';
 const ns='http://www.w3.org/2000/svg';
 const $=id=>document.getElementById(id);
 let result,projectId,selectedId;
@@ -36,7 +36,7 @@ function draw(){
  if(!result||!result.projects.length)return;
  const project=result.projects.find(p=>p.id===projectId);const chain=project.forecast.criticalChain,chainSet=new Set(chain),chainPairs=new Set(chain.slice(1).map((id,i)=>`${chain[i]}\0${id}`));
  const cross=chain.filter(id=>scheduled(id).projectId!==projectId).length;
- $('timeline-summary').textContent=`${project.name}${project.forecast.withheldReason?' · Full completion forecast withheld':''}: ${chain.length} critical-chain tasks${cross?`, including ${cross} from another project`:''}${forecastState(project.forecast).timelineWarning}.`;
+ $('timeline-summary').textContent=`${project.name}${project.forecast.withheldReason?' · Full completion forecast withheld':''}: ${criticalChainSummary(project)}${cross?`, including ${cross} from another project`:''}${forecastState(project.forecast).timelineWarning}.`;
  const buffers=feedingVisuals(result),bufferByTask=new Map(buffers.map(buffer=>[buffer.taskId,buffer]));
  const chart=$('timeline-chart');const restoreFocus=document.activeElement?.classList?.contains('timeline-task')||document.activeElement?.classList?.contains('feeding-buffer');const oldTop=chart.scrollTop,oldLeft=chart.scrollLeft;chart.replaceChildren();
  const width=Math.max(680,chart.clientWidth||920)*Number($('timeline-zoom').value),labelWidth=270,end=Math.max(1,...result.tasks.map(t=>t.finish)),plotWidth=width-labelWidth-35,rowHeight=32,positions=new Map();let y=14;
@@ -92,7 +92,7 @@ export function renderTimeline(value){
  const projectSelect=$('timeline-project');projectSelect.replaceChildren();for(const p of result.projects){const option=html('option',p.name);option.value=p.id;projectSelect.append(option);}projectSelect.value=projectId;
  const taskSelect=$('timeline-task');taskSelect.replaceChildren();for(const t of result.tasks){const option=html('option',`${t.projectId} · ${taskLabel(t.id)}`);option.value=t.id;taskSelect.append(option);}
  if(!scheduled(selectedId))selectedId=result.tasks[0]?.id;taskSelect.value=selectedId;
- if(!projectId){$('timeline-chart').replaceChildren();$('timeline-details').replaceChildren();$('timeline-summary').textContent='No projects to display.';return;}draw();
+ if(!projectId){$('timeline-chart').replaceChildren();$('timeline-details').replaceChildren();$('timeline-summary').textContent=result.needsAssignments?'Assign resources to all tasks and recalculate to display the critical chain.':result.needsTasks?'Add tasks to calculate a critical chain.':'No projects to display.';return;}draw();
 }
 $('timeline-project').addEventListener('change',()=>{projectId=$('timeline-project').value;draw();});
 $('timeline-links').addEventListener('change',draw);$('timeline-zoom').addEventListener('change',draw);$('timeline-task').addEventListener('change',()=>selectTask($('timeline-task').value,true));

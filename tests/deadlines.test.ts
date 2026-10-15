@@ -24,3 +24,12 @@ test('invalid deadlines reject; date deadlines require calendars; removing a dea
  assert.equal(schedulePortfolio(withDate).deadlineReport.projects[0]!.assessments.p95.status,'unavailable');
  assert.equal(schedulePortfolio(base).deadlineReport.projects.length,0);
 });
+
+test('November 11 P95 completion is late against November 2 and on time against November 11 or later',()=>{
+ for(const [deadline,status,daysLate] of [['2026-11-02','late',9],['2026-11-11','met',0],['2026-11-12','met',0]] as const){
+  const plan=parsePortfolio({...base,calendar:{startDate:'2026-11-02',hoursPerWorkday:8,resources:[{resource:'Alice',weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}]},projects:[{...base.projects[0],deadline,tasks:[{...base.projects[0]!.tasks[0],goodCase:8,poorCase:8}]}]});
+  const result=schedulePortfolio(plan),assessment=result.deadlineReport.projects[0]!.assessments.p95;
+  assert.equal(result.projects[0]!.forecast.completionDates!.p95,'2026-11-11');
+  assert.equal(assessment.status,status);assert.equal(assessment.daysLate,daysLate);
+ }
+});

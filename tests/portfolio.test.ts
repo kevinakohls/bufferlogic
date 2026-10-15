@@ -157,3 +157,19 @@ test('blank task assignments survive draft parsing but cannot be scheduled or si
  const fixed={...parsed,resources:['Replacement'],projects:parsed.projects.map(p=>({...p,tasks:p.tasks.map(t=>({...t,resource:'Replacement'}))}))};
  assert.equal(schedulePortfolio(fixed).tasks[0]!.resource,'Replacement');
 });
+
+test('projects with scheduled tasks retain critical chains after reorder, hold, resume and completion',()=>{
+ const base=plan([task('A','P1'),task('B','P1',{dependsOn:['A']})],[task('C','P2')]);
+ const reversed={...base,projects:[base.projects[1]!,base.projects[0]!]};
+ const held={...base,projects:[{...base.projects[0]!,onHold:true},base.projects[1]!]};
+ const resumed={...held,projects:held.projects.map(p=>({...p,onHold:false}))};
+ const completed={...base,asOf:6,projects:base.projects.map(p=>({...p,tasks:p.tasks.map(t=>({...t,status:'completed' as const,actuals:{start:t.id==='C'?4:t.id==='B'?2:0,finish:t.id==='C'?6:t.id==='B'?4:2}}))}))};
+ for(const input of [base,reversed,held,resumed,completed]){
+  const result=schedulePortfolio(input);
+  for(const project of result.projects){
+   const owned=result.tasks.filter(t=>t.projectId===project.id);
+   assert.equal(project.forecast.criticalChain.length>0,owned.length>0);
+   assert.ok(project.forecast.criticalChain.every(id=>result.tasks.some(t=>t.id===id)));
+  }
+ }
+});

@@ -27,3 +27,7 @@
 .project-create-fields{display:flex;align-items:end;gap:14px;padding:20px 24px;flex-wrap:wrap}.project-create-fields label{min-width:220px;flex:1;margin:0}.project-create-fields input{display:block;width:100%;margin-top:8px}#new-project-panel{margin-top:18px}#add-task-panel{padding:20px 24px;border-bottom:1px solid var(--line)}.task-create-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}.task-create-fields input,.task-create-fields select{display:block;width:100%;margin-top:8px}.table-toolbar #new-resource{width:220px}@media(max-width:620px){.task-create-fields{grid-template-columns:1fr}.table-toolbar{flex-wrap:wrap}.project-create-fields label{min-width:0;width:100%;flex-basis:100%}}
 
 #calendars-view label:has(#new-resource){display:flex;flex-direction:column;gap:8px;align-items:flex-start}#resources-empty{margin:16px 24px 22px;color:var(--muted);font-size:13px;line-height:1.6}.workspace-name-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0}.workspace-name-bar label{margin:0}.workspace-name-bar input{width:320px;max-width:100%}.workspace-name-bar span{font-size:12px;color:var(--muted)}.project-order-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}#template-start-blank{margin-top:12px}
+
+.deadline-met{color:var(--green);font-weight:600}
+
+.deadline-missed{color:#a1482d;background:#fff1eb}

@@ -1,5 +1,5 @@
 import {workspaceFilename} from './workspace-name.js';
-import {forecastState,holdAction,usesCalendarDates} from './forecast-state.js';
+import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineTargetState} from './forecast-state.js';
 import { renderTimeline, refreshTimeline } from './timeline.js';
 const $=id=>document.getElementById(id);
 let plan=null,result=null,dirty=false,busy=false,revision=1,exceptions=[],templateText='';
@@ -24,11 +24,12 @@ function renderResults(){
  for(const project of result.projects){
   if(!result.plan.projects.find(p=>p.id===project.id)?.tasks.length){const empty=element('article',undefined,'project-card');empty.append(element('h3',project.name),element('p','No tasks yet. Add tasks to calculate a forecast.'));cards.append(empty);continue;}
   const f=project.forecast,card=element('article',undefined,'project-card'),top=element('div',undefined,'card-top');
-  const presentation=forecastState(f);top.append(element('h3',project.name),element('span',presentation.badgeText,presentation.badgeClass));
+  const deadline=result.deadlineReport?.projects.find(p=>p.projectId===project.id),target=deadlineTargetState(deadline?.assessments.p95);
+  const presentation=forecastState(f,deadline?.assessments.p95);top.append(element('h3',project.name),element('span',presentation.badgeText,presentation.badgeClass));
   card.append(top,element('div','P95 · Conservative completion forecast','p95-label'),element('p',valueText(f,'p95'),'p95-date'),element('p',`Deterministic schedule: ${valueText(f,'deterministic')}`,'deterministic'));
   const values=element('div',undefined,'percentiles');
   for(const key of ['p50','p80','p98','p99']){const item=element('div');item.append(element('div',key.toUpperCase(),'percentile-label'),element('div',valueText(f,key),'percentile-value'));values.append(item);}
-  card.append(values);if(f.withheldReason)card.append(element('p',`${f.unscheduledTaskIds?.length??0} tasks unscheduled. Active work and locked commitments remain reserved. Resume held work and recalculate for a full completion forecast.`,'timeline-note'));const deadline=result.deadlineReport?.projects.find(p=>p.projectId===project.id);if(deadline)card.append(element('p',`Deadline: ${deadlineText(deadline.deadline)} · P50 ${deadlineAssessmentText(deadline.assessments.p50)} · P95 ${deadlineAssessmentText(deadline.assessments.p95)}${deadline.feasible===false?' · Forecast is infeasible':''}`,'deadline-summary'));if(f.staleTaskIds.length)card.append(element('p',`Remaining estimates need review: ${f.staleTaskIds.join(', ')}`,'timeline-note'));cards.append(card);
+  card.append(values);if(f.withheldReason)card.append(element('p',`${f.unscheduledTaskIds?.length??0} tasks unscheduled. Active work and locked commitments remain reserved. Resume held work and recalculate for a full completion forecast.`,'timeline-note'));if(deadline)card.append(element('p',`Deadline: ${deadlineText(deadline.deadline)} · ${target.text}${deadline.feasible===false?' · Schedule has conflicts':''}`,`deadline-summary ${target.className}`));if(f.staleTaskIds.length)card.append(element('p',`Remaining estimates need review: ${f.staleTaskIds.join(', ')}`,'timeline-note'));cards.append(card);
  }
  $('conflicts-panel').classList.toggle('hidden',!result.conflicts.length);$('conflicts').replaceChildren();
  for(const conflict of result.conflicts)$('conflicts').append(element('p',`${conflict.message} · ${conflict.taskIds.map(taskName).join('; ')}`));
@@ -178,11 +179,11 @@ function renderProgress(){
   const status=task.status??'planned',row=element('tr');row.dataset.id=task.id;row.append(element('td',`${task.id} · ${task.name}`),element('td',plan.projects.find(p=>p.id===task.projectId).name));
   const fields=[['status',select(status,`${task.id} progress status`,[['planned','Not started'],['active','In progress'],['completed','Complete']])],['start',progressInput(task.actuals?.start??task.actualStart,`${task.id} actual start`)],['finish',progressInput(task.actuals?.finish,`${task.id} actual finish`)]];
   for(const field of ['goodCase','poorCase'])fields.push([field,input(task.remaining?.[field]??'',`${task.id} remaining ${field}`,{type:'number',min:0,step:'any'})]);
-  fields.push(['review',select(task.remaining?.estimateStatus??'stale',`${task.id} estimate review`,[['stale','Needs review'],['current','Reviewed']])]);
+  fields.push(['review',select(estimateReviewValue(task),`${task.id} estimate review`,status==='active'?[['stale','Needs review'],['current','Reviewed']]:[['','']])]);
   for(const [field,node] of fields){node.dataset.progress=field;node.disabled=field==='start'?status==='planned':field==='finish'?status!=='completed':['goodCase','poorCase','review'].includes(field)?status!=='active':false;row.append(cell(node));}body.append(row);
  }
 }
-$('progress-asof').addEventListener('change',event=>{const day=progressDay(event.target);if(!Number.isFinite(day)||day<plan.asOf){failure(new Error('Progress date must not move backward.'));event.target.value=progressValue(plan.asOf);return;}if(day>plan.asOf)for(const task of allTasks())if(task.status==='active'&&task.remaining)task.remaining.estimateStatus='stale';plan.asOf=day;changed();for(const row of $('progress-body').rows){const task=allTasks().find(t=>t.id===row.dataset.id);if(task.remaining)row.querySelector('[data-progress="review"]').value=task.remaining.estimateStatus;}});
+$('progress-asof').addEventListener('change',event=>{const day=progressDay(event.target);if(!Number.isFinite(day)||day<plan.asOf){failure(new Error('Progress date must not move backward.'));event.target.value=progressValue(plan.asOf);return;}if(day>plan.asOf)for(const task of allTasks())if(task.status==='active'&&task.remaining)task.remaining.estimateStatus='stale';plan.asOf=day;changed();for(const row of $('progress-body').rows){const task=allTasks().find(t=>t.id===row.dataset.id);if(task.status==='active'&&task.remaining)row.querySelector('[data-progress="review"]').value=task.remaining.estimateStatus;}});
 $('progress-body').addEventListener('change',event=>{
  const node=event.target,field=node.dataset.progress;if(!field)return;const task=allTasks().find(t=>t.id===node.closest('tr').dataset.id);
  if(field==='status'){
@@ -263,7 +264,7 @@ function deadlineAssessmentText(assessment){if(!assessment)return 'No deadline';
 function deadlineInput(target,label){const value=target.deadline;const node=input(value??'',label,{type:typeof value==='string'||(value===undefined&&plan.calendar)?'date':'number'});if(node.type==='number'){node.min=0;node.step='any';}return node;}
 function renderDeadlines(){
  $('project-deadlines').replaceChildren();$('task-deadlines').replaceChildren();
- for(const project of plan.projects){const row=element('tr'),node=deadlineInput(project,`${project.id} project deadline`);node.dataset.deadlineProject=project.id;row.append(element('td',project.name),cell(node));const report=result.deadlineReport?.projects.find(p=>p.projectId===project.id);for(const key of ['deterministic','p50','p80','p95','p98','p99']){const assessment=report?.assessments[key];row.append(element('td',deadlineAssessmentText(assessment)+(report&&report.feasible===false?' · Infeasible':''),assessment?.status==='late'?'deadline-late':''));}$('project-deadlines').append(row);
+ for(const project of plan.projects){const row=element('tr'),node=deadlineInput(project,`${project.id} project deadline`);node.dataset.deadlineProject=project.id;row.append(element('td',project.name),cell(node));const report=result.deadlineReport?.projects.find(p=>p.projectId===project.id);const target=deadlineTargetState(report?.assessments.p95);row.append(element('td',target.text,target.className));for(const key of ['deterministic','p50','p80','p95','p98','p99']){const assessment=report?.assessments[key];row.append(element('td',deadlineAssessmentText(assessment)+(report&&report.feasible===false?' · Infeasible':''),assessment?.status==='late'?'deadline-late':''));}$('project-deadlines').append(row);
  for(const task of project.tasks){const row=element('tr'),node=deadlineInput(task,`${task.id} task deadline`);node.dataset.deadlineTask=task.id;const assessment=result.deadlineReport?.tasks.find(t=>t.taskId===task.id)?.assessment;row.append(element('td',project.name),element('td',`${task.id} · ${task.name}`),cell(node),element('td',deadlineAssessmentText(assessment),assessment?.status==='late'?'deadline-late':''));$('task-deadlines').append(row);}}
 }
 function updateDeadline(event){const node=event.target;if(!node.dataset.deadlineProject&&!node.dataset.deadlineTask)return;const target=node.dataset.deadlineProject?plan.projects.find(p=>p.id===node.dataset.deadlineProject):allTasks().find(t=>t.id===node.dataset.deadlineTask);if(node.value==='')delete target.deadline;else target.deadline=node.type==='date'?node.value:node.valueAsNumber;changed();}

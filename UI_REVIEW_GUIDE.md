@@ -349,3 +349,11 @@ Manual check: create a blank project, save/reopen it, add an unassigned task, an
 Use **Add blank project** beside **Project order** (or **Add project** at the top) to create Release Two manually. The manual form hides the template form and has a distinct **Create blank project** button. **Create from template** remains the CSV-template workflow, with a **Start a blank project instead** shortcut. Adding a blank project keeps existing tasks, resources, calendar and workspace name.
 
 The editable **Workspace name** defaults to the first project name followed by “workspace”, or “Untitled workspace” when there are no projects. Renaming updates the browser-tab title and saved plan metadata without recalculating. Downloads include the workspace name and a timestamp, with filename-unsafe characters replaced. Reopening restores the name. The browser tab also uses the BufferLogic link-symbol icon.
+
+## P95 target status and remaining-estimate review
+
+Project cards and the **P95 target status** column in Deadlines use the P95 completion forecast. A P95 completion of November 11 is late against November 2, and on time against November 11 or any later date. Calendar deadlines include the whole named date. The other percentile columns remain available for comparison; an earlier P50 does not make a late P95 target on time. Schedule conflicts are separate and still show Needs attention. Task deadline checks continue to use each task's calculated finish.
+
+In Progress, **Estimate review** is blank and disabled for not-started and completed tasks. It applies only to in-progress tasks. Advancing progress still marks active remaining estimates Needs review; completing a task clears its displayed review field.
+
+The timeline explains when no critical chain is calculated because a project is empty, a workspace has unassigned tasks, or work is held/blocked. If a populated, scheduled project unexpectedly loses its critical chain, save that workspace before further edits so the state can be reproduced.
