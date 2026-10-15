@@ -1,3 +1,4 @@
+import { todayDate } from '../src/resource-calendars.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { AddressInfo } from 'node:net';
@@ -87,4 +88,17 @@ test('file-free project and task entry supports empty drafts, assignment, depend
  const expanded=await (await post(base,'/api/project',{plan:scheduled.plan,name:'Second release',startDate:'2030-01-01'})).json();assert.equal(expanded.plan.projects.length,2);assert.deepEqual(expanded.plan.projects[0],scheduled.plan.projects[0]);assert.equal(expanded.plan.calendar.startDate,'2026-10-12');
  assert.equal((await post(base,'/api/task',{plan:scheduled.plan,...input,dependsOn:['missing']})).status,400);
  assert.equal((await post(base,'/api/project',{name:' '})).status,400);
+}));
+
+
+test('blank-project dates default to today in the client timezone when missing or empty, while invalid dates are rejected',async()=>withServer(async base=>{
+ for(const extra of [{},{startDate:''},{startDate:'   '}]){
+  const before=todayDate('Pacific/Kiritimati');
+  const response=await post(base,'/api/project',{name:'New release',timeZone:'Pacific/Kiritimati',...extra});
+  assert.equal(response.status,200);const value=await response.json();
+  assert.ok([before,todayDate('Pacific/Kiritimati')].includes(value.plan.calendar.startDate));
+  assert.equal(value.needsTasks,true);
+ }
+ const invalid=await post(base,'/api/project',{name:'New release',startDate:'2026-02-30'});
+ assert.equal(invalid.status,400);assert.match((await invalid.json()).error,/Invalid date/);
 }));

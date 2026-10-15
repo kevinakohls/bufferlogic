@@ -43,7 +43,9 @@ export function createReviewServer() {
       if(request.method==='POST'&&path==='/api/project'){
         const data=await body(request);
         if(typeof data.name!=='string')throw new Error('Give the new project a name');
-        json(reviewResult(createBlankProject(data.name,data.plan===undefined?undefined:parsePortfolio(data.plan),typeof data.startDate==='string'?data.startDate:undefined,typeof data.timeZone==='string'?data.timeZone:undefined)));return;
+        const timeZone=typeof data.timeZone==='string'?data.timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const startDate=typeof data.startDate==='string'&&data.startDate.trim()?data.startDate.trim():todayDate(timeZone);
+        json(reviewResult(createBlankProject(data.name,data.plan===undefined?undefined:parsePortfolio(data.plan),startDate,timeZone)));return;
       }
       if(request.method==='POST'&&path==='/api/task'){
         const data=await body(request);
