@@ -41,6 +41,8 @@ test('project headline status uses P95 deadline assessment while schedule confli
  assert.equal(forecastState({feasible:false},late).badgeText,'Needs attention');
  assert.equal(forecastState({withheldReason:'on-hold',feasible:null},late).badgeText,'Forecast withheld');
  assert.equal(deadlineTargetState(late).text,'Late at P95 · 9 days late');
+ assert.equal(deadlineTargetState({status:'late',daysLate:1}).text,'Late at P95 · 1 day late');
+ assert.equal(deadlineTargetState({status:'late',daysLate:.5}).text,'Late at P95 · 1 day late');
  assert.equal(deadlineTargetState({status:'unavailable',reason:'calendar-required'}).text,'Calendar required');
  assert.match(criticalChainSummary({tasks:[],forecast:{criticalChain:[]}}),/No tasks yet/);
  assert.match(criticalChainSummary({tasks:[{}],forecast:{criticalChain:[],withheldReason:'on-hold'}}),/on hold or blocked/);

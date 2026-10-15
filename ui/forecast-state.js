@@ -24,6 +24,11 @@ export function estimateReviewValue(task) {
   return task.status === 'active' ? task.remaining?.estimateStatus ?? 'stale' : '';
 }
 
+export function daysLateText(daysLate) {
+  const days = Math.ceil(daysLate);
+  return `${days} ${days === 1 ? 'day' : 'days'} late`;
+}
+
 export function deadlineTargetState(assessment) {
   if (!assessment) return {text: 'No deadline', badgeText: 'Feasible', className: ''};
   if (assessment.status === 'unavailable') {
@@ -31,7 +36,7 @@ export function deadlineTargetState(assessment) {
     return {text, badgeText: text, className: ''};
   }
   if (assessment.status === 'late') return {
-    text: `Late at P95 · ${Math.ceil(assessment.daysLate)} days late`,
+    text: `Late at P95 · ${daysLateText(assessment.daysLate)}`,
     badgeText: 'Late at P95', className: 'deadline-late',
   };
   return {text: 'On time at P95', badgeText: 'On time at P95', className: 'deadline-met'};

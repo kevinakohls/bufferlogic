@@ -1,5 +1,5 @@
 import {workspaceFilename} from './workspace-name.js';
-import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineTargetState} from './forecast-state.js';
+import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineTargetState,daysLateText} from './forecast-state.js';
 import { renderTimeline, refreshTimeline } from './timeline.js';
 const $=id=>document.getElementById(id);
 let plan=null,result=null,dirty=false,busy=false,revision=1,exceptions=[],templateText='';
@@ -260,7 +260,7 @@ $('checklist-items').addEventListener('change',event=>{const node=event.target,f
 $('checklist-items').addEventListener('click',event=>{const button=event.target.closest('[data-remove-checklist]');if(!button)return;checklistTask().checklist.splice(Number(button.dataset.removeChecklist),1);changed();renderChecklistItems();});
 
 function deadlineText(value){return typeof value==='string'?dateText(value):`Day ${value}`;}
-function deadlineAssessmentText(assessment){if(!assessment)return 'No deadline';if(assessment.status==='unavailable')return assessment.reason==='calendar-required'?'Calendar required':'Forecast unavailable';return assessment.status==='late'?`${Math.ceil(assessment.daysLate)} days late`:'Meets deadline';}
+function deadlineAssessmentText(assessment){if(!assessment)return 'No deadline';if(assessment.status==='unavailable')return assessment.reason==='calendar-required'?'Calendar required':'Forecast unavailable';return assessment.status==='late'?daysLateText(assessment.daysLate):'Meets deadline';}
 function deadlineInput(target,label){const value=target.deadline;const node=input(value??'',label,{type:typeof value==='string'||(value===undefined&&plan.calendar)?'date':'number'});if(node.type==='number'){node.min=0;node.step='any';}return node;}
 function renderDeadlines(){
  $('project-deadlines').replaceChildren();$('task-deadlines').replaceChildren();
