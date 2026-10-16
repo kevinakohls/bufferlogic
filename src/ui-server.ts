@@ -1,6 +1,6 @@
 import {compareScenarios} from './scenario-comparison.js';
 import {taskAssignments} from './task-resources.js';
-import { createBlankProject, appendTask, deleteProject } from './project-editor.js';
+import { createBlankProject, appendTask, deleteProject, deleteTask } from './project-editor.js';
 import { instantiateTemplate, templateProjects } from './templates.js';
 import { resourceUtilization } from './utilization.js';
 import { createServer, type IncomingMessage } from 'node:http';
@@ -56,6 +56,11 @@ export function createReviewServer() {
         const timeZone=typeof data.timeZone==='string'?data.timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone;
         const startDate=typeof data.startDate==='string'&&data.startDate.trim()?data.startDate.trim():todayDate(timeZone);
         json(reviewResult(createBlankProject(data.name,data.plan===undefined?undefined:parsePortfolio(data.plan),startDate,timeZone)));return;
+      }
+      if(request.method==='POST'&&path==='/api/task/delete'){
+        const data=await body(request);
+        if(typeof data.taskId!=='string'||!data.taskId.trim())throw new Error('Choose a task to delete');
+        json(reviewResult(deleteTask(parsePortfolio(data.plan),data.taskId)));return;
       }
       if(request.method==='POST'&&path==='/api/task'){
         const data=await body(request);

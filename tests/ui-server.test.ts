@@ -146,3 +146,21 @@ test('comparison API reports a saved baseline versus a what-if plan and rejects 
  const response=await post(base,'/api/compare',{baseline:{plan:source},scenario});assert.equal(response.status,200);const report=await response.json();assert.ok(report.projects.find((p:{projectId:string})=>p.projectId==='P1').p95Change>0);assert.ok(report.tasks.length>0);
  const bad=await post(base,'/api/compare',{baseline:source,scenario:{...source,asOf:1}});assert.equal(bad.status,400);assert.match((await bad.json()).error,/Progress as of/);
 }));
+
+test('task deletion API validates requests, blocks dependents and leaves the last project saveable',async()=>withServer(async base=>{
+ const source=JSON.parse(await readFile('examples/feeding-protection.json','utf8'));
+ const refused=await post(base,'/api/task/delete',{plan:source,taskId:'C'});
+ assert.equal(refused.status,400);assert.match((await refused.json()).error,/dependencies/);
+ assert.equal((await post(base,'/api/task/delete',{plan:source,taskId:''})).status,400);
+ assert.equal((await post(base,'/api/task/delete',{plan:source,taskId:'missing'})).status,400);
+ let current=source;
+ for(const taskId of ['D','F','C','L']){
+  const response=await post(base,'/api/task/delete',{plan:current,taskId});assert.equal(response.status,200);
+  const result=await response.json();current=result.plan;
+  assert.ok(!current.projects.flatMap((p:{tasks:{id:string}[]})=>p.tasks).some((t:{id:string})=>t.id===taskId));
+  if(taskId==='L')assert.equal(result.needsTasks,true);
+ }
+ assert.equal(current.projects.length,2);assert.deepEqual(current.resources,source.resources);
+ const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(current),format:'json'})).json();
+ assert.deepEqual(reopened.plan,current);
+}));

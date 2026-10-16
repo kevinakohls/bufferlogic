@@ -63,3 +63,20 @@ export function deleteProject(input: PortfolioPlan, projectId: string): Portfoli
     ...(plan.taskOrderOverrides === undefined ? {} : {taskOrderOverrides: plan.taskOrderOverrides.filter(id => !removed.has(id))}),
   });
 }
+
+/** Delete one task without silently removing dependencies or releasing named resources. */
+export function deleteTask(input: PortfolioPlan, taskId: string): PortfolioPlan {
+  const plan = parsePortfolio(input);
+  const tasks = plan.projects.flatMap(project => project.tasks);
+  const task = tasks.find(task => task.id === taskId);
+  if (!task) throw new Error('Task not found');
+  const dependents = tasks.filter(task => task.dependsOn.includes(taskId));
+  if (dependents.length) {
+    throw new Error(`Cannot delete ${task.name} (${task.id}). Remove or reassign dependencies first: ${dependents.map(task => `${task.name} (${task.id})`).join('; ')}`);
+  }
+  return parsePortfolio({...plan, approvalStatus: 'draft', versionId: `${plan.versionId}-delete-task`,
+    projects: plan.projects.map(project => ({...project, tasks: project.tasks.filter(task => task.id !== taskId)})),
+    ...(plan.feedingTaskIds === undefined ? {} : {feedingTaskIds: plan.feedingTaskIds.filter(id => id !== taskId)}),
+    ...(plan.taskOrderOverrides === undefined ? {} : {taskOrderOverrides: plan.taskOrderOverrides.filter(id => id !== taskId)}),
+  });
+}

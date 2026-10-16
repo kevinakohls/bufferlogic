@@ -92,10 +92,22 @@ function renderTasks(){
   for(const field of ['goodCase','poorCase'])fields.push([field,input(estimates?.[field]??'',`${task.id} ${task.status==='active'?'remaining ':''}${field}`,{type:'number',min:0,step:'any'})]);
   fields.push(['priority',input(task.priority,`${task.id} priority`,{type:'number',step:'any'})],['allocationPercent',input(task.allocationPercent??100,`${task.id} allocation percent`,{type:'number',min:1,max:100,step:'any'})],['durationMode',select(task.durationMode??'working',`${task.id} duration type`,[['working','Working effort'],['elapsed','Elapsed waiting']])]);
   for(const [field,node] of fields){node.dataset.field=field;row.append(cell(node));if(field==='resource')row.append(cell(supportingEditor(task)));}
-  row.append(cell(element('span',`${task.status??'planned'}${task.status==='active'?' · remaining estimates':''}${task.locked?' · locked':''}`,'lifecycle')));tbody.append(row);
+  row.append(cell(element('span',`${task.status??'planned'}${task.status==='active'?' · remaining estimates':''}${task.locked?' · locked':''}`,'lifecycle')));const remove=element('button','Delete task','secondary');remove.type='button';remove.dataset.deleteTask=task.id;remove.setAttribute('aria-label',`Delete task: ${task.name} (${task.id})`);remove.disabled=busy;row.append(cell(remove));tbody.append(row);
  }
  $('task-count').textContent=`${count} tasks`;
 }
+$('tasks-body').addEventListener('click',async event=>{
+ const button=event.target.closest('button[data-delete-task]');
+ if(!button||busy||button.disabled)return;
+ const task=allTasks().find(task=>task.id===button.dataset.deleteTask);
+ if(!task)return;
+ if(!confirm(`Are you sure you want to delete ${task.name} (${task.id})? Its checklist, comments and progress will also be deleted. Resources will be kept. Save a workspace copy first if you may need to restore this task.`))return;
+ setBusy(true);
+ try{
+  loadResult(await request('/api/task/delete',{plan:editablePlan(),taskId:task.id}));
+  message(`Deleted ${task.name}. Resources were retained. Save workspace to keep this change.`,true);
+ }catch(error){rejectedEdit(error.message);}finally{setBusy(false);}
+});
 function renderResources(){
  const body=$('resources-body');body.replaceChildren();
  $('resources-empty').classList.toggle('hidden',plan.resources.length>0);
