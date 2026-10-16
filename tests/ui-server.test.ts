@@ -131,3 +131,11 @@ test('supporting assignments round-trip through the review API, and missing supp
  reopened.plan.projects[0].tasks[0].supportingResources[0].resource='';reopened.plan.resources=reopened.plan.resources.filter((r:string)=>r!=='Loader');
  const draft=await (await post(base,'/api/schedule',{plan:reopened.plan})).json();assert.equal(draft.needsAssignments,true);assert.deepEqual(draft.unassignedTaskIds,['C']);assert.equal(draft.projects,undefined);assert.equal(draft.plan.projects[0].tasks[0].supportingResources[0].resource,'');
 }));
+
+test('built-in housing template adds shared equipment and spotting support to new project copies',async()=>withServer(async base=>{
+ const source=await (await fetch(base+'/api/housing-template')).json();assert.match(source.csvText,/Supporting resources/);
+ const first=await (await post(base,'/api/template',{csvText:source.csvText,name:'House One',startDate:'2026-10-19'})).json();assert.equal(first.plan.projects[0].tasks.length,36);
+ const excavation=first.plan.projects[0].tasks.find((t:{name:string})=>t.name==='Excavate foundation');assert.equal(excavation.supportingResources.length,2);
+ for(const id of ['Backhoe 1','Loader 1','Concrete pump 1','Telehandler 1'])assert.deepEqual(first.plan.calendar.resources.find((r:{resource:string})=>r.resource===id).weeklyHours,[8,8,8,8,8,0,0]);
+ const second=await (await post(base,'/api/template',{csvText:source.csvText,name:'House Two',plan:first.plan})).json();assert.equal(second.plan.projects.length,2);assert.equal(second.tasks.length,72);assert.equal(second.conflicts.length,0);assert.equal(second.plan.resources.filter((r:string)=>r==='Loader 1').length,1);
+}));

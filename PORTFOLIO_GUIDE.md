@@ -295,7 +295,7 @@ The optional top-level `name` is the workspace display name, separate from stabl
 
 ## Multiple resources per task
 
-Existing `resource` and `allocationPercent` remain the primary assignment. Optional `supportingResources` contains `{resource, allocationPercent}` entries; each percentage must be greater than zero and at most 100. Resource IDs must be distinct across primary and supporting assignments. JSON and saved workspaces preserve this field on both plan tasks and scheduled entries; existing CSV imports continue to provide a primary assignment only.
+Existing `resource` and `allocationPercent` remain the primary assignment. Optional `supportingResources` contains `{resource, allocationPercent}` entries; each percentage must be greater than zero and at most 100. Resource IDs must be distinct across primary and supporting assignments. JSON and saved workspaces preserve this field on both plan tasks and scheduled entries; CSV imports and template copies accept an optional `Supporting resources` column containing the same JSON array. Blank cells preserve primary-only behavior.
 
 ```json
 {

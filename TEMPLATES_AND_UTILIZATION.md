@@ -1,13 +1,12 @@
 # Templates, notes and resource utilization
 
 This review milestone adds reusable CSV template loading, editable descriptions and
-comments, and a weekly resource-capacity report. It does not change ordinary CSV
-import ordering, add multiple people to a task, or automatically increase capacity.
+comments, and a weekly resource-capacity report. Ordinary CSV import ordering is preserved. Tasks can reserve a primary resource and multiple supporting resources; template creation does not automatically increase capacity.
 
 ## Create projects from templates
 
 Start `npm run ui`, then click **Create from template**. Choose your template CSV or
-**Use housing template** or **Use software template**, enter a new project name, and click **Create project**.
+**Use housing template** or **Use software template**, enter a new project name, and click **Create from template**.
 A project is appended to the current workspace. In an empty workspace it starts a
 new portfolio. Repeat with another name to demonstrate two software projects sharing
 one resource pool.
@@ -122,3 +121,22 @@ comments for both houses. Review these assumptions for the actual build, especia
 permit approval, inspections and curing or drying waits. Notes do not change estimates,
 dependencies or resource assignments. New template copies inherit the notes; saved
 projects retain their existing notes.
+
+## Housing equipment demonstration
+
+**Use housing template** loads `examples/housing-template.csv`, a 36-task house template with draft equipment assignments. Create House One, then repeat for House Two. Both copies share the same named equipment and crew resources.
+
+| Task | Primary crew | Supporting resources |
+| --- | --- | --- |
+| Site clearing & grading | Excavation Crew | Loader 1, 100% |
+| Excavate foundation | Excavation Crew | Backhoe 1, 100%; Equipment spotter, 50% |
+| Backfill | Excavation Crew | Loader 1, 100% |
+| Pour slab / basement floor | Concrete Crew | Concrete pump 1, 100% |
+| Floor framing & subfloor | Framing Crew | Telehandler 1, 100% |
+| Final grading & landscaping | Landscaper | Loader 1, 100% |
+
+These are demonstration assumptions. Primary crews include their operator, equipment is reserved for the complete assigned task, and new resources start with eight-hour weekdays. Review the task comments and checklists. Split tasks when equipment is needed for only part of the work. A backhoe is the chosen excavating machine here; no additional excavator is reserved as an alternative. Supplier-operated ready-mix trucks are not modeled as company-owned shared equipment.
+
+The optional **Supporting resources** CSV column contains a JSON array matching the saved-workspace schema, for example `[{"resource":"Backhoe 1","allocationPercent":100},{"resource":"Equipment spotter","allocationPercent":50}]`. A blank cell means no supporting assignments. Normal CSV quoting applies; spreadsheet tools should retain the entire JSON array in one cell. Both template creation and portfolio CSV loading validate and preserve it. Matching names share one resource and preserve any existing custom calendar.
+
+For a reviewer demonstration, create two houses, show excavation's two supporting assignments, then find Loader 1 across clearing, backfill and final grading. Use Timeline and Resource utilization to inspect shared capacity. New template copies receive these defaults; use existing task editors to add equivalent assignments to saved projects.

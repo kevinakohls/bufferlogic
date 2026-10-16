@@ -385,3 +385,7 @@ Load `examples/multiple-resources.json` for two projects sharing a loader. Confi
 Tab from a supporting-resource selector to its percentage input and then to Remove; focus should follow the existing controls without jumping out of the table. Primary-resource and duration-type edits also keep their controls mounted. Add focuses the new resource selector; Remove focuses an adjacent selector or Add when none remain.
 
 Blank, zero, negative or above-100 supporting percentages are rejected locally with a clear allocation message, restoring the previous value. Positive fractional percentages are allowed. Rejected edits do not mark a clean calculation stale or discard earlier pending edits. The Feeding tab lists primary and supporting resources separately.
+
+### Housing template equipment
+
+Choose **Create from template → Use housing template**, name the project House One, and click **Create from template**. Repeat for House Two to demonstrate shared equipment. The housing template adds Backhoe 1 and Equipment spotter to excavation, Loader 1 to clearing/backfill/final grading, Concrete pump 1 to slab pouring, and Telehandler 1 to floor framing. Matching resource names are shared between houses; custom calendars are retained. Read the task comments for the full-task reservation assumptions. Existing saved houses can receive supporting assignments manually in Tasks.

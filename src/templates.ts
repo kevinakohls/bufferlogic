@@ -1,3 +1,5 @@
+import {supportingResourcesCell} from './supporting-resources-input.js';
+import {taskAssignments} from './task-resources.js';
 import { csvRecords } from './csv-input.js';
 import { parsePortfolio, type PortfolioPlan } from './portfolio.js';
 
@@ -35,11 +37,11 @@ export function instantiateTemplate(text:string, name:string, existing?:Portfoli
  const tasks=rows.map((row,index)=>{
   const predecessors=cell(row,'Depends on');
   const dependsOn=!predecessors||predecessors.toLowerCase()==='none'?[]:predecessors.split(',').map(id=>{const mapped=remap.get(id.trim());if(!mapped)throw new Error(`Template dependency ${id} is outside the selected project or missing`);return mapped;});
-  return {id:remap.get(ids[index]!)!,projectId,name:cell(row,'Task'),resource:cell(row,'Resource'),goodCase:numeric(cell(row,'Good days')),poorCase:numeric(cell(row,'Poor days')),dependsOn,priority:index+1,status:'planned' as const,
+  return {id:remap.get(ids[index]!)!,projectId,name:cell(row,'Task'),resource:cell(row,'Resource'),...supportingResourcesCell(cell(row,'Supporting resources')),goodCase:numeric(cell(row,'Good days')),poorCase:numeric(cell(row,'Poor days')),dependsOn,priority:index+1,status:'planned' as const,
    ...(header.includes('Checklist')?{checklist:cell(row,'Checklist').split(/\r?\n/).map(text=>text.trim()).filter(Boolean).map(text=>({text,completed:false}))}:{}),
    ...Object.fromEntries([['Description','description'],['Comments','comments'],['Completion criteria','completionCriteria'],['Lock reason','lockReason']].filter(([column])=>header.includes(column!)).map(([column,field])=>[field,cell(row,column!)]))};
  });
- const resources=[...new Set([...base.resources,...tasks.map(t=>t.resource)])];
- const calendar=base.calendar?{...base.calendar,resources:[...base.calendar.resources,...resources.filter(r=>!base.calendar!.resources.some(c=>c.resource===r)).map(resource=>({resource,weeklyHours:[base.calendar!.hoursPerWorkday,base.calendar!.hoursPerWorkday,base.calendar!.hoursPerWorkday,base.calendar!.hoursPerWorkday,base.calendar!.hoursPerWorkday,0,0],exceptions:{}}))]}:undefined;
+ const resources=[...new Set([...base.resources,...tasks.flatMap(t=>taskAssignments(t).map(a=>a.resource)).filter(Boolean)])];
+ const calendar=base.calendar?{...base.calendar,resources:[...base.calendar.resources,...resources.filter(r=>!base.calendar!.resources.some(c=>c.resource===r)).map(resource=>({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}))]}:undefined;
  return parsePortfolio({...base,approvalStatus:'draft',versionId:existing?`${base.versionId}-template-${projectId}`:'template-v1',resources,projects:[...base.projects,{id:projectId,name:name.trim(),tasks}],...(calendar?{calendar}:{})});
 }

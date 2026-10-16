@@ -47,7 +47,7 @@ risk without changing dispatch order or locking dates.
 
 Load the two-house example in the UI to see projects competing for shared crews.
 The **Timeline** highlights a project's critical chain across project boundaries.
-Create project copies from housing or software CSV templates, update progress and
+Create project copies from housing or software CSV templates (the housing template includes shared equipment and spotting support), update progress and
 deadlines, and use **Save workspace** to retain the plan.
 
 The portfolio CLI also supports JSON plans and CSV files with a `Project` column:

@@ -70,3 +70,27 @@ test('utilization handles holiday zero availability, overbooking, empty periods 
  const {calendar,...plain}=plan([]);assert.throws(()=>resourceUtilization(schedulePortfolio(plain)),/calendars/);
  const closed={...p,calendar:{...p.calendar!,resources:p.calendar!.resources.map(r=>({...r,exceptions:{'2026-10-09':0}}))}};const report=resourceUtilization(schedulePortfolio(closed));assert.equal(report.resources[0]!.availableHours,0);assert.equal(report.resources[0]!.utilizationPercent,null);
 });
+
+test('housing equipment template preserves multiple support assignments through copying, shared calendars and direct CSV import',async()=>{
+ const text=await readFile('examples/housing-template.csv','utf8');
+ const first=instantiateTemplate(text,'House One');assert.equal(first.projects[0]!.tasks.length,36);
+ const excavation=first.projects[0]!.tasks.find(t=>t.name==='Excavate foundation')!;
+ assert.deepEqual(excavation.supportingResources,[{resource:'Backhoe 1',allocationPercent:100},{resource:'Equipment spotter',allocationPercent:50}]);
+ for(const id of ['Backhoe 1','Equipment spotter','Loader 1','Concrete pump 1','Telehandler 1'])assert.ok(first.resources.includes(id));
+ const base={...first,calendar:{startDate:'2026-10-19',hoursPerWorkday:8,resources:first.resources.map(resource=>({resource,weeklyHours:resource==='Loader 1'?[4,4,4,4,4,0,0]:[8,8,8,8,8,0,0],exceptions:{}}))}};
+ const second=instantiateTemplate(text,'House Two',base);
+ assert.deepEqual(second.projects[0],base.projects[0]);assert.equal(second.resources.filter(id=>id==='Loader 1').length,1);
+ assert.deepEqual(second.calendar!.resources.find(c=>c.resource==='Loader 1')!.weeklyHours,[4,4,4,4,4,0,0]);
+ assert.equal(schedulePortfolio(second).conflicts.length,0);
+ const imported=parsePortfolioCsv(text);assert.deepEqual(imported.projects[0]!.tasks.find(t=>t.name==='Excavate foundation')!.supportingResources,excavation.supportingResources);
+ const reloaded=parsePortfolio(JSON.parse(JSON.stringify(schedulePortfolio(second).plan)));assert.deepEqual(reloaded.projects,second.projects);
+});
+
+test('CSV supporting-resource cells reject malformed JSON, invalid allocations and duplicate assignments',()=>{
+ const quote=(value:string)=>'"'+value.replaceAll('"','""')+'"';
+ for(const value of ['oops','{}','[null]','[{"resource":"Loader","allocationPercent":0}]','[{"resource":"Alice","allocationPercent":100}]']){
+  const source=header+',Supporting resources\nA,Build,Alice,none,1,2,1,'+quote(value);
+  assert.throws(()=>instantiateTemplate(source,'House'),/Supporting resources/);
+  assert.throws(()=>parsePortfolioCsv(source.replace('Supporting resources','Supporting resources,Project')+',P1'),/Supporting resources/);
+ }
+});
