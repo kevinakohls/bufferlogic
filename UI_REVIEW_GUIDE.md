@@ -75,12 +75,12 @@ the UI rejects changes that would silently reposition those recorded dates.
 After recalculating, click **Save workspace**. Your browser downloads the current plan,
 calendars, calculated tasks, conflicts and project forecasts as a JSON file. Select it
 as the project file and click **Load files** to reopen and recalculate it. Unsaved changes
-live only in the current browser session. This first screen does not automatically save
-history or compare revisions; preserve separate downloaded files if needed.
+live only in the current browser session. History is not saved automatically. Use Compare with a captured or saved baseline,
+and preserve downloaded copies of scenarios you want to keep.
 
 ## Verified in this milestone
 
-The automated suite has **133 passing tests**. New API tests verify static/example
+Run `npm test` for the current automated suite. API tests verify static/example
 loading, parity with the existing engine, calendar edits, saved-result reload, invalid
 input handling, request-origin restrictions and locked-plan origin protection.
 
@@ -89,8 +89,8 @@ stale-result labeling, invalid dependency recovery, Saturday changes, dated exce
 JSON download/reload, the schedule table and a narrow mobile viewport. No browser page
 errors occurred. The browser is a development validation tool, not a project dependency.
 
-Current State/What-If comparison, project reordering, drag-to-reorder, and
-resource-recommendation controls are subsequent UI milestones.
+Compare and project reordering are available in the UI. Drag-to-reorder and
+resource-recommendation controls remain subsequent UI milestones.
 
 ## Interactive timeline
 
@@ -389,3 +389,18 @@ Blank, zero, negative or above-100 supporting percentages are rejected locally w
 ### Housing template equipment
 
 Choose **Create from template → Use housing template**, name the project House One, and click **Create from template**. Repeat for House Two to demonstrate shared equipment. The housing template adds Backhoe 1 and Equipment spotter to excavation, Loader 1 to clearing/backfill/final grading, Concrete pump 1 to slab pouring, and Telehandler 1 to floor framing. Matching resource names are shared between houses; custom calendars are retained. Read the task comments for the full-task reservation assumptions. Existing saved houses can receive supporting assignments manually in Tasks.
+
+## Compare a baseline with a what-if scenario
+
+1. Open a workspace, resolve unassigned tasks and recalculate.
+2. Open **Compare** and click **Set current as baseline**. This captures a detached copy of the calculated plan. **Download baseline** saves that original plan for later use. A captured baseline stays in this tab through edits and recalculation, but ends when you open another workspace or reload.
+3. Change priorities, estimates, allocations, supporting resources, calendars, holds or other scheduling inputs. Recalculate as usual. Existing comparison results are hidden when the workspace changes.
+4. Return to **Compare** and click **Compare versions**. The current workspace is the scenario; the captured plan is the baseline. Earlier P95 forecasts are shaded green, later ones red. Other projects may be delayed by a change that helps the highest-priority project, so inspect all rows.
+5. Alternatively, choose a saved original workspace JSON in the baseline file picker. This replaces the session baseline. The file is read for comparison without replacing the current workspace.
+6. Save the current workspace to keep a useful scenario. To restore the original, open the downloaded baseline or your original saved workspace. **Clear comparison** removes the baseline selection and report without changing the schedule.
+
+The report includes project order, P95 completion and shift, deadline status, changed task timing and primary/supporting assignments, additions/removals, suspension/resumption, and resource/calendar changes. Task rows compare scheduling fields rather than checklist and comment text. Missing/withheld forecasts are labeled unavailable, never zero. Schedule conflicts are reported separately and indicate that an apparently earlier forecast may be infeasible.
+
+Both plans are recalculated using the current engine, rather than trusting stored forecast fields. Compare versions of the same workspace (matching portfolio ID), with the same **Progress as of**, schedule origin and calendar mode. This is a what-if comparison, not a historical progress comparison. Day shifts are elapsed calendar days with calendars and abstract days otherwise. Display preference comes from the current workspace. A newly assigned version label alone is not a schedule change.
+
+Manual check: capture a two-project baseline, download it, move the second project up, recalculate and compare. Verify one project's improvement and the other project's delay. Change a supporting assignment and confirm its task row reports Resources. Hold/resume a project and confirm withheld/resumed work is distinguished from removal. Test a saved-file baseline and an incompatible progress date. Confirm neither the original file nor current workspace is modified by comparison. This comparison provides measured outcomes for future scenario evaluation; it does not automatically search or rank solutions.

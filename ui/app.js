@@ -2,7 +2,7 @@ import {workspaceFilename} from './workspace-name.js';
 import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineTargetState,daysLateText,supportingAllocationError} from './forecast-state.js';
 import { renderTimeline, refreshTimeline } from './timeline.js';
 const $=id=>document.getElementById(id);
-let plan=null,result=null,dirty=false,busy=false,revision=1,exceptions=[],templateText='';
+let plan=null,result=null,dirty=false,busy=false,revision=1,exceptions=[],templateText='',comparison=null,capturedBaseline=null;
 const zone=Intl.DateTimeFormat().resolvedOptions().timeZone;
 function today(){const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;}
 $('start-date').value=today();
@@ -13,7 +13,7 @@ function setBusy(value){busy=value;document.querySelectorAll('button,input,selec
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
 function rejectedEdit(text){$('error').textContent=text;$('error').classList.remove('hidden');message(dirty?'Edit not applied. Earlier edits are still pending.':'Edit not applied. Calculated results are unchanged.',dirty);}
-function changed(){if(!plan)return;dirty=true;$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
+function changed(){if(!plan)return;dirty=true;invalidateComparison();$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
 async function request(path,data){const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const value=await response.json();if(!response.ok)throw new Error(value.error??'Unable to calculate');return value;}
 function resourceName(id,source=plan){const name=source?.resourceDetails?.find(r=>r.id===id)?.name;return name&&name!==id?`${name} (${id})`:id;}
 function assignmentsOf(task){return [{resource:task.resource,allocationPercent:task.allocationPercent??100},...(task.supportingResources??[])];}
@@ -146,7 +146,7 @@ function renderExceptions(){
  for(const [field,node] of [['resource',select(exception.resource,`Exception ${index+1} resource`,plan.calendar.resources.map(c=>[c.resource,c.resource]))],['date',input(exception.date,`Exception ${index+1} date`,{type:'date'})],['hours',input(exception.hours,`Exception ${index+1} hours`,{type:'number',min:0,max:24,step:'any'})]]){node.dataset.exception=field;row.append(cell(node));}
  const remove=element('button','Remove','remove');remove.dataset.remove=index;remove.type='button';row.append(cell(remove));body.append(row);});
 }
-function loadResult(value){result=(value.needsAssignments||value.needsTasks)?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
+function loadResult(value){invalidateComparison();result=(value.needsAssignments||value.needsTasks)?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
  $('workspace-name').value=plan.name??'Untitled workspace';document.title=`${$('workspace-name').value} · BufferLogic`;$('show-new-project').textContent='Add project';
  if(plan.calendar)$('start-date').value=plan.calendar.startDate;
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
@@ -154,13 +154,13 @@ function loadResult(value){result=(value.needsAssignments||value.needsTasks)?{..
  const filter=$('project-filter'),previousFilter=filter.value;filter.replaceChildren();for(const [id,name] of [['all','All projects'],...plan.projects.map(p=>[p.id,p.name])]){const option=element('option',name);option.value=id;filter.append(option);}if([...filter.options].some(o=>o.value===previousFilter))filter.value=previousFilter;
  renderTimeDisplay();renderResults();renderProjectOrder();renderTasks();if(!$('add-task-panel').classList.contains('hidden'))renderNewTaskFields();renderProgress();renderChecklists();renderDeadlines();renderFeeding();renderCalendars();renderNotes();renderUtilization();message(result.needsTasks?'No tasks to schedule. Add a project or add tasks to an existing project.':result.needsAssignments?'Assign resources to the unassigned tasks, then recalculate.':`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`,Boolean(result.needsAssignments||result.needsTasks));if(result.needsTasks)$('freshness').textContent='Not calculated · add tasks to get started';if(result.needsAssignments)$('freshness').textContent='Not calculated · tasks need resources';
 }
-$('example').addEventListener('click',async()=>{setBusy(true);message('Loading the two-house example…');try{const response=await fetch('/api/example');if(!response.ok)throw new Error('Unable to load the example');const source=await response.json();loadResult(await request('/api/load',{...source,format:'csv',startDate:$('start-date').value,timeZone:zone}));$('project-file').value='';$('calendar-file').value='';$('project-name').textContent='Two-house example · 72 tasks';$('calendar-name').textContent='Example calendar · 21 resources';}catch(error){failure(error);}finally{setBusy(false);}});
+$('example').addEventListener('click',async()=>{setBusy(true);message('Loading the two-house example…');try{const response=await fetch('/api/example');if(!response.ok)throw new Error('Unable to load the example');const source=await response.json();const loaded=await request('/api/load',{...source,format:'csv',startDate:$('start-date').value,timeZone:zone});clearComparisonBaseline();loadResult(loaded);$('project-file').value='';$('calendar-file').value='';$('project-name').textContent='Two-house example · 72 tasks';$('calendar-name').textContent='Example calendar · 21 resources';}catch(error){failure(error);}finally{setBusy(false);}});
 for(const [id,label] of [['project-file','project-name'],['calendar-file','calendar-name']])$(id).addEventListener('change',()=>{$(label).textContent=$(id).files[0]?.name??'No file selected';});
 $('load').addEventListener('click',async()=>{setBusy(true);try{
  const project=$('project-file').files[0],calendar=$('calendar-file').files[0];if(!project&&!plan)throw new Error('Select a project CSV or saved workspace first');if(!project&&!calendar)throw new Error('Select a file to load, or edit the existing plan below');
  const format=project?project.name.toLowerCase().endsWith('.csv')?'csv':'json':'json';
  const data={projectText:project?await project.text():JSON.stringify(plan),format,timeZone:zone,startDate:$('start-date').value};if(calendar)data.calendarText=await calendar.text();
- loadResult(await request('/api/load',data));
+ const loaded=await request('/api/load',data);clearComparisonBaseline();loadResult(loaded);
  }catch(error){failure(error);}finally{setBusy(false);}});
 $('recalculate').addEventListener('click',async()=>{if(!plan||busy)return;setBusy(true);message('Recalculating the schedule…');try{
  const draft=editablePlan();draft.versionId=`review-${++revision}`;
@@ -192,7 +192,7 @@ $('start-date').addEventListener('change',changed);
 $('add-exception').addEventListener('click',()=>{if(!plan.calendar?.resources.length)return;exceptions.push({resource:plan.calendar.resources[0].resource,date:'',hours:0});renderExceptions();changed();});
 $('exceptions-body').addEventListener('change',event=>{const node=event.target;if(!node.dataset.exception)return;const entry=exceptions[Number(node.closest('tr').dataset.index)];entry[node.dataset.exception]=node.type==='number'?node.valueAsNumber:node.value;changed();});
 $('exceptions-body').addEventListener('click',event=>{const node=event.target;if(node.dataset.remove===undefined)return;exceptions.splice(Number(node.dataset.remove),1);renderExceptions();changed();});
-for(const button of document.querySelectorAll('[data-tab]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-tab]')){b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button));}for(const name of ['tasks','feeding','deadlines','checklists','progress','calendars','notes','utilization','timeline','schedule'])$(name+'-view').classList.toggle('hidden',name!==button.dataset.tab);if(button.dataset.tab==='timeline')refreshTimeline();});
+for(const button of document.querySelectorAll('[data-tab]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-tab]')){b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button));}for(const name of ['tasks','feeding','deadlines','checklists','progress','calendars','notes','utilization','timeline','compare','schedule'])$(name+'-view').classList.toggle('hidden',name!==button.dataset.tab);if(button.dataset.tab==='timeline')refreshTimeline();});
 $('download').addEventListener('click',()=>{const unassigned=allTasks().some(hasUnassigned),empty=!allTasks().length;if(dirty&&!unassigned&&!empty){failure(new Error('Recalculate before saving so the plan and forecasts match.'));return;}let saved=result;try{if(unassigned||empty)saved={plan:editablePlan(),...(empty?{needsTasks:true}:{needsAssignments:true})};}catch(error){failure(error);return;}const blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=workspaceFilename(plan.name);link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 
 function editablePlan(){
@@ -311,7 +311,7 @@ $('workspace-file').addEventListener('change',async()=>{
  const file=$('workspace-file').files[0];if(!file)return;
  if(dirty&&!confirm('Open this workspace and discard your pending edits?'))return;
  setBusy(true);message('Opening saved workspace…');
- try{loadResult(await request('/api/load',{projectText:await file.text(),format:'json'}));$('project-file').value='';$('calendar-file').value='';$('project-name').textContent=file.name;}
+ try{const loaded=await request('/api/load',{projectText:await file.text(),format:'json'});clearComparisonBaseline();loadResult(loaded);$('project-file').value='';$('calendar-file').value='';$('project-name').textContent=file.name;}
  catch(error){failure(error);}finally{setBusy(false);}
 });
 
@@ -347,7 +347,7 @@ function renderFeeding(){
 $('feeding-tasks').addEventListener('change',event=>{const node=event.target,id=node.dataset.feedingTask;if(!id)return;const ids=new Set(plan.feedingTaskIds??[]);if(node.checked)ids.add(id);else ids.delete(id);plan.feedingTaskIds=[...ids];changed();});
 
 function renderTimeDisplay(){const control=$('time-display');control.value=usesCalendarDates(result.plan)?'dates':'days';const dates=control.querySelector('[value="dates"]');dates.disabled=!result.plan.calendar;dates.textContent=result.plan.calendar?'Calendar dates':'Dates (calendar required)';$('time-display-note').textContent=result.plan.calendar?(usesCalendarDates(result.plan)?'Calendar dates use resource availability. Estimates remain working days.':'Day numbers are elapsed calendar days from schedule start, including weekends and holidays.'):'Abstract day numbers. Load a resource calendar to view completion dates.';}
-$('time-display').addEventListener('change',()=>{if(!plan)return;const mode=$('time-display').value;plan.settings.displayTime=mode;result.plan.settings.displayTime=mode;renderTimeDisplay();renderResults();renderFeeding();});
+$('time-display').addEventListener('change',()=>{if(!plan)return;invalidateComparison();const mode=$('time-display').value;plan.settings.displayTime=mode;result.plan.settings.displayTime=mode;renderTimeDisplay();renderResults();renderFeeding();});
 
 // File-free project and task entry. Existing edits are included in each request.
 function openBlankProject(){
@@ -356,7 +356,7 @@ function openBlankProject(){
 }
 for(const id of ['show-new-project','add-blank-project','template-start-blank'])$(id).addEventListener('click',openBlankProject);
 $('workspace-name').addEventListener('change',()=>{
- const name=$('workspace-name').value.trim()||'Untitled workspace';
+ invalidateComparison();const name=$('workspace-name').value.trim()||'Untitled workspace';
  $('workspace-name').value=name;plan.name=name;result.plan.name=name;document.title=`${name} · BufferLogic`;
 });
 $('cancel-new-project').addEventListener('click',()=>$('new-project-panel').classList.add('hidden'));
@@ -391,4 +391,104 @@ $('create-task').addEventListener('click',async()=>{
   loadResult(await request('/api/task',data));$('project-filter').value=projectId;renderTasks();
   $('add-task-panel').classList.add('hidden');$('new-task-name').value='';$('new-task-dependencies').value='';
  }catch(error){failure(error);}finally{setBusy(false);}
+});
+
+function invalidateComparison(){
+ if(!comparison)return;
+ comparison=null;$('compare-results').classList.add('hidden');
+ $('compare-status').textContent='Workspace changed. Compare again to refresh the differences.';
+}
+function compareNumber(value){return Math.abs(value)>1e-9&&Math.abs(value)<.01?'<0.01':Number(value.toFixed(2)).toLocaleString();}
+function comparisonCompletion(view,dates){
+ if(!view)return '—';
+ if(view.empty)return 'No tasks';
+ if(view.withheldReason)return view.withheldReason==='on-hold'?'On hold — withheld':'Blocked — withheld';
+ const text=dates&&view.p95Date?dateText(view.p95Date):view.p95===null?'Unavailable':`Day ${compareNumber(view.p95)}`;return text+(view.feasible===false?' · Conflicts':'');
+}
+function comparisonTarget(view){
+ if(!view)return '—';
+ if(view.deadline===null)return 'No deadline';
+ const status=view.deadlineStatus==='late'?'Late at P95':view.deadlineStatus==='met'?'On time at P95':'Unavailable';
+ return `${deadlineText(view.deadline)} · ${status}`;
+}
+function comparisonTiming(task,dates){
+ if(!task)return '—';
+ if(task.start===null)return 'Unscheduled';
+ return dates&&task.startDate?`${dateText(task.startDate)} → ${dateText(task.finishDate)}`:`Day ${compareNumber(task.start)} → ${compareNumber(task.finish)}`;
+}
+function comparisonAssignments(task){
+ if(!task)return '—';
+ return `${task.resource} (${task.allocationPercent}%)`+(task.supportingResources.length?'; support: '+task.supportingResources.map(a=>`${a.resource} (${a.allocationPercent}%)`).join('; '):'');
+}
+function renderComparison(value){
+ const body=$('compare-projects');body.replaceChildren();
+ let earlier=0,later=0;
+ for(const project of value.projects){
+  const shift=project.p95Change,changed=shift!==null&&Math.abs(shift)>1e-9;
+  if(changed){if(shift<0)earlier++;else later++;}
+  const row=element('tr'),label=project.after?.name??project.before?.name??project.projectId;
+  const magnitude=shift===null?null:Math.abs(shift);const difference=shift===null?'Not comparable':!changed?'No change':`${compareNumber(magnitude)} ${Math.abs(magnitude-1)<1e-9?'day':'days'} ${shift<0?'earlier':'later'}`;
+  for(const text of [label,project.status,project.before?.order??'—',project.after?.order??'—',comparisonCompletion(project.before,value.calendarDates),comparisonCompletion(project.after,value.calendarDates),difference,comparisonTarget(project.before),comparisonTarget(project.after)])row.append(element('td',text));
+  if(changed)row.classList.add(shift>0?'compare-later':'compare-earlier');body.append(row);
+ }
+ $('compare-summary').replaceChildren();
+ for(const text of [`${earlier} ${earlier===1?'project':'projects'} earlier`,`${later} ${later===1?'project':'projects'} later`,`${value.tasks.length} task changes`,`${value.resources.length} resource/calendar changes`])$('compare-summary').append(element('span',text));
+ $('compare-names').textContent=`Baseline: ${value.baselineName} (${value.baselineVersion}) → Current: ${value.scenarioName} (${value.scenarioVersion}).`;
+ $('compare-tasks').replaceChildren();
+ for(const task of value.tasks){
+  const row=element('tr'),details=[];
+  if(task.before&&task.after){
+   if(task.changes.includes('Estimates'))details.push(`P20/P80: ${task.before.goodCase}/${task.before.poorCase} → ${task.after.goodCase}/${task.after.poorCase}`+(JSON.stringify(task.before.remaining)!==JSON.stringify(task.after.remaining)?' · remaining estimates changed':''));
+   if(task.changes.includes('Dependencies'))details.push(`Dependencies: ${task.before.dependsOn.join(', ')||'none'} → ${task.after.dependsOn.join(', ')||'none'}`);
+   if(task.changes.includes('Deadline'))details.push(`Deadline: ${task.before.deadline===null?'none':deadlineText(task.before.deadline)} → ${task.after.deadline===null?'none':deadlineText(task.after.deadline)}`);
+   if(task.changes.includes('Priority'))details.push(`Priority: ${task.before.priority} → ${task.after.priority}`);
+   if(task.changes.includes('Progress'))details.push(`Status: ${task.before.status} → ${task.after.status}`);
+   if(task.changes.includes('Scheduling settings'))details.push('Duration type or fixed commitment changed');
+  }
+  for(const text of [`${task.taskId} · ${task.after?.name??task.before?.name}`,task.status+': '+task.changes.join(', '),comparisonTiming(task.before,value.calendarDates),comparisonTiming(task.after,value.calendarDates),comparisonAssignments(task.before),comparisonAssignments(task.after),details.join('; ')||'—'])row.append(element('td',text));
+  $('compare-tasks').append(row);
+ }
+ $('compare-no-tasks').textContent=value.tasks.length?'':'No task scheduling or assignment changes.';
+ $('compare-resources').replaceChildren();
+ for(const resource of value.resources){
+  const lines=[`${resource.resource} · ${resource.status}`];
+  for(const [label,view]of [['Baseline',resource.before],['Current',resource.after]])if(view){
+   const calendar=view.calendar;const weekly=calendar?calendar.weeklyHours.map((hours,index)=>`${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][index]} ${hours}h`).join(', '):'No calendar';const exceptions=calendar?Object.entries(calendar.exceptions).map(([date,hours])=>`${date}: ${hours}h`).join(', '):'';lines.push(`${label}: ${weekly}${exceptions?'; exceptions '+exceptions:''}`);
+  }
+  if(resource.before&&resource.after&&JSON.stringify(resource.before.details)!==JSON.stringify(resource.after.details))lines.push('Resource description or display details changed');
+  $('compare-resources').append(element('p',lines.join(' — ')));
+ }
+ if(!value.resources.length)$('compare-resources').append(element('p','No resource or calendar changes.'));
+ $('compare-conflicts').textContent=`Schedule conflicts: baseline ${value.baselineConflicts.length}; current ${value.scenarioConflicts.length}.${value.settingsChanged?' Estimate units, task ordering overrides or feeding selections changed.':''}`;
+ for(const setting of value.settingsChanges??[])$('compare-resources').append(element('p',`${setting.field}: ${JSON.stringify(setting.before)} → ${JSON.stringify(setting.after)}`));
+ $('compare-method').textContent=value.interpretation;
+ $('compare-results').classList.remove('hidden');
+}
+$('run-compare').addEventListener('click',async()=>{
+ if(busy||!plan)return;
+ $('compare-error').classList.add('hidden');
+ const file=$('compare-file').files[0];
+ if(!file&&!capturedBaseline){$('compare-error').textContent='Set current as baseline or choose a saved baseline file.';$('compare-error').classList.remove('hidden');return;}
+ if(dirty||result.needsAssignments||result.needsTasks){$('compare-error').textContent='Assign resources and recalculate the current workspace before comparing.';$('compare-error').classList.remove('hidden');return;}
+ setBusy(true);$('compare-status').textContent='Comparing versions…';
+ try{
+  const original=file?JSON.parse(await file.text()):capturedBaseline;
+  comparison=await request('/api/compare',{baseline:original?.plan??original,scenario:result.plan});
+  renderComparison(comparison);$('compare-status').textContent='Comparison ready. Your workspace and baseline file are unchanged.';
+ }catch(error){comparison=null;$('compare-results').classList.add('hidden');$('compare-error').textContent=error.message;$('compare-error').classList.remove('hidden');$('compare-status').textContent='Comparison could not be completed.';}
+ finally{setBusy(false);}
+});
+$('compare-file').addEventListener('change',()=>{capturedBaseline=null;invalidateComparison();$('compare-error').classList.add('hidden');$('compare-status').textContent='Baseline selected. Click Compare versions.';});
+function clearComparisonBaseline(){capturedBaseline=null;comparison=null;$('compare-file').value='';$('compare-results').classList.add('hidden');$('compare-error').classList.add('hidden');$('compare-status').textContent='Set a baseline or choose a saved file to compare.';}
+$('clear-compare').addEventListener('click',clearComparisonBaseline);
+$('capture-baseline').addEventListener('click',()=>{
+ if(!plan||busy)return;
+ if(dirty||result.needsAssignments||result.needsTasks){$('compare-error').textContent='Recalculate a fully assigned workspace before setting its baseline.';$('compare-error').classList.remove('hidden');return;}
+ if(capturedBaseline&&!confirm('Replace the captured baseline with the current calculation?'))return;
+ invalidateComparison();capturedBaseline=structuredClone(result.plan);$('compare-file').value='';$('compare-error').classList.add('hidden');
+ $('compare-status').textContent=`Baseline captured: ${capturedBaseline.name} (${capturedBaseline.versionId}). Make changes, recalculate, then Compare versions. Download baseline to keep this copy.`;
+});
+$('download-baseline').addEventListener('click',()=>{
+ if(!capturedBaseline){$('compare-error').textContent='Set current as baseline first. A baseline chosen from a file is already saved on your computer.';$('compare-error').classList.remove('hidden');return;}
+ const blob=new Blob([JSON.stringify({plan:capturedBaseline},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=workspaceFilename(`${capturedBaseline.name} baseline`);link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });

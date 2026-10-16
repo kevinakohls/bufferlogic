@@ -36,7 +36,7 @@ To build a plan without importing a file, choose **New project** in the review U
 - CSV templates, editable task notes and checklists.
 - Actual progress and explicit remaining estimates.
 - Interactive schedule timeline and weekly resource utilization graphs.
-- Workspace save/open and Excel-compatible report exports.
+- Workspace save/open, captured or saved-file baseline comparison, and Excel-compatible report exports.
 - CLI ranking of extra Saturday hours one resource at a time.
 
 Percentile forecasts use independent lognormal task durations and a fixed critical
@@ -99,10 +99,10 @@ priorities. The deliberate regression is for demonstration only.
 
 ## Future work
 
-Project baselines, saved progress history, buffer consumption and a CCPM fever
-chart are planned but not implemented. Feeding buffers, historical duration
-calibration, Monte Carlo simulation, cost/OT optimization and agents acting on
-scheduling recommendations are also future work.
+Automatic saved progress history, buffer consumption and a CCPM fever chart
+remain future work. Historical duration calibration, Monte Carlo simulation,
+cost/OT optimization and agents acting on scheduling recommendations are also
+future work.
 
 ## License
 

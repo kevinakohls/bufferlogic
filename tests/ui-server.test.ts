@@ -139,3 +139,10 @@ test('built-in housing template adds shared equipment and spotting support to ne
  for(const id of ['Backhoe 1','Loader 1','Concrete pump 1','Telehandler 1'])assert.deepEqual(first.plan.calendar.resources.find((r:{resource:string})=>r.resource===id).weeklyHours,[8,8,8,8,8,0,0]);
  const second=await (await post(base,'/api/template',{csvText:source.csvText,name:'House Two',plan:first.plan})).json();assert.equal(second.plan.projects.length,2);assert.equal(second.tasks.length,72);assert.equal(second.conflicts.length,0);assert.equal(second.plan.resources.filter((r:string)=>r==='Loader 1').length,1);
 }));
+
+test('comparison API reports a saved baseline versus a what-if plan and rejects incompatible versions',async()=>withServer(async base=>{
+ const source=JSON.parse(await readFile('examples/feeding-protection.json','utf8'));
+ const scenario=structuredClone(source);scenario.projects[0].tasks[0].goodCase=25;scenario.projects[0].tasks[0].poorCase=25;
+ const response=await post(base,'/api/compare',{baseline:{plan:source},scenario});assert.equal(response.status,200);const report=await response.json();assert.ok(report.projects.find((p:{projectId:string})=>p.projectId==='P1').p95Change>0);assert.ok(report.tasks.length>0);
+ const bad=await post(base,'/api/compare',{baseline:source,scenario:{...source,asOf:1}});assert.equal(bad.status,400);assert.match((await bad.json()).error,/Progress as of/);
+}));

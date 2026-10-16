@@ -35,3 +35,5 @@
 .delete-project{color:#a1482d}.project-order-panel .actions{flex-wrap:wrap}
 
 .supporting-editor{min-width:310px;display:flex;flex-direction:column;gap:8px}.supporting-assignment{display:flex;align-items:center;gap:8px}.supporting-assignment select{width:160px}.supporting-assignment input[type=number]{width:65px}.supporting-assignment button{padding:7px;font-size:11px}
+
+.compare-heading{padding:20px 24px}.compare-heading p{font-size:13px;color:var(--muted);line-height:1.6}.compare-controls{display:flex;align-items:end;gap:14px;flex-wrap:wrap}.compare-controls label{max-width:420px;flex:1;min-width:200px}.compare-controls input{display:block;width:100%;margin-top:8px}.compare-summary{display:flex;flex-wrap:wrap;gap:12px;padding:0 24px 12px}.compare-summary span{padding:10px 14px;background:#edf3ed;border-radius:7px;font-size:13px}.compare-later{background:#fff3ee}.compare-earlier{background:#edf7f1}.compare-resource-list{padding:0 24px;font-size:13px;overflow-wrap:anywhere}#compare-tasks td{white-space:normal;min-width:140px;vertical-align:top;line-height:1.5}#compare-projects td{white-space:normal;min-width:100px;line-height:1.5}

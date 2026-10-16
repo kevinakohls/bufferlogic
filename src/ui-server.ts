@@ -1,3 +1,4 @@
+import {compareScenarios} from './scenario-comparison.js';
 import {taskAssignments} from './task-resources.js';
 import { createBlankProject, appendTask, deleteProject } from './project-editor.js';
 import { instantiateTemplate, templateProjects } from './templates.js';
@@ -40,6 +41,9 @@ export function createReviewServer() {
       if(request.method==='GET'&&path==='/api/software-template'){json({csvText:await readFile(new URL('examples/software-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/example'){
         json({projectText:await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8'),calendarText:await readFile(new URL('examples/house-resource-calendars.csv',root),'utf8')});return;
+      }
+      if(request.method==='POST'&&path==='/api/compare'){
+        const data=await body(request);json(compareScenarios(data.baseline,data.scenario));return;
       }
       if(request.method==='POST'&&path==='/api/project/delete'){
         const data=await body(request);
