@@ -379,3 +379,9 @@ The scheduler checks every required resource together. Shared equipment and peop
 Supporting resources appear in the calculated schedule, timeline details, and utilization report. Feeding protection reserves every assigned resource through its buffer. Save/open preserves the assignments. Deleting a resource clears matching primary or supporting fields; an empty supporting field remains a required assignment, so assign a replacement or explicitly remove that requirement before scheduling. Resource counts include both roles.
 
 Load `examples/multiple-resources.json` for two projects sharing a loader. Confirm foundation work reserves the operator, loader and spotter together, landscaping waits for the loader, and the timeline shows the resource-wait link. Add/remove support, change its allocation, save/reopen, and test a loader holiday. Verify changing supporting allocation does not change the task's working-effort estimate; changing primary allocation does.
+
+### Supporting-resource editing checks
+
+Tab from a supporting-resource selector to its percentage input and then to Remove; focus should follow the existing controls without jumping out of the table. Primary-resource and duration-type edits also keep their controls mounted. Add focuses the new resource selector; Remove focuses an adjacent selector or Add when none remain.
+
+Blank, zero, negative or above-100 supporting percentages are rejected locally with a clear allocation message, restoring the previous value. Positive fractional percentages are allowed. Rejected edits do not mark a clean calculation stale or discard earlier pending edits. The Feeding tab lists primary and supporting resources separately.

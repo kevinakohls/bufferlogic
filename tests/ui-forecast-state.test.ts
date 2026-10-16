@@ -47,3 +47,9 @@ test('project headline status uses P95 deadline assessment while schedule confli
  assert.match(criticalChainSummary({tasks:[],forecast:{criticalChain:[]}}),/No tasks yet/);
  assert.match(criticalChainSummary({tasks:[{}],forecast:{criticalChain:[],withheldReason:'on-hold'}}),/on hold or blocked/);
 });
+
+const {supportingAllocationError}=await import(new URL('../../ui/forecast-state.js',import.meta.url).href);
+test('supporting allocation edits accept positive fractional percentages and reject cleared or out-of-range values',()=>{
+ for(const value of [NaN,Infinity,0,-1,101])assert.match(supportingAllocationError(value),/greater than 0 and at most 100%/);
+ for(const value of [.5,25,100])assert.equal(supportingAllocationError(value),'');
+});

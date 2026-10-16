@@ -1,5 +1,5 @@
 import {workspaceFilename} from './workspace-name.js';
-import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineTargetState,daysLateText} from './forecast-state.js';
+import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineTargetState,daysLateText,supportingAllocationError} from './forecast-state.js';
 import { renderTimeline, refreshTimeline } from './timeline.js';
 const $=id=>document.getElementById(id);
 let plan=null,result=null,dirty=false,busy=false,revision=1,exceptions=[],templateText='';
@@ -12,6 +12,7 @@ function valueText(f,key){if(f.withheldReason)return forecastState(f).completion
 function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan){renderProgress();renderProjectOrder();$('show-add-task').disabled=!plan.projects.length;$('create-task').disabled=!plan.projects.length;for(const node of document.querySelectorAll('[data-add-support]'))node.disabled=allTasks().find(t=>t.id===node.dataset.addSupport)?.durationMode==='elapsed';if(plan.calendar)renderExceptions();renderTimeDisplay();}}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
+function rejectedEdit(text){$('error').textContent=text;$('error').classList.remove('hidden');message(dirty?'Edit not applied. Earlier edits are still pending.':'Edit not applied. Calculated results are unchanged.',dirty);}
 function changed(){if(!plan)return;dirty=true;$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
 async function request(path,data){const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const value=await response.json();if(!response.ok)throw new Error(value.error??'Unable to calculate');return value;}
 function resourceName(id,source=plan){const name=source?.resourceDetails?.find(r=>r.id===id)?.name;return name&&name!==id?`${name} (${id})`:id;}
@@ -53,18 +54,33 @@ function supportingEditor(task){
   const row=element('div',undefined,'supporting-assignment');row.dataset.supportIndex=index;
   const used=new Set([task.resource,...(task.supportingResources??[]).filter((_,i)=>i!==index).map(a=>a.resource)].filter(Boolean));
   const resource=select(assignment.resource,`${task.id} supporting resource ${index+1}`,[['','Unassigned — choose a resource'],...plan.resources.filter(id=>!used.has(id)).map(id=>[id,resourceName(id)])]);resource.dataset.supportingField='resource';
-  const percent=input(assignment.allocationPercent,`${task.id} supporting allocation ${index+1}`,{type:'number',min:1,max:100,step:'any'});percent.dataset.supportingField='allocationPercent';
+  const percent=input(assignment.allocationPercent,`${task.id} supporting allocation ${index+1}`,{type:'number',min:0,max:100,step:'any'});percent.dataset.supportingField='allocationPercent';
   const remove=element('button','Remove','secondary');remove.type='button';remove.dataset.removeSupport=index;remove.setAttribute('aria-label',`${task.id} remove supporting resource ${index+1}`);
   row.append(resource,percent,element('span','%'),remove);host.append(row);
  });
  const add=element('button','Add supporting resource','secondary');add.type='button';add.dataset.addSupport=task.id;add.disabled=busy||task.durationMode==='elapsed';host.append(add);return host;
 }
+// Keep existing inputs mounted during edits so Tab and mouse focus stay intact.
+function refreshSupportingOptions(task,row){
+ for(const node of row.querySelectorAll('[data-supporting-field="resource"]')){
+  const index=Number(node.closest('[data-support-index]').dataset.supportIndex);
+  const used=new Set([task.resource,...(task.supportingResources??[]).filter((_,i)=>i!==index).map(a=>a.resource)].filter(Boolean));
+  node.replaceChildren();
+  for(const [id,label]of [['','Unassigned — choose a resource'],...plan.resources.filter(id=>!used.has(id)).map(id=>[id,resourceName(id)])]){const option=element('option',label);option.value=id;node.append(option);}
+  node.value=task.supportingResources[index].resource;
+ }
+ row.querySelector('[data-add-support]').disabled=busy||task.durationMode==='elapsed';
+}
 $('tasks-body').addEventListener('click',event=>{
  const add=event.target.closest('button[data-add-support]'),remove=event.target.closest('button[data-remove-support]');if(!add&&!remove)return;
- const task=allTasks().find(t=>t.id===event.target.closest('tr').dataset.id);
- if(add){if(task.durationMode==='elapsed'){failure(new Error('Use a working task to reserve supporting resources.'));return;}task.supportingResources??=[];task.supportingResources.push({resource:'',allocationPercent:100});}
- else task.supportingResources.splice(Number(remove.dataset.removeSupport),1);
- changed();renderTasks();renderResources();
+ const row=event.target.closest('tr'),task=allTasks().find(t=>t.id===row.dataset.id);
+ let focusIndex;
+ if(add){if(task.durationMode==='elapsed'){rejectedEdit('Use a working task to reserve supporting resources.');return;}task.supportingResources??=[];task.supportingResources.push({resource:'',allocationPercent:100});focusIndex=task.supportingResources.length-1;}
+ else {focusIndex=Number(remove.dataset.removeSupport);task.supportingResources.splice(focusIndex,1);}
+ const editor=supportingEditor(task);row.querySelector('.supporting-editor').replaceWith(editor);
+ const selects=editor.querySelectorAll('[data-supporting-field="resource"]');
+ (selects[Math.min(focusIndex,selects.length-1)]??editor.querySelector('[data-add-support]')).focus();
+ changed();renderResources();
 });
 function renderTasks(){
  const tbody=$('tasks-body');tbody.replaceChildren();const filter=$('project-filter').value;let count=0;
@@ -97,8 +113,8 @@ function resourceListChanged(){
 $('add-resource').addEventListener('click',()=>{
  if(!plan)return;
  const resource=$('new-resource').value.trim();
- if(!resource){failure(new Error('Enter a resource name.'));return;}
- if(plan.resources.includes(resource)){failure(new Error('That resource already exists.'));return;}
+ if(!resource){rejectedEdit('Enter a resource name.');return;}
+ if(plan.resources.includes(resource)){rejectedEdit('That resource already exists.');return;}
  plan.resources.push(resource);
  if(plan.calendar)plan.calendar.resources.push({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{}});
  $('new-resource').value='';resourceListChanged();
@@ -151,13 +167,24 @@ $('recalculate').addEventListener('click',async()=>{if(!plan||busy)return;setBus
  loadResult(await request('/api/schedule',{plan:draft}));
  }catch(error){failure(error);}finally{setBusy(false);}});
 $('tasks-body').addEventListener('change',event=>{const node=event.target;
- if(node.dataset.supportingField){const task=allTasks().find(t=>t.id===node.closest('tr').dataset.id),assignment=task.supportingResources[Number(node.closest('[data-support-index]').dataset.supportIndex)];assignment[node.dataset.supportingField]=node.type==='number'?node.valueAsNumber:node.value;changed();renderTasks();renderResources();return;}
+ if(node.dataset.supportingField){
+  const row=node.closest('tr'),task=allTasks().find(t=>t.id===row.dataset.id),assignment=task.supportingResources[Number(node.closest('[data-support-index]').dataset.supportIndex)];
+  if(node.dataset.supportingField==='allocationPercent'){
+   const error=supportingAllocationError(node.valueAsNumber);
+   if(error){node.value=assignment.allocationPercent;rejectedEdit(error);return;}
+   assignment.allocationPercent=node.valueAsNumber;
+  }else{
+   if(node.value&&(node.value===task.resource||task.supportingResources.some(a=>a!==assignment&&a.resource===node.value))){node.value=assignment.resource;rejectedEdit('That resource is already assigned to this task.');return;}
+   assignment.resource=node.value;refreshSupportingOptions(task,row);
+  }
+  changed();renderResources();return;
+ }
  if(!node.dataset.field)return;const task=allTasks().find(t=>t.id===node.closest('tr').dataset.id),field=node.dataset.field;
- if(field==='resource'&&(task.supportingResources??[]).some(a=>a.resource&&a.resource===node.value)){node.value=task.resource;failure(new Error('That resource is already a supporting resource. Remove that assignment before making it primary.'));return;}
- if(field==='durationMode'&&node.value==='elapsed'&&task.supportingResources?.length){node.value=task.durationMode??'working';failure(new Error('Remove supporting resources before changing this task to elapsed waiting.'));return;}
+ if(field==='resource'&&(task.supportingResources??[]).some(a=>a.resource&&a.resource===node.value)){node.value=task.resource;rejectedEdit('That resource is already a supporting resource. Remove that assignment before making it primary.');return;}
+ if(field==='durationMode'&&node.value==='elapsed'&&task.supportingResources?.length){node.value=task.durationMode??'working';rejectedEdit('Remove supporting resources before changing this task to elapsed waiting.');return;}
  if(field==='dependsOn')task.dependsOn=node.value.trim()?node.value.split(',').map(s=>s.trim()):[];
  else if(['goodCase','poorCase'].includes(field)&&task.status==='active'){task.remaining[field]=node.valueAsNumber;task.remaining.estimateStatus='current';}
- else task[field]=node.type==='number'?node.valueAsNumber:node.value;if(field==='resource'||field==='durationMode'){renderResources();renderTasks();}changed();});
+ else task[field]=node.type==='number'?node.valueAsNumber:node.value;if(field==='resource'||field==='durationMode'){renderResources();refreshSupportingOptions(task,node.closest('tr'));}changed();});
 $('project-filter').addEventListener('change',renderTasks);
 $('calendars-body').addEventListener('change',event=>{const node=event.target;if(node.dataset.day===undefined)return;const c=plan.calendar.resources.find(c=>c.resource===node.closest('tr').dataset.resource);c.weeklyHours[Number(node.dataset.day)]=node.valueAsNumber;renderResources();changed();});
 $('workday-hours').addEventListener('change',()=>{plan.calendar.hoursPerWorkday=$('workday-hours').valueAsNumber;changed();});
@@ -313,7 +340,7 @@ $('project-deadlines').addEventListener('change',updateDeadline);$('task-deadlin
 function feedingTime(day){if(!usesCalendarDates(result.plan))return `Day ${hours(day)}`;return `${dateText(new Date(Date.parse(plan.calendar.startDate+'T00:00:00Z')+day*86400000).toISOString().slice(0,10))} (day ${hours(day)})`;}
 function renderFeeding(){
  const body=$('feeding-tasks');body.replaceChildren();
- for(const project of plan.projects)for(const task of project.tasks){const row=element('tr'),check=input('',`${task.id} latest safe start`,{type:'checkbox'});check.checked=plan.feedingTaskIds?.includes(task.id)??false;check.dataset.feedingTask=task.id;row.append(cell(check),element('td',project.name),element('td',`${task.id} · ${task.name}`),element('td',resourceName(task.resource)));body.append(row);}
+ for(const project of plan.projects)for(const task of project.tasks){const row=element('tr'),check=input('',`${task.id} latest safe start`,{type:'checkbox'});check.checked=plan.feedingTaskIds?.includes(task.id)??false;check.dataset.feedingTask=task.id;row.append(cell(check),element('td',project.name),element('td',`${task.id} · ${task.name}`),element('td',resourceName(task.resource)),element('td',supportingText(task)));body.append(row);}
  const host=$('feeding-report');host.replaceChildren();const report=result.feedingReport;if(!report){host.append(element('p',result.needsTasks?'Add tasks to calculate feeding protection.':result.needsAssignments?'Assign resources and recalculate to calculate feeding protection.':'No feeding tasks selected in the last calculation.'));return;}
  for(const change of report.changes){const item=element('article');item.append(element('h4',`${taskName(change.taskId)} · ${change.status}`),element('p',change.reason));if(change.protectedStart!==null)item.append(element('p',`Start: ${feedingTime(change.originalStart)} → ${feedingTime(change.newStart)}. P50: ${hours(change.p50Effort)} workdays; P99: ${hours(change.p99Effort)} workdays; buffer: ${hours(change.bufferEffort)} workdays. Protected downstream start: ${feedingTime(change.protectedStart)}.`));for(const window of report.resourceWindows.filter(w=>w.taskId===change.taskId))item.append(element('p',`${resourceName(window.resource)}: ${window.allocationPercent}% allocation freed from ${feedingTime(window.start)} to ${feedingTime(window.finish)}. Later occupied by this task from ${feedingTime(change.newStart)} to ${feedingTime(change.newFinish)}; protection reserves its allocation until ${feedingTime(change.protectionFinish??change.protectedStart)}. Other work can use safe earlier gaps.`));if(change.feedsHigherPriorityProject)item.append(element('p',`Owning project deterministic completion: ${change.ownerCompletionBefore===null?'unavailable':feedingTime(change.ownerCompletionBefore)} → ${change.ownerCompletionAfter===null?'unavailable':feedingTime(change.ownerCompletionAfter)}. Higher-priority downstream start remains protected.`));host.append(item);}
 }

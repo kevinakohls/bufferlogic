@@ -48,3 +48,8 @@ export function criticalChainSummary(project) {
   if (!project.tasks.length) return 'No tasks yet — add tasks to calculate a critical chain';
   return 'No calculated critical chain — recalculate and check task assignments';
 }
+
+export function supportingAllocationError(value) {
+  return Number.isFinite(value) && value > 0 && value <= 100
+    ? '' : 'Enter a supporting allocation greater than 0 and at most 100%.';
+}
