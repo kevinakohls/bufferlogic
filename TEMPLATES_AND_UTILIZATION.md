@@ -47,8 +47,8 @@ defaults. Excel row reordering does change the template's default order.
 
 Resource labels are shared across copies; `Frontend Developer` means the same planned
 capacity in both projects. This is not a new developer per project. New resource labels
-receive weekday calendars (eight hours per day in a new workspace, or the existing
-standard workday hours in an existing calendar). Existing calendars, notes and projects
+receive eight-hour Monday–Friday calendars (40 hours per week), independently of the
+workspace’s hours-per-estimated-workday conversion. Existing calendars, notes and projects
 are preserved. Review those defaults before making customer promises. Naming an actual
 person does not add capacity; multiple developers must be modeled as distinct resources
 and assigned appropriately.

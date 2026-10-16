@@ -1,3 +1,4 @@
+import {createCalendar} from '../src/resource-calendars.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -93,4 +94,17 @@ test('CSV supporting-resource cells reject malformed JSON, invalid allocations a
   assert.throws(()=>instantiateTemplate(source,'House'),/Supporting resources/);
   assert.throws(()=>parsePortfolioCsv(source.replace('Supporting resources','Supporting resources,Project')+',P1'),/Supporting resources/);
  }
+});
+
+
+test('template resources default to 40 hours even when estimate workdays use ten hours, preserving existing custom calendars',()=>{
+ const original=plan([task('X')]);
+ const base={...original,calendar:{...original.calendar!,hoursPerWorkday:10,resources:original.calendar!.resources.map(c=>({...c,weeklyHours:[6,6,6,6,6,0,0],exceptions:{'2026-10-12':0}}))}};
+ const copy=instantiateTemplate(csv.replaceAll('Alice','Developer'),'Copy',base);
+ assert.equal(copy.calendar!.hoursPerWorkday,10);
+ assert.deepEqual(copy.calendar!.resources.find(r=>r.resource==='Developer')!.weeklyHours,[8,8,8,8,8,0,0]);
+ for(const existing of base.calendar.resources)assert.deepEqual(copy.calendar!.resources.find(r=>r.resource===existing.resource),existing);
+ const result=schedulePortfolio(copy),first=copy.projects[1]!.tasks[0]!,entry=result.tasks.find(t=>t.id===first.id)!;
+ const hours=createCalendar(copy.calendar!).effortBetween('Developer',entry.start,entry.finish)*copy.calendar!.hoursPerWorkday;
+ assert.equal(hours,20); // Two estimated days still mean 20 hours; availability remains eight hours/day.
 });

@@ -42,6 +42,7 @@ export function instantiateTemplate(text:string, name:string, existing?:Portfoli
    ...Object.fromEntries([['Description','description'],['Comments','comments'],['Completion criteria','completionCriteria'],['Lock reason','lockReason']].filter(([column])=>header.includes(column!)).map(([column,field])=>[field,cell(row,column!)]))};
  });
  const resources=[...new Set([...base.resources,...tasks.flatMap(t=>taskAssignments(t).map(a=>a.resource)).filter(Boolean)])];
+ // New resources default to 40-hour weeks; hoursPerWorkday is an estimate conversion, not availability.
  const calendar=base.calendar?{...base.calendar,resources:[...base.calendar.resources,...resources.filter(r=>!base.calendar!.resources.some(c=>c.resource===r)).map(resource=>({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}))]}:undefined;
  return parsePortfolio({...base,approvalStatus:'draft',versionId:existing?`${base.versionId}-template-${projectId}`:'template-v1',resources,projects:[...base.projects,{id:projectId,name:name.trim(),tasks}],...(calendar?{calendar}:{})});
 }
