@@ -1,0 +1,131 @@
+{
+  "id": "multiple-resource-demo",
+  "name": "Shared equipment demonstration",
+  "versionId": "v1",
+  "asOf": 0,
+  "settings": {
+    "durationUnit": "days",
+    "displayTime": "days"
+  },
+  "resources": [
+    "Operator",
+    "Front-end loader",
+    "Spotter",
+    "Second operator"
+  ],
+  "calendar": {
+    "startDate": "2026-10-19",
+    "timeZone": "America/New_York",
+    "hoursPerWorkday": 8,
+    "resources": [
+      {
+        "resource": "Operator",
+        "weeklyHours": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          0,
+          0
+        ],
+        "exceptions": {}
+      },
+      {
+        "resource": "Front-end loader",
+        "weeklyHours": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          0,
+          0
+        ],
+        "exceptions": {}
+      },
+      {
+        "resource": "Spotter",
+        "weeklyHours": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          0,
+          0
+        ],
+        "exceptions": {}
+      },
+      {
+        "resource": "Second operator",
+        "weeklyHours": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          0,
+          0
+        ],
+        "exceptions": {}
+      }
+    ]
+  },
+  "projects": [
+    {
+      "id": "P1",
+      "name": "House foundation",
+      "tasks": [
+        {
+          "id": "FOUNDATION",
+          "name": "Excavate foundation",
+          "projectId": "P1",
+          "resource": "Operator",
+          "supportingResources": [
+            {
+              "resource": "Front-end loader",
+              "allocationPercent": 100
+            },
+            {
+              "resource": "Spotter",
+              "allocationPercent": 50
+            }
+          ],
+          "goodCase": 2,
+          "poorCase": 2,
+          "dependsOn": [],
+          "priority": 1,
+          "allocationPercent": 100,
+          "status": "planned",
+          "durationMode": "working"
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "Landscaping",
+      "tasks": [
+        {
+          "id": "LANDSCAPE",
+          "name": "Prepare landscaping",
+          "projectId": "P2",
+          "resource": "Second operator",
+          "supportingResources": [
+            {
+              "resource": "Front-end loader",
+              "allocationPercent": 100
+            }
+          ],
+          "goodCase": 2,
+          "poorCase": 2,
+          "dependsOn": [],
+          "priority": 1,
+          "allocationPercent": 100,
+          "status": "planned",
+          "durationMode": "working"
+        }
+      ]
+    }
+  ]
+}

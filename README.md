@@ -30,7 +30,7 @@ To build a plan without importing a file, choose **New project** in the review U
 ## Implemented features
 
 - Projects sharing resources, project order and task order exceptions.
-- Nonpreemptive scheduling, resource allocations, locked commitments and milestones.
+- Nonpreemptive scheduling, primary and multiple supporting resources, allocations, locked commitments and milestones.
 - Approximate fixed-critical-chain P50/P80/P95/P98/P99 completion forecasts.
 - Resource calendars, dated exceptions and project/task deadline warnings.
 - CSV templates, editable task notes and checklists.

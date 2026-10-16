@@ -33,3 +33,5 @@
 .deadline-missed{color:#a1482d;background:#fff1eb}
 
 .delete-project{color:#a1482d}.project-order-panel .actions{flex-wrap:wrap}
+
+.supporting-editor{min-width:310px;display:flex;flex-direction:column;gap:8px}.supporting-assignment{display:flex;align-items:center;gap:8px}.supporting-assignment select{width:160px}.supporting-assignment input[type=number]{width:65px}.supporting-assignment button{padding:7px;font-size:11px}

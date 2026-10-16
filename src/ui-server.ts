@@ -1,3 +1,4 @@
+import {taskAssignments} from './task-resources.js';
 import { createBlankProject, appendTask, deleteProject } from './project-editor.js';
 import { instantiateTemplate, templateProjects } from './templates.js';
 import { resourceUtilization } from './utilization.js';
@@ -12,7 +13,7 @@ import { parseResourceCalendarsCsv, todayDate } from './resource-calendars.js';
 function reviewResult(input:unknown){
  const plan=parsePortfolio(input);
  if(!plan.projects.some(project=>project.tasks.length))return {plan,needsTasks:true};
- const unassignedTaskIds=plan.projects.flatMap(project=>project.tasks).filter(task=>!task.resource).map(task=>task.id);
+ const unassignedTaskIds=plan.projects.flatMap(project=>project.tasks).filter(task=>taskAssignments(task).some(a=>!a.resource)).map(task=>task.id);
  if(unassignedTaskIds.length)return {plan,needsAssignments:true,unassignedTaskIds};
  const result=schedulePortfolio(plan);return {...result,...(result.plan.calendar?{utilization:resourceUtilization(result)}:{})};}
 const root = new URL('../../', import.meta.url);

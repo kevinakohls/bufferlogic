@@ -367,3 +367,15 @@ Deletion is blocked when another project's tasks depend on work in the selected 
 You can delete the last project. Resources remain available, the empty workspace is saveable, and **New project/Add project** lets you start again. Add task is disabled until a project exists.
 
 Manual check: cancel deletion and verify pending edits remain. Confirm deletion of an independent project and verify all its tasks disappear while shared resources remain. Try deleting a project with cross-project dependents and verify it is blocked. Delete the last project, save/reopen, and create a new project using retained resources.
+
+## Primary and multiple supporting resources
+
+The **Tasks** table labels the original resource and allocation as **Primary resource** and **Primary allocation %**. Add the task normally, then click **Add supporting resource** in its row as many times as needed. Select each supporting resource and its allocation percentage. Recalculate to apply the changes. The same resource cannot be primary and supporting, or appear twice on one task. Remove a supporting assignment with its **Remove** button.
+
+For foundation excavation, choose the operator as primary, a front-end loader at 100% as supporting, and a spotter at 50% as another supporting resource. The operator's P20/P80 estimates and allocation determine working effort. Supporting allocations reserve capacity for the full task and do not scale its effort. A resource needed for only one phase should be modeled in a separate dependent task. Elapsed waiting cannot reserve supporting resources; milestones have no capacity demand.
+
+The scheduler checks every required resource together. Shared equipment and people create resource waits and critical-chain links across projects. Calendar mode uses common daily working availability (the minimum hours across assigned resource calendars, including dated exceptions); closures or shorter supporting calendars can extend calendar duration. Reservations remain nonpreemptive across the entire interval, including gaps, as with existing single-resource tasks. Calendar hours are daily capacity, not actual shift times.
+
+Supporting resources appear in the calculated schedule, timeline details, and utilization report. Feeding protection reserves every assigned resource through its buffer. Save/open preserves the assignments. Deleting a resource clears matching primary or supporting fields; an empty supporting field remains a required assignment, so assign a replacement or explicitly remove that requirement before scheduling. Resource counts include both roles.
+
+Load `examples/multiple-resources.json` for two projects sharing a loader. Confirm foundation work reserves the operator, loader and spotter together, landscaping waits for the loader, and the timeline shows the resource-wait link. Add/remove support, change its allocation, save/reopen, and test a loader holiday. Verify changing supporting allocation does not change the task's working-effort estimate; changing primary allocation does.

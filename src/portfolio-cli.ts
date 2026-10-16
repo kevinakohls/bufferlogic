@@ -61,7 +61,7 @@ try {
         console.log(`Calendar start: ${result.plan.calendar.startDate}; ${result.plan.calendar.hoursPerWorkday} hours per estimated workday`);
         console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, ...(p.forecast.withheldReason?{Status:p.forecast.withheldReason}:p.forecast.completionDates) })));
       }
-      console.table(result.tasks.map(t=>({ Project:t.projectId, Task:t.id, Resource:t.resource, 'Allocation %':t.allocationPercent, Start:t.start, Finish:t.finish, Locked:t.locked, 'Resource waits for':t.resourcePredecessors.join(' -> '), ...(result.plan.calendar ? { 'Start date':t.startDate, 'Finish date':t.finishDate } : {}) })));
+      console.table(result.tasks.map(t=>({ Project:t.projectId, Task:t.id, Resource:t.resource, 'Supporting resources':(t.supportingResources??[]).map(a=>`${a.resource} (${a.allocationPercent}%)`).join(', '), 'Allocation %':t.allocationPercent, Start:t.start, Finish:t.finish, Locked:t.locked, 'Resource waits for':t.resourcePredecessors.join(' -> '), ...(result.plan.calendar ? { 'Start date':t.startDate, 'Finish date':t.finishDate } : {}) })));
       if(result.feedingReport){console.table(result.feedingReport.changes);console.table(result.feedingReport.resourceWindows);console.log(result.feedingReport.interpretation);}
       if (comparison) console.table(comparison.projects.map(p => ({ Project:p.projectId, 'Completion change': p.whatIf.withheldReason||p.current?.withheldReason?'withheld':p.current ? p.whatIf.deterministicCompletion-p.current.deterministicCompletion : 'new', ...p.percentileDifferences })));
       for (const conflict of result.conflicts) console.log(`CONFLICT: ${conflict.message} [${conflict.taskIds.join(', ')}]`);

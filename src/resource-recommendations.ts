@@ -9,7 +9,7 @@ export function recommendSaturdayHours(plan: PortfolioPlan) {
   const includedIds = new Set(included.map(project => project.id));
   const excludedProjects = baseline.projects.filter(project => project.forecast.withheldReason).map(project => ({projectId:project.id,projectName:project.name,reason:project.forecast.withheldReason}));
   if (!included.length) throw new Error('No fully scheduled projects available for resource recommendations. Resume held work and recalculate.');
-  const candidates = plan.resources.map(resource => {
+  const candidates = baseline.plan.resources.map(resource => {
     const calendar = baseline.plan.calendar!.resources.find(c => c.resource === resource)!;
     const originalHours = calendar.weeklyHours[5]!;
     const proposedHours = Math.min(24, originalHours + 8);

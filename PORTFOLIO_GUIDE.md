@@ -69,7 +69,7 @@ and `dependsOn` fields, plus:
 - `locked`: optional `{ "start": 7, "finish": 8 }`, both times fixed.
 - Existing progress metadata: `status`, `remaining`, and `actuals`.
 
-Ordinary estimates are task P20/P80 durations at 100% allocation. At 50%, the
+Ordinary estimates are task P20/P80 durations at 100% primary-resource allocation. At 50%, the
 engine doubles duration and scales distribution moments accordingly. Concurrent
 allocations must total no more than 100%. The engine never interrupts a task or
 changes its allocation while it is running. Dynamic allocations and automatic task
@@ -292,3 +292,24 @@ The optional top-level `name` is the workspace display name, separate from stabl
 ### Project deletion
 
 `POST /api/project/delete` accepts `plan` and `projectId`. The immutable `deleteProject` helper removes the selected project and its tasks, filters their IDs from `feedingTaskIds` and `taskOrderOverrides`, and preserves resource definitions, calendars, workspace name and remaining project order. It rejects unknown projects and any surviving task dependency on removed work. The review API recalculates the result, or returns its normal `needsTasks`/`needsAssignments` draft shape when appropriate. User confirmation is provided by the browser before sending the request.
+
+## Multiple resources per task
+
+Existing `resource` and `allocationPercent` remain the primary assignment. Optional `supportingResources` contains `{resource, allocationPercent}` entries; each percentage must be greater than zero and at most 100. Resource IDs must be distinct across primary and supporting assignments. JSON and saved workspaces preserve this field on both plan tasks and scheduled entries; existing CSV imports continue to provide a primary assignment only.
+
+```json
+{
+  "resource": "Operator",
+  "allocationPercent": 100,
+  "supportingResources": [
+    {"resource": "Front-end loader", "allocationPercent": 100},
+    {"resource": "Spotter", "allocationPercent": 50}
+  ]
+}
+```
+
+P20/P80 estimates, remaining estimates and primary allocation control working effort. Supporting allocations reserve capacity for that same interval, without independently scaling effort. All required resources must fit simultaneously. Calendar conversion uses the minimum available hours of assigned resources per date, with exceptions overriding weekly hours, so there must be common working capacity. Calendars do not express clock-time shifts. Fixed commitments remain fixed and report capacity/calendar conflicts; active work reserves all assignments. Zero-duration milestones consume no capacity; elapsed waiting with supporting reservations is rejected.
+
+Resource-wait predecessors, critical-chain links, calendar percentile conversion, utilization, resource recommendations and feeding reservations include supporting resources. Utilization charges common working hours times each assignment's allocation; feeding buffers remain reservations rather than productive utilization. Version comparison reports assignment changes even if task dates are unchanged. Missing supporting IDs join the resource list and receive default calendars when applicable. Empty supporting IDs can be saved as drafts but block scheduling, just like an empty primary assignment.
+
+Use separate dependent tasks for resources needed during different phases. This version does not support resource pools, interchangeable equipment selection, or different start/finish windows for individual assignments. See `examples/multiple-resources.json` for a complete input.

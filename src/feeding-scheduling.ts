@@ -1,3 +1,4 @@
+import {taskAssignments,taskCalendarSettings,createTaskCalendar,type ResourceAssignment} from "./task-resources.js";
 import { fitTaskLognormal } from "./percentiles.js";
 import { createCalendar } from "./resource-calendars.js";
 import type {
@@ -63,57 +64,31 @@ function latestStart(
 
 /** Move left across occupied intervals until the whole P99 window fits. */
 function latestResourceWindow(
-  plan: PortfolioPlan,
-  resource: string,
-  target: number,
-  effort: number,
-  allocation: number,
-  occupied: readonly {
-    resource: string;
-    start: number;
-    finish: number;
-    allocationPercent: number;
-  }[],
-): { start: number; finish: number } {
-  const calendar = plan.calendar ? createCalendar(plan.calendar) : undefined;
-  let boundary = target;
-  for (let attempt = 0; attempt <= occupied.length * 2 + 2; attempt++) {
-    const start = latestStart(plan, resource, boundary, effort);
-    if (start < plan.asOf - 1e-9) return { start: -1, finish: boundary };
-    const finish = calendar
-      ? calendar.finish(resource, start, effort)
-      : start + effort;
-    const blocks = occupied.filter(
-      (slot) =>
-        slot.resource === resource &&
-        slot.start < finish - 1e-9 &&
-        slot.finish > start + 1e-9,
-    );
-    const points = [
-      start,
-      ...blocks.flatMap((slot) => [
-        Math.max(start, slot.start),
-        Math.min(finish, slot.finish),
-      ]),
-    ]
-      .filter((time) => time < finish - 1e-9)
-      .sort((a, b) => a - b);
-    const violation = points.find(
-      (time) =>
-        blocks
-          .filter((slot) => slot.start <= time && slot.finish > time + 1e-9)
-          .reduce((load, slot) => load + slot.allocationPercent, allocation) >
-        100 + 1e-9,
-    );
-    if (violation === undefined) return { start, finish };
-    const active = blocks.filter(
-      (slot) => slot.start <= violation && slot.finish > violation + 1e-9,
-    );
-    const next = Math.max(...active.map((slot) => slot.start));
-    if (next >= boundary - 1e-9) return { start: -1, finish: boundary };
-    boundary = next;
+  plan: PortfolioPlan, resource: string, target: number, effort: number, allocation: number,
+  occupied: readonly {resource:string;start:number;finish:number;allocationPercent:number}[],
+  assignments: readonly ResourceAssignment[] = [{resource,allocationPercent:allocation}],
+): {start:number;finish:number} {
+  const calendar=plan.calendar?createCalendar(plan.calendar):undefined;
+  let boundary=target;
+  for(let attempt=0;attempt<=occupied.length*2+2;attempt++){
+    const start=latestStart(plan,resource,boundary,effort);
+    if(start<plan.asOf-1e-9)return {start:-1,finish:boundary};
+    const finish=calendar?calendar.finish(resource,start,effort):start+effort;
+    let next:number|undefined;
+    for(const assignment of assignments){
+      const blocks=occupied.filter(slot=>slot.resource===assignment.resource&&slot.start<finish-1e-9&&slot.finish>start+1e-9);
+      const points=[start,...blocks.flatMap(slot=>[Math.max(start,slot.start),Math.min(finish,slot.finish)])].filter(time=>time<finish-1e-9).sort((a,b)=>a-b);
+      const violation=points.find(time=>blocks.filter(slot=>slot.start<=time&&slot.finish>time+1e-9).reduce((sum,slot)=>sum+slot.allocationPercent,assignment.allocationPercent)>100+1e-9);
+      if(violation!==undefined){
+        const active=blocks.filter(slot=>slot.start<=violation&&slot.finish>violation+1e-9);
+        next=Math.max(next??-Infinity,...active.map(slot=>slot.start));
+      }
+    }
+    if(next===undefined)return {start,finish};
+    if(next>=boundary-1e-9)return {start:-1,finish:boundary};
+    boundary=next;
   }
-  return { start: -1, finish: boundary };
+  return {start:-1,finish:boundary};
 }
 
 /** Protect baseline targets, fit selected feeder windows, then dispatch other work into safe gaps. */
@@ -277,17 +252,16 @@ export function scheduleFeedingPortfolio(
           finish: entry.finish,
         });
     }
-    const occupied = [...proposedSlots].map(([id, slot]) => ({
-      ...entries.get(id)!,
-      ...slot,
-    }));
+    const occupied = [...proposedSlots].flatMap(([id, slot]) => taskAssignments(entries.get(id)!).map(assignment=>({...slot,...assignment})));
+    const feedingPlan=plan.calendar?{...plan,calendar:taskCalendarSettings(plan.calendar,task)}:plan;
     const window = latestResourceWindow(
-      plan,
+      feedingPlan,
       task.resource,
       target,
       change.p99Effort,
       task.allocationPercent ?? 100,
       [...occupied, ...reservations],
+      taskAssignments(task),
     );
     const start = window.start;
     change.protectionFinish = window.finish;
@@ -306,16 +280,16 @@ export function scheduleFeedingPortfolio(
       continue;
     }
     const finish = calendar
-      ? calendar.finish(task.resource, start, change.p50Effort)
+      ? createTaskCalendar(plan.calendar!,task).finish(task.resource, start, change.p50Effort)
       : start + change.p50Effort;
     for (const [id, slot] of proposedSlots) protectedSlots.set(id, slot);
     protectedSlots.set(id, { start, finish });
     starts.set(id, start);
-    reservations.push({
-      resource: task.resource,
+    for(const assignment of taskAssignments(task))reservations.push({
+      resource: assignment.resource,
       start: finish,
       finish: window.finish,
-      allocationPercent: task.allocationPercent ?? 100,
+      allocationPercent: assignment.allocationPercent,
     });
     change.newStart = start;
     change.newFinish = finish;
@@ -330,7 +304,7 @@ export function scheduleFeedingPortfolio(
   if (starts.size) {
     result = forwardSchedule(plan, previous, placement);
     const reservationConflict = reservations.some((slot) => {
-      const overlaps = result.tasks.filter(
+      const overlaps = result.tasks.flatMap(task=>taskAssignments(task).map(assignment=>({...task,...assignment}))).filter(
         (task) =>
           task.resource === slot.resource &&
           task.start < slot.finish &&
@@ -411,12 +385,12 @@ export function scheduleFeedingPortfolio(
   }
   for (const change of report.changes)
     if (change.status === "applied")
-      report.resourceWindows.push({
-        resource: change.resource,
+      for(const assignment of taskAssignments(byId.get(change.taskId)!))report.resourceWindows.push({
+        resource: assignment.resource,
         taskId: change.taskId,
         start: change.originalStart,
         finish: Math.min(change.originalFinish, change.newStart),
-        allocationPercent: byId.get(change.taskId)!.allocationPercent ?? 100,
+        allocationPercent: assignment.allocationPercent,
         meaning:
           "Feeder allocation released before its delayed start; other work may use this gap if it fits protected reservations",
       });

@@ -121,3 +121,13 @@ test('project deletion API blocks cross-project dependencies and supports an emp
  const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(last),format:'json'})).json();assert.deepEqual(reopened.plan,last.plan);
  assert.equal((await post(base,'/api/project/delete',{plan:source,projectId:'missing'})).status,400);
 }));
+
+test('supporting assignments round-trip through the review API, and missing support blocks calculation without dropping the requirement',async()=>withServer(async base=>{
+ const source=JSON.parse(await readFile('examples/feeding-protection.json','utf8'));
+ source.projects[0].tasks[0].supportingResources=[{resource:'Loader',allocationPercent:100},{resource:'Spotter',allocationPercent:50}];
+ const loaded=await (await post(base,'/api/load',{projectText:JSON.stringify(source),format:'json'})).json();
+ assert.ok(loaded.plan.resources.includes('Loader'));assert.equal(loaded.tasks.find((t:{id:string})=>t.id==='C').supportingResources.length,2);
+ const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(loaded),format:'json'})).json();assert.deepEqual(reopened.tasks,loaded.tasks);
+ reopened.plan.projects[0].tasks[0].supportingResources[0].resource='';reopened.plan.resources=reopened.plan.resources.filter((r:string)=>r!=='Loader');
+ const draft=await (await post(base,'/api/schedule',{plan:reopened.plan})).json();assert.equal(draft.needsAssignments,true);assert.deepEqual(draft.unassignedTaskIds,['C']);assert.equal(draft.projects,undefined);assert.equal(draft.plan.projects[0].tasks[0].supportingResources[0].resource,'');
+}));
