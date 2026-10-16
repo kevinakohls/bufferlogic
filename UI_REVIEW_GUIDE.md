@@ -114,6 +114,21 @@ Open the **Timeline** tab after loading or calculating a plan.
 - Diamonds represent zero-duration milestones. **L** and a stronger outline mark locked
   commitments. Infeasible project summaries and selected-task conflicts stay visible.
 
+If a project appears entirely green or has no visible connections, first check the
+controls above the chart. Only the project chosen in **Highlight project** has its
+critical chain highlighted; scrolling to another project or selecting one of its
+tasks does not change that choice. Green bars in that other project do not mean it
+has no critical chain. Choose that project explicitly to inspect its chain.
+
+To inspect every recorded dependency, choose **Show links → All dependencies and
+waits**. The default **Critical chain & feeders** view filters other connections,
+and **No links** hides them. Cross-project links can extend above or below the
+visible rows, so scroll to see both endpoints. For example, if P2-T002 depends on
+P1-T001 after the redundant P2-T001 is deleted, highlight Project Two and show all
+dependencies and waits to inspect P1-T001 → P2-T002. Changing these display controls
+does not change dependencies or require recalculation. After editing dependencies
+or deleting a task, use the successfully recalculated schedule before inspecting.
+
 For a review demonstration, load the houses, highlight P2 and find task 38
 (architectural design). It depends on task 37 in P2 but waits for task 2 in P1 to
 release the Architect. Click task 2 in the resource-wait list to see how P1's work

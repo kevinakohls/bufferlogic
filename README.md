@@ -47,6 +47,9 @@ risk without changing dispatch order or locking dates.
 
 Load the two-house example in the UI to see projects competing for shared crews.
 The **Timeline** highlights a project's critical chain across project boundaries.
+Choose **Highlight project** for the project you want to inspect; scrolling or selecting
+a task does not change the highlighted project. Use **Show links → All dependencies
+and waits** to see connections filtered out by the default view.
 Create project copies from housing or software CSV templates (the housing template includes shared equipment and spotting support), update progress and
 deadlines, and use **Save workspace** to retain the plan.
 
