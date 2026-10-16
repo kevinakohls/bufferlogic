@@ -4,7 +4,15 @@ function comparisonPlan(value:unknown):PortfolioPlan {
   const source=typeof value==='object'&&value!==null&&!Array.isArray(value)&&'plan' in value?value.plan:value;
   return parsePortfolio(source);
 }
-const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
+// Object key order is storage detail. Array order stays meaningful unless a field
+// is explicitly normalized as a set below (dependencies and supporting resources).
+function canonical(value:unknown):unknown {
+  if(Array.isArray(value))return value.map(canonical);
+  if(typeof value==='object'&&value!==null)return Object.fromEntries(
+    Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,item])=>[key,canonical(item)]));
+  return value;
+}
+const same=(a:unknown,b:unknown)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
 const ids=<T extends {id:string}>(items:readonly T[])=>new Map(items.map(item=>[item.id,item]));
 
 /** Recalculate both plans under the current engine; keep the live workspace untouched. */
@@ -27,18 +35,22 @@ export function compareScenarios(baselineInput:unknown,scenarioInput:unknown){
       p95:available?forecast.completionPercentiles!.p95:null,p95Date:available?forecast.completionDates?.p95??null:null,
       deterministic:available?forecast.deterministicCompletion:null};
   };
-  const projects=[...new Set([...beforeProjects.keys(),...afterProjects.keys()])].map(projectId=>{
-    const before=projectView(baseline,projectId),after=projectView(scenario,projectId);
-    const delta=before?.p95!==null&&before?.p95!==undefined&&after?.p95!==null&&after?.p95!==undefined?after.p95-before.p95:null;
-    return {projectId,before,after,status:!before?'added':!after?'removed':!same(before,after)||!same(beforeProjects.get(projectId),afterProjects.get(projectId))?'changed':'unchanged',
-      p95Change:delta===null?null:Math.abs(delta)<1e-9?0:delta};
-  });
   const taskView=(task:PortfolioTask|undefined,entry:PortfolioResult['tasks'][number]|undefined)=>task?{
     name:task.name,projectId:task.projectId,resource:task.resource,allocationPercent:task.allocationPercent??100,
-    supportingResources:task.supportingResources??[],dependsOn:task.dependsOn,goodCase:task.goodCase,poorCase:task.poorCase,
+    supportingResources:[...(task.supportingResources??[])].sort((a,b)=>a.resource<b.resource?-1:a.resource>b.resource?1:0),dependsOn:[...task.dependsOn].sort(),goodCase:task.goodCase,poorCase:task.poorCase,
     deadline:task.deadline??null,priority:task.priority,status:task.status??'planned',durationMode:task.durationMode??'working',remaining:task.remaining??null,
     locked:task.locked??null,start:entry?.start??null,finish:entry?.finish??null,startDate:entry?.startDate??null,finishDate:entry?.finishDate??null,
   }:null;
+  // Compare only the task fields represented by the scheduling report. Comments,
+  // descriptions and checklist ticks must not mark the project's schedule changed.
+  const projectTasks=(result:PortfolioResult,id:string,entries:ReadonlyMap<string,PortfolioResult['tasks'][number]>)=>
+    result.plan.projects.find(p=>p.id===id)?.tasks.map(task=>taskView(task,entries.get(task.id)))??null;
+  const projects=[...new Set([...beforeProjects.keys(),...afterProjects.keys()])].map(projectId=>{
+    const before=projectView(baseline,projectId),after=projectView(scenario,projectId);
+    const delta=before?.p95!==null&&before?.p95!==undefined&&after?.p95!==null&&after?.p95!==undefined?after.p95-before.p95:null;
+    return {projectId,before,after,status:!before?'added':!after?'removed':!same(before,after)||!same(projectTasks(baseline,projectId,beforeEntries),projectTasks(scenario,projectId,afterEntries))?'changed':'unchanged',
+      p95Change:delta===null?null:Math.abs(delta)<1e-9?0:delta};
+  });
   const tasks=[...new Set([...beforeTasks.keys(),...afterTasks.keys()])].flatMap(taskId=>{
     const before=taskView(beforeTasks.get(taskId),beforeEntries.get(taskId)),after=taskView(afterTasks.get(taskId),afterEntries.get(taskId));
     if(same(before,after))return [];

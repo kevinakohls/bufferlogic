@@ -32,3 +32,30 @@ test('saved result comparison recalculates rather than trusting stale forecast f
  const report=compareScenarios(dated,changed);assert.equal(report.resources.length,1);assert.ok(report.projects[0]!.p95Change!>0);assert.equal(report.calendarDates,true);
  assert.throws(()=>compareScenarios(base,{...base,projects:base.projects.map(p=>({...p,tasks:p.tasks.map(t=>({...t,resource:''}))}))}),/Assign a resource/);
 });
+
+test('object-key order and unordered assignment/dependency lists do not create comparison changes',()=>{
+ const p:PortfolioPlan={...base,resources:[...base.resources,'Spotter','Equipment'],projects:[{id:'P1',name:'Build',tasks:[
+  {...base.projects[0]!.tasks[0]!,goodCase:1,poorCase:1,supportingResources:[{resource:'Spotter',allocationPercent:50},{resource:'Equipment',allocationPercent:100}]},
+  {id:'C',name:'Other prerequisite',projectId:'P1',resource:'Loader',goodCase:2,poorCase:2,priority:2,dependsOn:[]},
+  {id:'D',name:'Finish',projectId:'P1',resource:'Developer',goodCase:1,poorCase:1,priority:3,dependsOn:['A','C']},
+ ]}],calendar:{startDate:'2026-10-19',hoursPerWorkday:8,resources:['Developer','Loader','Spotter','Equipment'].map(resource=>({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{'2026-10-20':8,'2026-10-22':4}}))}};
+ const reordered=structuredClone(p);
+ for(const calendar of reordered.calendar!.resources)Object.assign(calendar,{exceptions:{'2026-10-22':4,'2026-10-20':8}});
+ const a=reordered.projects[0]!.tasks[0]!;
+ Object.assign(a,{supportingResources:[...a.supportingResources!].reverse().map(assignment=>({allocationPercent:assignment.allocationPercent,resource:assignment.resource}))});
+ Object.assign(reordered.projects[0]!.tasks[2]!,{dependsOn:['C','A']});
+ const original=structuredClone(p),snapshot=structuredClone(reordered),report=compareScenarios(p,reordered);
+ assert.equal(report.resources.length,0);assert.equal(report.tasks.length,0);assert.ok(report.projects.every(project=>project.status==='unchanged'));assert.deepEqual(p,original);assert.deepEqual(reordered,snapshot);
+ // Weekly hours are an ordered calendar, not a set: moving availability matters.
+ const shifted=structuredClone(reordered);Object.assign(shifted.calendar!.resources[0]!,{weeklyHours:[0,8,8,8,8,8,0]});
+ assert.equal(compareScenarios(p,shifted).resources.length,1);
+});
+
+test('comments, descriptions and checklist ticks do not mark a project schedule changed, but real inputs still do',()=>{
+ const metadata={...base,projects:base.projects.map(p=>({...p,comments:'Project note',description:'Description',owner:'Owner',tasks:p.tasks.map(t=>({...t,comments:'Task note',description:'Task description',completionCriteria:'Checked',checklist:[{text:'Review work',completed:true}]}))}))};
+ const report=compareScenarios(base,metadata);assert.equal(report.tasks.length,0);assert.ok(report.projects.every(p=>p.status==='unchanged'));
+ const estimate={...metadata,projects:metadata.projects.map(p=>({...p,tasks:p.tasks.map(t=>({...t,goodCase:t.goodCase+1,poorCase:t.poorCase+1}))}))};
+ assert.ok(compareScenarios(base,estimate).projects.some(p=>p.status==='changed'));
+ const deadline={...metadata,projects:metadata.projects.map(p=>({...p,deadline:10}))};assert.ok(compareScenarios(base,deadline).projects.every(p=>p.status==='changed'));
+ const moved={...base,projects:[base.projects[1]!,base.projects[0]!]};assert.ok(compareScenarios(base,moved).projects.every(p=>p.status==='changed'));
+});
