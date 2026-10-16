@@ -357,3 +357,13 @@ Project cards and the **P95 target status** column in Deadlines use the P95 comp
 In Progress, **Estimate review** is blank and disabled for not-started and completed tasks. It applies only to in-progress tasks. Advancing progress still marks active remaining estimates Needs review; completing a task clears its displayed review field.
 
 The timeline explains when no critical chain is calculated because a project is empty, a workspace has unassigned tasks, or work is held/blocked. If a populated, scheduled project unexpectedly loses its critical chain, save that workspace before further edits so the state can be reproduced.
+
+## Delete a project
+
+In **Project order**, click **Delete project**. Confirmation names the project and task count and explains that resources are retained. Save a separate workspace copy first if you may need to restore it. Cancelling changes nothing. Confirming removes the project and all its tasks and recalculates the remaining portfolio, preserving current edits, resource calendars, idle resources and the workspace name. Save workspace afterward to keep the deletion.
+
+Deletion is blocked when another project's tasks depend on work in the selected project, including held or completed dependent tasks. The error identifies the dependent project and tasks. Edit or remove those dependency references first; deletion does not silently break them. Feeding-task selections and task-order overrides for removed tasks are cleared.
+
+You can delete the last project. Resources remain available, the empty workspace is saveable, and **New project/Add project** lets you start again. Add task is disabled until a project exists.
+
+Manual check: cancel deletion and verify pending edits remain. Confirm deletion of an independent project and verify all its tasks disappear while shared resources remain. Try deleting a project with cross-project dependents and verify it is blocked. Delete the last project, save/reopen, and create a new project using retained resources.

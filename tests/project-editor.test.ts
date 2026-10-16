@@ -30,3 +30,29 @@ test('manual task entry generates unique IDs, validates estimates and dependenci
  const milestone=appendTask(cross,{...input,projectId:'P2',goodCase:0,poorCase:0,resource:'Developer',dependsOn:[id]});
  assert.equal(schedulePortfolio(milestone).tasks.length,3);
 });
+
+const {deleteProject}=await import('../src/project-editor.js');
+test('project deletion removes owned tasks and selection references but retains resources, metadata, calendar and remaining order',()=>{
+ const first=createBlankProject('First',undefined,'2026-10-15');
+ const named={...first,name:'My portfolio',resources:['Shared','Idle'],resourceDetails:[{id:'Shared',comments:'Keep me'}]};
+ const withTask=appendTask(named,{projectId:'P1',name:'Build',resource:'Shared',goodCase:1,poorCase:2,dependsOn:[]});
+ const second=appendTask(createBlankProject('Second',withTask),{projectId:'P2',name:'Other',resource:'Shared',goodCase:1,poorCase:1,dependsOn:[]});
+ const a=second.projects[0]!.tasks[0]!.id,b=second.projects[1]!.tasks[0]!.id;
+ const input={...second,feedingTaskIds:[a,b],taskOrderOverrides:[a,b]},snapshot=structuredClone(input);
+ const result=deleteProject(input,'P1');
+ assert.deepEqual(input,snapshot);assert.deepEqual(result.projects,[second.projects[1]]);
+ assert.equal(result.name,'My portfolio');assert.deepEqual(result.resources,second.resources);
+ assert.deepEqual(result.resourceDetails,second.resourceDetails);assert.deepEqual(result.calendar,second.calendar);
+ assert.deepEqual(result.feedingTaskIds,[b]);assert.deepEqual(result.taskOrderOverrides,[b]);
+ assert.equal(schedulePortfolio(result).tasks.length,1);
+ const empty=deleteProject(result,'P2');assert.deepEqual(empty.projects,[]);assert.deepEqual(empty.resources,result.resources);
+ assert.throws(()=>deleteProject(result,'missing'),/Project not found/);
+});
+test('project deletion is blocked by dependencies from another project, including held projects',()=>{
+ const first=appendTask({...createBlankProject('First',undefined,'2026-10-15'),resources:['Shared']},{projectId:'P1',name:'Build',resource:'Shared',goodCase:1,poorCase:1,dependsOn:[]});
+ const input=appendTask(createBlankProject('Second',first),{projectId:'P2',name:'Dependent',resource:'Shared',goodCase:1,poorCase:1,dependsOn:[first.projects[0]!.tasks[0]!.id]});
+ const snapshot=structuredClone(input);assert.throws(()=>deleteProject(input,'P1'),/Cannot delete First.*Second: Dependent/);assert.deepEqual(input,snapshot);
+ assert.throws(()=>deleteProject({...input,projects:input.projects.map(p=>({...p,onHold:true}))},'P1'),/dependencies/);
+ // Dependencies owned by the deleted project disappear together and do not block deletion.
+ assert.equal(deleteProject(input,'P2').projects.length,1);
+});

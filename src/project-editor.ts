@@ -47,3 +47,19 @@ export function appendTask(input: PortfolioPlan, task: NewTask): PortfolioPlan {
       ...task, id, name: task.name.trim(), priority, status: 'planned', allocationPercent: 100, durationMode: 'working',
     }]})});
 }
+
+/** Remove owned work only; cross-project dependencies must be resolved explicitly. */
+export function deleteProject(input: PortfolioPlan, projectId: string): PortfolioPlan {
+  const plan = parsePortfolio(input);
+  const project = plan.projects.find(project => project.id === projectId);
+  if (!project) throw new Error('Project not found');
+  const removed = new Set(project.tasks.map(task => task.id));
+  const dependents = plan.projects.filter(p => p.id !== projectId).flatMap(p =>
+    p.tasks.filter(task => task.dependsOn.some(id => removed.has(id))).map(task => `${p.name}: ${task.name} (${task.id})`));
+  if (dependents.length) throw new Error(`Cannot delete ${project.name}. Reassign or remove dependencies on its tasks first: ${dependents.join('; ')}`);
+  return parsePortfolio({...plan, approvalStatus: 'draft', versionId: `${plan.versionId}-delete-project`,
+    projects: plan.projects.filter(project => project.id !== projectId),
+    ...(plan.feedingTaskIds === undefined ? {} : {feedingTaskIds: plan.feedingTaskIds.filter(id => !removed.has(id))}),
+    ...(plan.taskOrderOverrides === undefined ? {} : {taskOrderOverrides: plan.taskOrderOverrides.filter(id => !removed.has(id))}),
+  });
+}

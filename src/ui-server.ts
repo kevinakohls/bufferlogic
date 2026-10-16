@@ -1,4 +1,4 @@
-import { createBlankProject, appendTask } from './project-editor.js';
+import { createBlankProject, appendTask, deleteProject } from './project-editor.js';
 import { instantiateTemplate, templateProjects } from './templates.js';
 import { resourceUtilization } from './utilization.js';
 import { createServer, type IncomingMessage } from 'node:http';
@@ -39,6 +39,11 @@ export function createReviewServer() {
       if(request.method==='GET'&&path==='/api/software-template'){json({csvText:await readFile(new URL('examples/software-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/example'){
         json({projectText:await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8'),calendarText:await readFile(new URL('examples/house-resource-calendars.csv',root),'utf8')});return;
+      }
+      if(request.method==='POST'&&path==='/api/project/delete'){
+        const data=await body(request);
+        if(typeof data.projectId!=='string'||!data.projectId.trim())throw new Error('Choose a project to delete');
+        json(reviewResult(deleteProject(parsePortfolio(data.plan),data.projectId)));return;
       }
       if(request.method==='POST'&&path==='/api/project'){
         const data=await body(request);

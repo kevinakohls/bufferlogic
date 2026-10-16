@@ -288,3 +288,7 @@ An entirely empty workspace returns `{plan, needsTasks: true}` with no calculate
 ### Workspace name
 
 The optional top-level `name` is the workspace display name, separate from stable portfolio `id`, project names and schedule `versionId`. `parsePortfolio` preserves trimmed nonempty names and supplies a default for older plans: the first project name plus “workspace”, or “Untitled workspace”. New projects and recalculation preserve an existing name. The UI saves this field and uses a filename-safe name plus timestamp for downloaded workspaces.
+
+### Project deletion
+
+`POST /api/project/delete` accepts `plan` and `projectId`. The immutable `deleteProject` helper removes the selected project and its tasks, filters their IDs from `feedingTaskIds` and `taskOrderOverrides`, and preserves resource definitions, calendars, workspace name and remaining project order. It rejects unknown projects and any surviving task dependency on removed work. The review API recalculates the result, or returns its normal `needsTasks`/`needsAssignments` draft shape when appropriate. User confirmation is provided by the browser before sending the request.

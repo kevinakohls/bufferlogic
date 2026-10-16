@@ -9,7 +9,7 @@ $('start-date').value=today();
 function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);if(className)node.className=className;return node;}
 function dateText(value){if(!value)return '—';const [year,month,day]=value.split('-').map(Number);return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month-1,day)));}
 function valueText(f,key){if(f.withheldReason)return forecastState(f).completionLabel;return usesCalendarDates(result.plan)&&f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
-function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan){renderProgress();renderProjectOrder();if(plan.calendar)renderExceptions();renderTimeDisplay();}}
+function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>n.disabled=value);if(!value&&plan){renderProgress();renderProjectOrder();$('show-add-task').disabled=!plan.projects.length;$('create-task').disabled=!plan.projects.length;if(plan.calendar)renderExceptions();renderTimeDisplay();}}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
 function changed(){if(!plan)return;dirty=true;$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
@@ -114,7 +114,7 @@ function loadResult(value){result=(value.needsAssignments||value.needsTasks)?{..
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
  $('workspace').classList.remove('hidden');$('error').classList.add('hidden');$('freshness').textContent='Calculated from the current plan';
  const filter=$('project-filter'),previousFilter=filter.value;filter.replaceChildren();for(const [id,name] of [['all','All projects'],...plan.projects.map(p=>[p.id,p.name])]){const option=element('option',name);option.value=id;filter.append(option);}if([...filter.options].some(o=>o.value===previousFilter))filter.value=previousFilter;
- renderTimeDisplay();renderResults();renderProjectOrder();renderTasks();if(!$('add-task-panel').classList.contains('hidden'))renderNewTaskFields();renderProgress();renderChecklists();renderDeadlines();renderFeeding();renderCalendars();renderNotes();renderUtilization();message(result.needsTasks?'Project created. Add resources and tasks to get started.':result.needsAssignments?'Assign resources to the unassigned tasks, then recalculate.':`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`,Boolean(result.needsAssignments||result.needsTasks));if(result.needsTasks)$('freshness').textContent='Not calculated · add tasks to get started';if(result.needsAssignments)$('freshness').textContent='Not calculated · tasks need resources';
+ renderTimeDisplay();renderResults();renderProjectOrder();renderTasks();if(!$('add-task-panel').classList.contains('hidden'))renderNewTaskFields();renderProgress();renderChecklists();renderDeadlines();renderFeeding();renderCalendars();renderNotes();renderUtilization();message(result.needsTasks?'No tasks to schedule. Add a project or add tasks to an existing project.':result.needsAssignments?'Assign resources to the unassigned tasks, then recalculate.':`${plan.projects.length} projects · ${allTasks().length} tasks · ${plan.resources.length} shared resources${plan.calendar?' · Calendar dates':' · Abstract days'}`,Boolean(result.needsAssignments||result.needsTasks));if(result.needsTasks)$('freshness').textContent='Not calculated · add tasks to get started';if(result.needsAssignments)$('freshness').textContent='Not calculated · tasks need resources';
 }
 $('example').addEventListener('click',async()=>{setBusy(true);message('Loading the two-house example…');try{const response=await fetch('/api/example');if(!response.ok)throw new Error('Unable to load the example');const source=await response.json();loadResult(await request('/api/load',{...source,format:'csv',startDate:$('start-date').value,timeZone:zone}));$('project-file').value='';$('calendar-file').value='';$('project-name').textContent='Two-house example · 72 tasks';$('calendar-name').textContent='Example calendar · 21 resources';}catch(error){failure(error);}finally{setBusy(false);}});
 for(const [id,label] of [['project-file','project-name'],['calendar-file','calendar-name']])$(id).addEventListener('change',()=>{$(label).textContent=$(id).files[0]?.name??'No file selected';});
@@ -228,10 +228,24 @@ function renderProjectOrder(){
  plan.projects.forEach((project,index)=>{
   const row=element('li'),label=element('span',`${index+1}. ${project.name}`),actions=element('div',undefined,'actions');
   for(const [direction,text] of [[-1,'Move up'],[1,'Move down']]){const button=element('button',text,'secondary');button.type='button';button.dataset.project=project.id;button.dataset.direction=direction;button.setAttribute('aria-label',`${text}: ${project.name}`);button.disabled=busy||(direction<0?index===0:index===plan.projects.length-1);actions.append(button);}
-  const action=holdAction(project.onHold),hold=element('button',action.label,'secondary');hold.type='button';hold.setAttribute('aria-pressed',action.pressed);hold.dataset.holdProject=project.id;hold.setAttribute('aria-label',`${project.onHold?'Resume project':'Put on hold'}: ${project.name}`);hold.disabled=busy;actions.append(hold);if(project.onHold)label.append(element('span',' · On hold','hold-label'));row.append(label,actions);list.append(row);
+  const action=holdAction(project.onHold),hold=element('button',action.label,'secondary');hold.type='button';hold.setAttribute('aria-pressed',action.pressed);hold.dataset.holdProject=project.id;hold.setAttribute('aria-label',`${project.onHold?'Resume project':'Put on hold'}: ${project.name}`);hold.disabled=busy;actions.append(hold);const remove=element('button','Delete project','secondary delete-project');remove.type='button';remove.dataset.deleteProject=project.id;remove.setAttribute('aria-label',`Delete project: ${project.name}`);remove.disabled=busy;actions.append(remove);if(project.onHold)label.append(element('span',' · On hold','hold-label'));row.append(label,actions);list.append(row);
  });
 }
-$('project-order').addEventListener('click',event=>{
+$('project-order').addEventListener('click',async event=>{
+ const remove=event.target.closest('button[data-delete-project]');
+ if(remove){
+  if(busy||remove.disabled)return;
+  const project=plan.projects.find(project=>project.id===remove.dataset.deleteProject);
+  if(!project)return;
+  if(!confirm(`Are you sure you want to delete ${project.name} and all ${project.tasks.length} of its tasks? Resources will be kept. Save a workspace copy first if you may need to restore this project.`))return;
+  setBusy(true);
+  try{
+   loadResult(await request('/api/project/delete',{plan:editablePlan(),projectId:project.id}));
+   message(`Deleted ${project.name}. Resources were retained. Save workspace to keep this change.`,true);
+  }catch(error){failure(error);}finally{setBusy(false);}
+  return;
+ }
+
  const hold=event.target.closest('button[data-hold-project]');if(hold&&!busy){const project=plan.projects.find(p=>p.id===hold.dataset.holdProject);project.onHold=!project.onHold;changed();renderProjectOrder();return;}
  const button=event.target.closest('button[data-project]');if(!button||button.disabled||busy)return;
  const index=plan.projects.findIndex(p=>p.id===button.dataset.project),next=index+Number(button.dataset.direction);

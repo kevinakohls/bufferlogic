@@ -111,3 +111,13 @@ test('workspace names survive save/load and the browser icon is served safely',a
  const icon=await fetch(base+'/favicon.svg');assert.equal(icon.status,200);assert.equal(icon.headers.get('content-type'),'image/svg+xml');assert.match(await icon.text(),/<svg/);
  const page=await (await fetch(base)).text();assert.match(page,/rel="icon"/);assert.match(page,/id="add-blank-project"/);
 }));
+
+test('project deletion API blocks cross-project dependencies and supports an empty saveable workspace',async()=>withServer(async base=>{
+ const source=JSON.parse(await readFile('examples/feeding-protection.json','utf8'));
+ const blocked=structuredClone(source);blocked.projects[1].tasks[0].dependsOn=['D'];
+ const refused=await post(base,'/api/project/delete',{plan:blocked,projectId:'P1'});assert.equal(refused.status,400);assert.match((await refused.json()).error,/dependencies/);
+ const response=await post(base,'/api/project/delete',{plan:source,projectId:'P1'});assert.equal(response.status,200);const result=await response.json();assert.equal(result.plan.projects.length,1);assert.equal(result.tasks.length,1);assert.deepEqual(result.plan.resources,source.resources);
+ const last=await (await post(base,'/api/project/delete',{plan:result.plan,projectId:'P2'})).json();assert.equal(last.needsTasks,true);assert.deepEqual(last.plan.projects,[]);assert.deepEqual(last.plan.resources,source.resources);
+ const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(last),format:'json'})).json();assert.deepEqual(reopened.plan,last.plan);
+ assert.equal((await post(base,'/api/project/delete',{plan:source,projectId:'missing'})).status,400);
+}));
