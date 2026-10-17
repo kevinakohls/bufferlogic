@@ -1,7 +1,8 @@
 # Cloud Run reviewer demo
 
-This configuration prepares a public, stateless demo. It does not create cloud
-resources. Workspaces are sent to the server for calculation, then returned to the
+The public demo is https://bufferlogic-859125571309.us-central1.run.app
+(project `bufferlogic`, service `bufferlogic`, region `us-central1`).
+The configuration files alone do not create cloud resources. Workspaces are sent to the server for calculation, then returned to the
 browser; they are not saved on the server. Save workspace downloads a local file.
 Visitors have separate browser state. Use fictional examples for the public demo.
 
@@ -21,7 +22,7 @@ as a non-root user without development dependencies. It includes the UI and bund
 examples required by the server. Build locally with `docker build -t bufferlogic .`.
 Run with `docker run --rm -p 8080:8080 bufferlogic`; local HTTP requests still work.
 
-## Deployment checklist (perform later)
+## Initial deployment checklist
 
 1. Select a Google Cloud project with billing enabled and configure a budget alert.
    Alerts do not cap charges. Confirm current regional pricing and free allowances.
@@ -44,3 +45,63 @@ Maximum instances limits scaling, not total spending. Builds, image storage,
 network traffic and running requests can incur charges. No domain purchase,
 database or sign-in implementation is needed for this reviewer demo. The public
 service is a demo without persistent accounts or saved cloud workspaces.
+
+## Release an update
+
+GitLab merge requests and CI remain the review process. Merging, updating a local
+PowerShell checkout and deploying the hosted service are three separate actions.
+There is no automatic Cloud Run deployment in the current GitLab pipeline.
+
+The first deployment used the GitHub `cloud-run-preparation` snapshot. Do not keep
+redeploying that branch and assume it contains later GitLab merges. For each new
+release, obtain the intended GitLab `main` revision through an authenticated Git
+checkout or an archive exported from that revision. GitLab authentication must be
+configured separately in Cloud Shell; never put access tokens in URLs or files
+committed to the repository. A GitLab login prompt means the checkout has not
+completed; do not proceed using a different or stale source directory.
+
+In a clean GitLab checkout in Cloud Shell, fetch and inspect the release:
+
+```bash
+git fetch origin
+git switch --detach origin/main
+git status --short
+git log -1 --format='%H %s'
+npm ci
+npm test
+```
+
+Here `origin` must be the GitLab repository, not the GitHub snapshot. Check with
+`git remote get-url origin` first. Resolve unexpected local changes and stop if
+any check fails. Record the full commit hash in the release notes. If using an
+archive instead, record the source commit when exporting it and run the same
+npm checks after extraction.
+
+From that verified source directory, deploy the existing public demo:
+
+```bash
+gcloud run deploy bufferlogic \
+  --project bufferlogic \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --min-instances 0 \
+  --max-instances 1 \
+  --concurrency 1 \
+  --cpu 1 \
+  --memory 512Mi \
+  --timeout 60 \
+  --port 8080 \
+  --update-env-vars BUFFERLOGIC_PUBLIC_ORIGIN=https://bufferlogic-859125571309.us-central1.run.app
+```
+
+This command builds and deploys a new revision and may incur charges. The URL
+stays the same. Test it in a private browser: example loading, recalculation,
+Compare, task deletion, workspace download/reopen and a separate visitor session.
+Record the resulting revision alongside the source commit. Keep budget alerts
+and monitor usage. If validation fails, route traffic back to the last verified
+revision in Cloud Run's **Revisions** tab.
+
+A future deployment pipeline can automate this after merging. It requires
+separate Google Cloud authentication and deployment permissions; it is not yet
+configured.

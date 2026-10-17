@@ -4,12 +4,22 @@
 
 BufferLogic is a TypeScript scheduling prototype for projects that share limited
 resources. It calculates resource-constrained critical chains and approximate
-project completion forecasts, and provides a local review interface for updating
+project completion forecasts, and provides a browser interface for updating
 plans and actual progress.
 
 GitLab Duo Code Review flow supports supervised review of proposed changes.
 GitLab CI validates the application with build, test and security jobs. The
 workflow below explains how to reproduce a controlled deadline-regression demo.
+
+## Try the hosted demo
+
+[Open BufferLogic](https://bufferlogic-859125571309.us-central1.run.app)
+
+No installation or Google account is required. Use the bundled examples or
+fictional data. The hosted server processes uploaded plans for calculation;
+workspaces are not stored on the server. Choose **Save workspace** to download
+your changes, then reopen that file when you return. Visitors have separate
+browser state; there are no accounts or automatic cloud saves.
 
 ## Run the prototype
 
@@ -22,8 +32,9 @@ npm run ui
 ```
 
 On Windows PowerShell, use `npm.cmd` in place of `npm`. Leave the server running
-and open `http://localhost:3000`. Stop it with Ctrl+C. The interface processes
-loaded plans locally; save the workspace to retain edits between sessions.
+and open `http://localhost:3000`. Stop it with Ctrl+C. In this local setup, calculations run on your computer. Save the workspace to
+retain edits between sessions. The hosted demo instead sends calculations to
+the Cloud Run server.
 
 To build a plan without importing a file, choose **New project** in the review UI, add resources in **Resources & calendars**, then use **Add task** in **Tasks**. Blank and unassigned workspaces can be saved as drafts.
 
@@ -80,6 +91,34 @@ application tests on Node.js 22 and 24. It also includes GitLab's SAST and Secre
 Detection templates. Job execution can differ between branch and merge-request
 pipelines; inspect the actual jobs and logs for each run.
 
+### Review, merge and release
+
+GitLab `main` is the reviewed release source. Work on a branch, open a merge
+request, address Duo feedback, check the pipeline and merge after human review.
+A merge updates the repository; it does **not** deploy Cloud Run or update local
+installations. Cloud deployment is currently manual, with no deployment CI job.
+
+To update a local PowerShell checkout after merging, stop the app with Ctrl+C:
+
+```powershell
+cd C:\Users\gothe\bufferlogic
+git switch main
+git pull --ff-only duo main
+npm.cmd ci
+npm.cmd run ui
+```
+
+These commands assume `duo` points to the GitLab repository. Refresh the browser
+with Ctrl+F5 after restarting. If Git reports local changes or untracked files
+blocking the update, preserve them before retrying.
+
+For a hosted release, use a clean checkout of the intended GitLab `main` commit,
+run the checks and explicitly deploy it. Record the deployed commit and test the
+public URL. See [Cloud Run releases](CLOUD_RUN.md#release-an-update).
+The initial demo was deployed from GitHub's `cloud-run-preparation` branch because
+GitLab authentication was unavailable in Cloud Shell. That branch is an initial
+snapshot, not an automatically synchronized release source.
+
 ### Reproduce the supervised review workflow
 
 1. Run `npm test` on the latest `main` and confirm the baseline passes.
@@ -110,6 +149,3 @@ future work.
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-Cloud hosting preparation and the reviewer deployment checklist are in
-[CLOUD_RUN.md](CLOUD_RUN.md). Deployment is separate from running locally.
