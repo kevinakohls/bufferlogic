@@ -110,3 +110,6 @@ future work.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+Cloud hosting preparation and the reviewer deployment checklist are in
+[CLOUD_RUN.md](CLOUD_RUN.md). Deployment is separate from running locally.

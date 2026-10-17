@@ -164,3 +164,23 @@ test('task deletion API validates requests, blocks dependents and leaves the las
  const reopened=await (await post(base,'/api/load',{projectText:JSON.stringify(current),format:'json'})).json();
  assert.deepEqual(reopened.plan,current);
 }));
+
+test('hosted demo accepts only its configured HTTPS origin and ignores spoofed forwarded headers',async()=>{
+ assert.throws(()=>createReviewServer({publicOrigin:'http://demo.run.app'}),/HTTPS/);
+ assert.throws(()=>createReviewServer({publicOrigin:'https://demo.run.app/path'}),/HTTPS/);
+ const server=createReviewServer({publicOrigin:'https://demo.run.app'});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const base=`http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+ const {request}=await import('node:http');
+ const call=(host:string,origin?:string,forwarded?:string)=>new Promise<number>((resolve,reject)=>{
+  const req=request(base,{headers:{Host:host,...(origin?{Origin:origin}:{}),...(forwarded?{'X-Forwarded-Host':forwarded,'X-Forwarded-Proto':'https'}:{})}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode!));});req.on('error',reject);req.end();
+ });
+ try{
+  assert.equal(await call('demo.run.app','https://demo.run.app'),200);
+  assert.equal(await call('demo.run.app'),200);
+  assert.equal(await call('demo.run.app','https://evil.example'),403);
+  assert.equal(await call('demo.run.app','http://demo.run.app'),403);
+  assert.equal(await call('evil.example',undefined,'demo.run.app'),403);
+  assert.equal((await fetch(base)).status,200);
+ }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
+});

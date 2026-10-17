@@ -26,7 +26,14 @@ async function body(request:IncomingMessage):Promise<Record<string,unknown>> {
   if(typeof parsed!=='object'||parsed===null||Array.isArray(parsed))throw new Error('Invalid request');
   return parsed as Record<string,unknown>;
 }
-export function createReviewServer() {
+export interface ReviewServerOptions { readonly publicOrigin?: string; }
+export function createReviewServer(options: ReviewServerOptions = {}) {
+  let publicOrigin: string | undefined;
+  if(options.publicOrigin){
+    const url=new URL(options.publicOrigin);
+    if(url.protocol!=='https:'||url.username||url.password||url.pathname!=='/'||url.search||url.hash)throw new Error('Public origin must be an HTTPS origin without a path or credentials');
+    publicOrigin=url.origin;
+  }
   return createServer(async(request,response)=>{
     response.setHeader('Cache-Control','no-store');
     response.setHeader('X-Content-Type-Options','nosniff');
@@ -34,8 +41,10 @@ export function createReviewServer() {
     const json=(value:unknown,status=200)=>{response.statusCode=status;response.setHeader('Content-Type','application/json; charset=utf-8');response.end(JSON.stringify(value));};
     try {
       const host=request.headers.host??'';
-      if(!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)){json({error:'Use localhost or 127.0.0.1'},403);return;}
-      if(request.headers.origin && request.headers.origin!==`http://${host}`){json({error:'Open the review app on this computer'},403);return;}
+      const local=/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
+      const expectedOrigin=publicOrigin&&host===new URL(publicOrigin).host?publicOrigin:local?`http://${host}`:undefined;
+      if(!expectedOrigin){json({error:'Use the configured BufferLogic address'},403);return;}
+      if(request.headers.origin && request.headers.origin!==expectedOrigin){json({error:'Open BufferLogic at the same address as this request'},403);return;}
       const path=new URL(request.url??'/',`http://${host}`).pathname;
       if(request.method==='GET'&&path==='/api/housing-template'){json({csvText:await readFile(new URL('examples/housing-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/software-template'){json({csvText:await readFile(new URL('examples/software-template.csv',root),'utf8')});return;}
@@ -102,9 +111,9 @@ export function createReviewServer() {
   });
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  const port=Number(process.env.BUFFERLOGIC_PORT??3000);
-  if(!Number.isInteger(port)||port<1||port>65535)throw new Error('BUFFERLOGIC_PORT must be between 1 and 65535');
-  const server=createReviewServer();
+  const port=Number(process.env.PORT??process.env.BUFFERLOGIC_PORT??3000);
+  if(!Number.isInteger(port)||port<1||port>65535)throw new Error('PORT or BUFFERLOGIC_PORT must be between 1 and 65535');
+  const server=createReviewServer(process.env.BUFFERLOGIC_PUBLIC_ORIGIN?{publicOrigin:process.env.BUFFERLOGIC_PUBLIC_ORIGIN}:{});
   server.on('error',error=>{console.error(`BufferLogic: ${error.message}`);process.exitCode=1;});
-  server.listen(port,'127.0.0.1',()=>console.log(`BufferLogic review UI: http://localhost:${port}\nKeep this terminal open. Press Ctrl+C to stop.`));
+  server.listen(port,process.env.PORT?'0.0.0.0':'127.0.0.1',()=>console.log(`BufferLogic review UI: http://localhost:${port}\nKeep this terminal open. Press Ctrl+C to stop.`));
 }
