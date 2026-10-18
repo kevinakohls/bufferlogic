@@ -19,7 +19,11 @@ No installation or Google account is required. Use the bundled examples or
 fictional data. The hosted server processes uploaded plans for calculation;
 workspaces are not stored on the server. Choose **Save workspace** to download
 your changes, then reopen that file when you return. Visitors have separate
-browser state; there are no accounts or automatic cloud saves.
+browser state; there are no accounts or automatic cloud saves. Browser recovery
+keeps a local copy of workspace edits and captured baselines when storage is
+available. On return, choose Restore workspace. This is specific to the browser
+and site address; private browsing or cleared browser data can lose the copy.
+Download files as portable backups and clear recovery on shared computers.
 
 ## Run the prototype
 
@@ -47,7 +51,8 @@ To build a plan without importing a file, choose **New project** in the review U
 - CSV templates, editable task notes and checklists.
 - Actual progress and explicit remaining estimates.
 - Interactive schedule timeline and weekly resource utilization graphs.
-- Workspace save/open, captured or saved-file baseline comparison, and Excel-compatible report exports.
+- Workspace save/open, local browser recovery, captured or saved-file baseline comparison, and Excel-compatible report exports.
+- A prominent stale-schedule warning and muted previous results until recalculation.
 - CLI ranking of extra Saturday hours one resource at a time.
 
 Percentile forecasts use independent lognormal task durations and a fixed critical

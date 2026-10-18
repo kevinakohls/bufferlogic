@@ -4,7 +4,10 @@ The public demo is https://bufferlogic-859125571309.us-central1.run.app
 (project `bufferlogic`, service `bufferlogic`, region `us-central1`).
 The configuration files alone do not create cloud resources. Workspaces are sent to the server for calculation, then returned to the
 browser; they are not saved on the server. Save workspace downloads a local file.
-Visitors have separate browser state. Use fictional examples for the public demo.
+Visitors have separate browser state. A local browser recovery copy can retain
+edits and captured baselines on that device; it is not server storage or account
+history. Download files for portable backups and clear recovery on shared devices.
+Use fictional examples for the public demo.
 
 ## Runtime settings
 

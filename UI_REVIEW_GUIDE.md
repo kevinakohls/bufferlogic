@@ -74,8 +74,8 @@ the UI rejects changes that would silently reposition those recorded dates.
 
 After recalculating, click **Save workspace**. Your browser downloads the current plan,
 calendars, calculated tasks, conflicts and project forecasts as a JSON file. Select it
-as the project file and click **Load files** to reopen and recalculate it. Unsaved changes
-live only in the current browser session. History is not saved automatically. Use Compare with a captured or saved baseline,
+as the project file and click **Load files** to reopen and recalculate it. Browser recovery keeps a local copy of edits and captured baselines when storage
+is available. Restore it on return; it is not saved version history or cloud storage. Use Compare with a captured or saved baseline,
 and preserve downloaded copies of scenarios you want to keep.
 
 ## Verified in this milestone
@@ -408,7 +408,7 @@ Choose **Create from template → Use housing template**, name the project House
 ## Compare a baseline with a what-if scenario
 
 1. Open a workspace, resolve unassigned tasks and recalculate.
-2. Open **Compare** and click **Set current as baseline**. This captures a detached copy of the calculated plan. **Download baseline** saves that original plan for later use. A captured baseline stays in this tab through edits and recalculation, but ends when you open another workspace or reload.
+2. Open **Compare** and click **Set current as baseline**. This captures a detached copy of the calculated plan. **Download baseline** saves that original plan for later use. A captured baseline stays through edits and recalculation and is included in browser recovery. After reloading, choose Restore workspace to recover it. Opening another workspace clears the current baseline; download it separately to keep a portable copy.
 3. Change priorities, estimates, allocations, supporting resources, calendars, holds or other scheduling inputs. Recalculate as usual. Existing comparison results are hidden when the workspace changes.
 4. Return to **Compare** and click **Compare versions**. The current workspace is the scenario; the captured plan is the baseline. Earlier P95 forecasts are shaded green, later ones red. Other projects may be delayed by a change that helps the highest-priority project, so inspect all rows.
 5. Alternatively, choose a saved original workspace JSON in the baseline file picker. This replaces the session baseline. The file is read for comparison without replacing the current workspace.
@@ -439,3 +439,44 @@ captured baseline; verify those are unchanged. Check narrow screens, keyboard
 navigation and scrolling through the longer topics. In particular, Timeline
 explains project highlighting and link filters; Save & reopen explains that the
 hosted demo has no automatic cloud storage.
+
+
+## Browser recovery and stale results
+
+After loading a workspace, edits and captured baselines are saved to local browser
+storage automatically. The status above the workspace reports success or storage
+errors. Reopening the same site offers **Restore workspace**, **Discard recovery
+copy**, or **Download recovery copy**. Recovery data downloads are troubleshooting
+snapshots, not normal workspace files; use **Save workspace** and **Download
+baseline** for portable plans. Selected baseline files must be selected again after
+reload; captured baselines are recovered automatically with the workspace.
+
+Restore recalculates the last calculated plan with the current engine, then
+reapplies pending edits, including unfinished calendar exceptions. Those edits
+remain stale until recalculated. A restore failure retains the browser copy.
+Discard requires confirmation. **Clear browser recovery** removes the copy and
+pauses automatic recovery for that tab until reload. Clearing browser data, private
+browsing, storage quotas, switching site address, or another device can make
+recovery unavailable. The app keeps working and shows a warning if storage fails.
+A second tab cannot silently overwrite a copy changed by another tab; download
+that tab's work and reopen it separately if needed. There is one recovery slot per
+browser/site, not a workspace history. Do not rely on it as the only backup.
+
+The browser may warn before leaving when a workspace or captured baseline has
+not been downloaded. Browser policies can suppress unload prompts, so recovery
+writes occur on edits and when the page becomes hidden too. Opening a different
+workspace or example asks before replacing undownloaded work or a baseline.
+
+Edits show a sticky **Schedule out of date** banner with a **Recalculate schedule**
+button. Previous forecast cards, timeline, calculated schedule, feeding reports,
+utilization and deadline results are muted. Editors remain usable; Compare and
+exports still require current results. Only a successful recalculation clears the
+warning; errors leave edits and recovery intact. Empty or unassigned drafts show
+that no schedule is available rather than a fabricated forecast.
+
+Manual checks: capture a baseline, edit a task and reload. Restore and verify the
+edit, baseline, and stale warning; recalculate and confirm the warning clears.
+Repeat with an unfinished calendar exception, an invalid dependency, an unassigned
+draft, a renamed workspace, notes and checklist edits. Check warning behavior when
+replacing a workspace, Discard confirmation, Clear recovery, blocked/full storage,
+two tabs, and narrow screens. Browser recovery must not change scheduling logic.
