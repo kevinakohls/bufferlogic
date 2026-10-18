@@ -423,3 +423,19 @@ Manual check: capture a two-project baseline, download it, move the second proje
 ### Delete a task and compare the result
 
 Save a workspace copy or capture a Compare baseline first. In Tasks, each row has a **Delete task** button. Cancel the “Are you sure?” prompt to keep the task. Confirm to remove the task, including its checklist, comments and progress. Deletion is blocked if any other task depends on it, including work in another project or on hold; the error names the dependents. Remove or reassign those dependencies explicitly before retrying. Resources and calendars remain available, and an empty project is retained for new tasks. Feeding selections and task order overrides for the deleted task are removed. Successful deletion recalculates the workspace (or leaves a saveable draft when empty or unassigned). Compare retains the captured baseline and reports the task as **Removed**. Save workspace to keep the deletion.
+
+## In-app Help
+
+The header's **Help** button is available before loading a workspace and while
+calculations run. Its six topics cover Getting started, Forecasts & deadlines,
+Timeline, Compare, Save & reopen, and Common problems. Opening it or changing
+topics does not edit a plan, recalculate it, clear a baseline or replace files.
+Use Close or Escape to return to the workspace. Keyboard focus stays in the modal
+while it is open and returns to Help when it closes.
+
+Manual checks: open Help on the initial screen, visit all six topics and close it
+using both Close and Escape. Repeat with a loaded workspace, unsaved edits and a
+captured baseline; verify those are unchanged. Check narrow screens, keyboard
+navigation and scrolling through the longer topics. In particular, Timeline
+explains project highlighting and link filters; Save & reopen explains that the
+hosted demo has no automatic cloud storage.
