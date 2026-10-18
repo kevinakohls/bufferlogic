@@ -98,10 +98,11 @@ request, address Duo feedback, check the pipeline and merge after human review.
 A merge updates the repository; it does **not** deploy Cloud Run or update local
 installations. Cloud deployment is currently manual, with no deployment CI job.
 
-To update a local PowerShell checkout after merging, stop the app with Ctrl+C:
+To update a local PowerShell checkout after merging, stop the app with Ctrl+C.
+Replace `C:\path\to\bufferlogic` with your checkout folder:
 
 ```powershell
-cd C:\Users\gothe\bufferlogic
+cd "C:\path\to\bufferlogic"
 git switch main
 git pull --ff-only duo main
 npm.cmd ci
