@@ -5,7 +5,7 @@ import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineT
 import { renderTimeline, refreshTimeline } from './timeline.js';
 const $=id=>document.getElementById(id);
 let plan=null,result=null,dirty=false,busy=false,revision=1,exceptions=[],templateText='',comparison=null,capturedBaseline=null;
-let recoveryStore=null,pendingRecovery=null,recoveryPaused=false,recoveryRestoring=false,unsavedWorkspace=false,unsavedBaseline=false,recoveryTimer;
+let recoveryStore=null,pendingRecovery=null,recoveryPaused=false,recoveryRestoring=false,recoveryManuallyPaused=false,unsavedWorkspace=false,unsavedBaseline=false,recoveryTimer;
 const zone=Intl.DateTimeFormat().resolvedOptions().timeZone;
 function today(){const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;}
 $('start-date').value=today();
@@ -20,9 +20,9 @@ function failure(error){
   if(!error.issues?.some(item=>item.taskId===issue.taskId&&item.kind===issue.kind))continue;
   const jump=element('button',`Go to ${issue.taskId}${issue.kind==='remaining'?' remaining estimates':''}`,'secondary');jump.type='button';jump.dataset.estimateTask=issue.taskId;jump.dataset.estimateKind=issue.kind;panel.append(jump);
  }
- panel.classList.remove('hidden');highlightEstimateIssues();if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
-function rejectedEdit(text){$('error').textContent=text;$('error').classList.remove('hidden');message(dirty?'Edit not applied. Earlier edits are still pending.':'Edit not applied. Calculated results are unchanged.',dirty);}
-function changed(){if(!plan)return;dirty=true;unsavedWorkspace=true;invalidateComparison();renderFreshness();persistRecovery();highlightEstimateIssues();$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
+ panel.classList.remove('hidden');showActionFeedback(panel);highlightEstimateIssues();if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
+function rejectedEdit(text){$('error').textContent=text;$('error').classList.remove('hidden');showActionFeedback($('error'));message(dirty?'Edit not applied. Earlier edits are still pending.':'Edit not applied. Calculated results are unchanged.',dirty);}
+function changed(){if(!plan)return;$('action-feedback').classList.add('hidden');dirty=true;unsavedWorkspace=true;invalidateComparison();renderFreshness();persistRecovery();highlightEstimateIssues();$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
 async function request(path,data){if(data.plan){const issues=taskEstimateIssues(data.plan);if(issues.length)throw new TaskEstimateValidationError(issues);}const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const value=await response.json();if(!response.ok)throw Object.assign(new Error(value.error??'Unable to calculate'),{issues:value.issues});return value;}
 function resourceName(id,source=plan){const name=source?.resourceDetails?.find(r=>r.id===id)?.name;return name&&name!==id?`${name} (${id})`:id;}
 function assignmentsOf(task){return [{resource:task.resource,allocationPercent:task.allocationPercent??100},...(task.supportingResources??[])];}
@@ -101,6 +101,17 @@ function renderTasks(){
   for(const field of ['goodCase','poorCase'])fields.push([field,input(estimates?.[field]??'',`${task.id} ${task.status==='active'?'remaining ':''}${field==='goodCase'?'good estimate (P20)':'poor estimate (P80)'}`,{type:'number',min:0,step:'any'})]);
   fields.push(['priority',input(task.priority,`${task.id} priority`,{type:'number',step:'any'})],['allocationPercent',input(task.allocationPercent??100,`${task.id} allocation percent`,{type:'number',min:1,max:100,step:'any'})],['durationMode',select(task.durationMode??'working',`${task.id} duration type`,[['working','Working effort'],['elapsed','Elapsed waiting']])]);
   for(const [field,node] of fields){node.dataset.field=field;row.append(cell(node));if(field==='resource')row.append(cell(supportingEditor(task)));}
+  const identity=row.cells[2];identity.classList.add('task-identity');identity.prepend(element('small',`Task ${task.id}`,'task-identity-label'));
+  if(task.status==='active'){
+   const original=element('details',undefined,'original-estimates');original.dataset.originalTask=task.id;
+   original.append(element('summary','Original estimates'));
+   for(const field of ['goodCase','poorCase']){
+    const title=field==='goodCase'?'good':'poor',label=element('label',`Original ${title} days`);
+    const node=input(task[field],`${task.id} original ${title} estimate`,{type:'number',min:0,step:'any'});node.dataset.originalEstimate=field;
+    label.append(node);original.append(label);
+   }
+   identity.append(original);
+  }
   row.append(cell(element('span',`${task.status??'planned'}${task.status==='active'?' · remaining estimates':''}${task.locked?' · locked':''}`,'lifecycle')));const remove=element('button','Delete task','secondary');remove.type='button';remove.dataset.deleteTask=task.id;remove.setAttribute('aria-label',`Delete task: ${task.name} (${task.id})`);remove.disabled=busy;row.append(cell(remove));tbody.append(row);
  }
  $('task-count').textContent=`${count} tasks`;highlightEstimateIssues();
@@ -110,6 +121,8 @@ $('tasks-body').addEventListener('click',async event=>{
  if(!button||busy||button.disabled)return;
  const task=allTasks().find(task=>task.id===button.dataset.deleteTask);
  if(!task)return;
+ const dependents=allTasks().filter(other=>other.dependsOn.includes(task.id));
+ if(dependents.length){rejectedEdit(`Cannot delete ${task.name} (${task.id}). Remove or reassign dependencies first: ${dependents.map(other=>`${other.name} (${other.id})`).join('; ')}`);return;}
  if(!confirm(`Are you sure you want to delete ${task.name} (${task.id})? Its checklist, comments and progress will also be deleted. Resources will be kept. Save a workspace copy first if you may need to restore this task.`))return;
  setBusy(true);
  try{
@@ -167,7 +180,7 @@ function renderExceptions(){
  for(const [field,node] of [['resource',select(exception.resource,`Exception ${index+1} resource`,plan.calendar.resources.map(c=>[c.resource,c.resource]))],['date',input(exception.date,`Exception ${index+1} date`,{type:'date'})],['hours',input(exception.hours,`Exception ${index+1} hours`,{type:'number',min:0,max:24,step:'any'})]]){node.dataset.exception=field;row.append(cell(node));}
  const remove=element('button','Remove','remove');remove.dataset.remove=index;remove.type='button';row.append(cell(remove));body.append(row);});
 }
-function loadResult(value){pendingEditorInput=null;invalidateComparison();result=(value.needsAssignments||value.needsTasks)?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;unsavedWorkspace=true;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
+function loadResult(value){$('action-feedback').classList.add('hidden');pendingEditorInput=null;revision=Math.max(revision,reviewNumber(value.plan.versionId));invalidateComparison();result=(value.needsAssignments||value.needsTasks)?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;unsavedWorkspace=true;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
  $('workspace-name').value=plan.name??'Untitled workspace';document.title=`${$('workspace-name').value} · BufferLogic`;$('show-new-project').textContent='Add project';
  if(plan.calendar)$('start-date').value=plan.calendar.startDate;
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
@@ -184,7 +197,7 @@ $('load').addEventListener('click',async()=>{if(!allowWorkspaceReplacement())ret
  const loaded=await request('/api/load',data);clearComparisonBaseline();loadResult(loaded);
  }catch(error){failure(error);}finally{setBusy(false);}});
 $('recalculate').addEventListener('click',async()=>{if(!plan||busy)return;setBusy(true);message('Recalculating the schedule…');try{
- const draft=editablePlan();draft.versionId=`review-${++revision}`;
+ const draft=editablePlan();revision=Math.max(revision,reviewNumber(plan.versionId),reviewNumber(capturedBaseline?.versionId));draft.versionId=`review-${++revision}`;
  loadResult(await request('/api/schedule',{plan:draft}));
  }catch(error){failure(error);renderFreshness();persistRecovery();}finally{setBusy(false);}});
 $('tasks-body').addEventListener('change',event=>{const node=event.target;
@@ -200,6 +213,7 @@ $('tasks-body').addEventListener('change',event=>{const node=event.target;
   }
   changed();renderResources();return;
  }
+ if(node.dataset.originalEstimate){const task=allTasks().find(task=>task.id===node.closest('tr').dataset.id);task[node.dataset.originalEstimate]=node.valueAsNumber;changed();return;}
  if(!node.dataset.field)return;const task=allTasks().find(t=>t.id===node.closest('tr').dataset.id),field=node.dataset.field;
  if(field==='resource'&&(task.supportingResources??[]).some(a=>a.resource&&a.resource===node.value)){node.value=task.resource;rejectedEdit('That resource is already a supporting resource. Remove that assignment before making it primary.');return;}
  if(field==='durationMode'&&node.value==='elapsed'&&task.supportingResources?.length){node.value=task.durationMode??'working';rejectedEdit('Remove supporting resources before changing this task to elapsed waiting.');return;}
@@ -461,6 +475,7 @@ function renderComparison(value){
  for(const task of value.tasks){
   const row=element('tr'),details=[];
   if(task.before&&task.after){
+   if(task.before.name!==task.after.name)details.push(`Name: ${task.before.name} → ${task.after.name}`);
    if(task.changes.includes('Estimates'))details.push(`P20/P80: ${task.before.goodCase}/${task.before.poorCase} → ${task.after.goodCase}/${task.after.poorCase}`+(JSON.stringify(task.before.remaining)!==JSON.stringify(task.after.remaining)?' · remaining estimates changed':''));
    if(task.changes.includes('Dependencies'))details.push(`Dependencies: ${task.before.dependsOn.join(', ')||'none'} → ${task.after.dependsOn.join(', ')||'none'}`);
    if(task.changes.includes('Deadline'))details.push(`Deadline: ${task.before.deadline===null?'none':deadlineText(task.before.deadline)} → ${task.after.deadline===null?'none':deadlineText(task.after.deadline)}`);
@@ -526,16 +541,20 @@ function renderFreshness(){
 }
 $('recalculate-warning').addEventListener('click',()=>$('recalculate').click());
 function recoveryState(){return {plan,calculatedPlan:result.plan,exceptions,startDate:$('start-date').value,
- dirty,capturedBaseline,unsavedWorkspace,unsavedBaseline,pendingInput:pendingEditorInput,
+ dirty,revision,capturedBaseline,unsavedWorkspace,unsavedBaseline,pendingInput:pendingEditorInput,
  view:{tab:document.querySelector('[data-tab].selected')?.dataset.tab,projectFilter:$('project-filter').value,
  checklistTask:$('checklist-task').value,notesKind:$('notes-kind').value,notesItem:$('notes-item').value}};}
 let pendingEditorInput=null;
-function recoveryProblem(error){$('recovery-status').textContent=`Browser recovery unavailable: ${error.message??error}. Download your workspace and baseline before leaving.`;}
+function recoveryProblem(error){
+ const reason=String(error.message??error).trim().replace(/[.]+$/,'');
+ const text=`Browser recovery unavailable: ${reason}. Download your workspace and baseline before leaving.`;
+ $('recovery-status').textContent=text;$('recovery-warning-text').textContent=text;$('recovery-warning').classList.remove('hidden');
+}
 function persistRecovery(){
  if(!plan||!result||pendingRecovery||recoveryPaused||recoveryRestoring)return;
  clearTimeout(recoveryTimer);
  if(!recoveryStore)return;
- try{recoveryStore.save(recoveryState());$('recovery-status').textContent='Recovery copy saved in this browser. Download workspace and baseline files for portable backups.';}
+ try{const savedAt=recoveryStore.save(recoveryState());$('recovery-warning').classList.add('hidden');$('recovery-status').textContent=`Recovery copy saved in this browser at ${new Date(savedAt).toLocaleTimeString()}. Download workspace and baseline files for portable backups.`;}
  catch(error){recoveryProblem(error);}
 }
 function allowWorkspaceReplacement(){
@@ -564,12 +583,15 @@ window.addEventListener('beforeunload',event=>{
 });
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistRecovery();});
 window.addEventListener('storage',event=>{
- if(event.key==='bufferlogic.recovery.v1'&&plan){recoveryPaused=true;recoveryProblem(new Error('Another tab changed recovery. This tab will not overwrite it.'));}
+ if((event.key!=='bufferlogic.recovery.v1'&&event.key!==null)||!plan||recoveryManuallyPaused)return;
+ if(event.newValue===null){
+  try{recoveryStore.resume();recoveryPaused=false;persistRecovery();}catch(error){recoveryPaused=true;recoveryProblem(error);}
+ }else{recoveryPaused=true;recoveryProblem(new Error('Another tab changed recovery. This tab will not overwrite it.'));}
 });
 function endRecoveryPrompt(){pendingRecovery=null;$('recovery-prompt').classList.add('hidden');}
 $('restore-recovery').addEventListener('click',async()=>{
  if(!pendingRecovery?.state||busy)return;
- const state=pendingRecovery.state;setBusy(true);recoveryRestoring=true;
+ const state=pendingRecovery.state;revision=Math.max(revision,Number.isSafeInteger(state.revision)?state.revision:1,reviewNumber(state.plan?.versionId),reviewNumber(state.capturedBaseline?.versionId));setBusy(true);recoveryRestoring=true;
  try{
   const checked=await request('/api/schedule',{plan:state.calculatedPlan});
   loadResult(checked);
@@ -594,12 +616,12 @@ $('restore-recovery').addEventListener('click',async()=>{
   }
   pendingEditorInput=null;
   if(dirty){$('freshness').textContent='Recovered edits · schedule out of date';message('Workspace recovered. Recalculate before using previous results.',true);}
-  endRecoveryPrompt();recoveryPaused=false;
- }catch(error){$('recovery-error').textContent=`Unable to restore: ${error.message}. The recovery copy has been kept. Download it before discarding.`;}
+  endRecoveryPrompt();recoveryPaused=false;recoveryManuallyPaused=false;
+ }catch(error){$('recovery-error').textContent=`Unable to restore: ${String(error.message).replace(/[.]+$/,'')}. The recovery copy has been kept. Download it before discarding.`;}
  finally{recoveryRestoring=false;setBusy(false);if(!pendingRecovery)persistRecovery();}
 });
 $('discard-recovery').addEventListener('click',()=>{
- if(!confirm('Discard this browser recovery copy? Downloaded workspace files will not be deleted.'))return;
+ if(!confirm('Discard this browser recovery copy? It may belong to work open in another tab. Downloaded files will not be deleted, and open editing tabs may save a new recovery copy.'))return;
  try{recoveryStore?.clear();endRecoveryPrompt();$('recovery-status').textContent='Recovery copy discarded. A new copy will be saved when you load or edit a workspace.';}
  catch(error){recoveryProblem(error);}
 });
@@ -611,7 +633,7 @@ $('download-recovery').addEventListener('click',()=>{
 $('clear-recovery').addEventListener('click',()=>{
  if(!confirm('Clear the recovery copy and pause browser recovery in this tab? Download workspace and baseline files first.'))return;
  if(!recoveryStore){recoveryProblem(new Error('Browser storage is not accessible.'));return;}
- try{recoveryStore.clear();recoveryPaused=true;endRecoveryPrompt();$('recovery-status').textContent='Browser recovery cleared and paused in this tab. Download your workspace before leaving. Reload to enable recovery again.';}
+ try{recoveryStore.clear();recoveryPaused=true;recoveryManuallyPaused=true;endRecoveryPrompt();recoveryProblem(new Error('Recovery cleared and paused in this tab. Use Resume browser recovery to enable it without reloading'));}
  catch(error){recoveryProblem(error);}
 });
 try{
@@ -637,21 +659,54 @@ function highlightEstimateIssues(){
     const message=element('p',issue.message,'task-estimate-message');
     message.id=`estimate-${progress?'progress':'tasks'}-${encodeURIComponent(issue.taskId)}-${issue.kind}`;
     row.cells[progress?0:2].append(message);
-    const visible=progress?issue.kind==='remaining':(task.status==='active')===(issue.kind==='remaining');
+    const originalActive=!progress&&task.status==='active'&&issue.kind==='original';
+    if(originalActive){const editor=row.querySelector('.original-estimates');if(editor)editor.open=true;}
+    const visible=progress?issue.kind==='remaining':originalActive||(task.status==='active')===(issue.kind==='remaining');
     if(visible)for(const field of issue.fields){
-     const node=row.querySelector(`[${progress?'data-progress':'data-field'}="${field}"]`);
+     const node=row.querySelector(`[${originalActive?'data-original-estimate':progress?'data-progress':'data-field'}="${field}"]`);
      if(node){node.setAttribute('aria-invalid','true');node.setAttribute('aria-describedby',message.id);}
     }
    }
   }
  }
 }
-$('error').addEventListener('click',event=>{
+function navigateEstimateIssue(event){
  const button=event.target.closest('[data-estimate-task]');if(!button||!plan||busy)return;
  const progress=button.dataset.estimateKind==='remaining',tab=progress?'progress':'tasks';
- if(!progress){$('project-filter').value='all';renderTasks();}
+ if(!progress){const task=allTasks().find(task=>task.id===button.dataset.estimateTask);if($('project-filter').value!=='all'&&$('project-filter').value!==task.projectId)$('project-filter').value=task.projectId;renderTasks();}
  document.querySelector(`[data-tab="${tab}"]`).click();
  const row=[...$(progress?'progress-body':'tasks-body').rows].find(row=>row.dataset.id===button.dataset.estimateTask);
  row?.scrollIntoView({block:'center',inline:'nearest'});
- row?.querySelector('[aria-invalid="true"]')?.focus({preventScroll:true});
+ const target=row?.querySelector(!progress?'[data-original-estimate][aria-invalid="true"], [data-field][aria-invalid="true"]':'[data-progress][aria-invalid="true"]');
+ target?.scrollIntoView({block:'center',inline:'center'});
+ if(target&&!target.closest('.task-identity')){
+  const identity=progress?row.cells[0]:row.querySelector('.task-identity'),scroller=row.closest('.table-scroll');
+  const overlap=identity.getBoundingClientRect().right+8-target.getBoundingClientRect().left;
+  if(overlap>0)scroller.scrollLeft=Math.max(0,scroller.scrollLeft-overlap);
+ }
+ target?.focus({preventScroll:true});
+}
+$('error').addEventListener('click',navigateEstimateIssue);
+$('feedback-content').addEventListener('click',navigateEstimateIssue);
+
+
+function showActionFeedback(panel){
+ $('feedback-content').replaceChildren(...[...panel.childNodes].map(node=>node.cloneNode(true)));
+ $('action-feedback').classList.remove('hidden');
+}
+$('close-feedback').addEventListener('click',()=>$('action-feedback').classList.add('hidden'));
+$('resume-recovery').addEventListener('click',()=>{
+ try{
+  if(pendingRecovery)throw new Error('Restore or discard the existing recovery copy first');
+  if(!recoveryStore){
+   if(localStorage.getItem('bufferlogic.recovery.v1')!==null)throw new Error('Another recovery copy exists. Download your work before opening it');
+   recoveryStore=createRecoveryStore(localStorage);
+  }
+  recoveryStore.resume();recoveryPaused=false;recoveryManuallyPaused=false;persistRecovery();
+  if(!plan){$('recovery-warning').classList.add('hidden');$('recovery-status').textContent='Browser recovery enabled. Load or create a workspace to save a recovery copy.';}
+ }catch(error){recoveryProblem(error);}
 });
+function reviewNumber(label){
+ const match=/^review-(\d+)(?:-|$)/.exec(label??'');const value=match?Number(match[1]):0;
+ return Number.isSafeInteger(value)?value:0;
+}

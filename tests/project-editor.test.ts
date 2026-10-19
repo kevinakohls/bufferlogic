@@ -82,3 +82,27 @@ test('task deletion blocks same-project and cross-project dependents, including 
  assert.throws(()=>deleteTask({...cross,projects:cross.projects.map(p=>({...p,onHold:true}))},id),/dependencies first: Review/);
  assert.deepEqual(cross,snapshot);
 });
+
+test('deleted tasks retain retired identities across save/open and compare replacements as Removed and Added',async()=>{
+ const {parsePortfolio}=await import('../src/portfolio.js');const {compareScenarios}=await import('../src/scenario-comparison.js');
+ const first=appendTask({...createBlankProject('Beta'),resources:['Crew']},{projectId:'P1',name:'Build',resource:'Crew',goodCase:1,poorCase:2,dependsOn:[]});
+ const baseline=appendTask(first,{projectId:'P1',name:'Inspect widget',resource:'Crew',goodCase:1,poorCase:1,dependsOn:[]});
+ const retired=baseline.projects[0]!.tasks[1]!.id;
+ const reopened=parsePortfolio(JSON.parse(JSON.stringify(deleteTask(baseline,retired))));
+ const next=appendTask(reopened,{projectId:'P1',name:'Train team',resource:'Crew',goodCase:1,poorCase:1,dependsOn:[]});
+ const replacement=next.projects[0]!.tasks[1]!;assert.notEqual(replacement.id,retired);
+ const report=compareScenarios(baseline,next);assert.equal(report.tasks.find(t=>t.taskId===retired)!.status,'removed');assert.equal(report.tasks.find(t=>t.taskId===replacement.id)!.status,'added');
+ const again=appendTask(parsePortfolio(JSON.parse(JSON.stringify(deleteTask(next,replacement.id)))),{projectId:'P1',name:'Another',resource:'Crew',goodCase:1,poorCase:1,dependsOn:[]});
+ assert.ok(![retired,replacement.id].includes(again.projects[0]!.tasks[1]!.id));
+ const empty=deleteProject(next,'P1');const fresh=createBlankProject('Unrelated',parsePortfolio(JSON.parse(JSON.stringify(empty))));assert.notEqual(fresh.projects[0]!.id,'P1');
+ assert.throws(()=>parsePortfolio({...next,retiredTaskIds:[next.projects[0]!.tasks[0]!.id]}),/active ID/);
+ assert.throws(()=>parsePortfolio({...next,retiredTaskIds:['x','x']}),/unique/);
+});
+
+test('template copies cannot reuse retired project or task identities',async()=>{
+ const {instantiateTemplate}=await import('../src/templates.js');
+ const template='ID,Task,Resource,Good days,Poor days\n1,Build,Crew,1,2';
+ const first=instantiateTemplate(template,'First');const id=first.projects[0]!.id,taskId=first.projects[0]!.tasks[0]!.id;
+ const next=instantiateTemplate(template,'Replacement',deleteProject(first,id));
+ assert.notEqual(next.projects[0]!.id,id);assert.notEqual(next.projects[0]!.tasks[0]!.id,taskId);
+});

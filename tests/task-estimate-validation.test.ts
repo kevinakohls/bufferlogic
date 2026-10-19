@@ -24,3 +24,8 @@ test('missing, non-finite, negative and multiple invalid estimates have readable
  assert.equal(taskEstimateIssues({projects:[{tasks:[task,{...task,id:'B'}]}]}).length,2);
  assert.deepEqual(taskEstimateIssues(null),[]);
 });
+
+test('an active task with valid remaining work identifies its hidden original estimate error explicitly',()=>{
+ const issues=taskEstimateIssues({projects:[{id:'P1',tasks:[{...task,status:'active',remaining:{goodCase:2,poorCase:3}}]}]});
+ assert.equal(issues.length,1);assert.equal(issues[0]!.kind,'original');assert.match(issues[0]!.message,/Original estimates: Good estimate/);
+});

@@ -10,7 +10,7 @@ export function createBlankProject(name: string, existing?: PortfolioPlan, start
     calendar: {startDate, ...(timeZone === undefined ? {} : {timeZone}), hoursPerWorkday: 8, resources: []},
   };
   if (!existing) parseDate(startDate);
-  const ids = new Set(base.projects.map(project => project.id));
+  const ids = new Set([...base.projects.map(project => project.id),...base.retiredProjectIds??[]]);
   let number = 1;
   while (ids.has(`P${number}`)) number++;
   return parsePortfolio({...base, approvalStatus: 'draft', versionId: `${base.versionId}-project`,
@@ -38,8 +38,9 @@ export function appendTask(input: PortfolioPlan, task: NewTask): PortfolioPlan {
   const ids = new Set(plan.projects.flatMap(project => project.tasks.map(task => task.id)));
   if (!Array.isArray(task.dependsOn) || new Set(task.dependsOn).size !== task.dependsOn.length
       || task.dependsOn.some(id => !ids.has(id))) throw new Error('Dependencies must be unique existing task IDs');
+  const usedIds=new Set([...ids,...plan.retiredTaskIds??[]]);
   let number = 1;
-  while (ids.has(`${project.id}-T${String(number).padStart(3, '0')}`)) number++;
+  while (usedIds.has(`${project.id}-T${String(number).padStart(3, '0')}`)) number++;
   const id = `${project.id}-T${String(number).padStart(3, '0')}`;
   const priority = Math.max(0, ...project.tasks.map(task => task.priority)) + 1;
   return parsePortfolio({...plan, approvalStatus: 'draft', versionId: `${plan.versionId}-task`,
@@ -59,6 +60,8 @@ export function deleteProject(input: PortfolioPlan, projectId: string): Portfoli
   if (dependents.length) throw new Error(`Cannot delete ${project.name}. Reassign or remove dependencies on its tasks first: ${dependents.join('; ')}`);
   return parsePortfolio({...plan, approvalStatus: 'draft', versionId: `${plan.versionId}-delete-project`,
     projects: plan.projects.filter(project => project.id !== projectId),
+    retiredTaskIds:[...new Set([...plan.retiredTaskIds??[],...removed])],
+    retiredProjectIds:[...new Set([...plan.retiredProjectIds??[],projectId])],
     ...(plan.feedingTaskIds === undefined ? {} : {feedingTaskIds: plan.feedingTaskIds.filter(id => !removed.has(id))}),
     ...(plan.taskOrderOverrides === undefined ? {} : {taskOrderOverrides: plan.taskOrderOverrides.filter(id => !removed.has(id))}),
   });
@@ -76,6 +79,7 @@ export function deleteTask(input: PortfolioPlan, taskId: string): PortfolioPlan 
   }
   return parsePortfolio({...plan, approvalStatus: 'draft', versionId: `${plan.versionId}-delete-task`,
     projects: plan.projects.map(project => ({...project, tasks: project.tasks.filter(task => task.id !== taskId)})),
+    retiredTaskIds:[...new Set([...plan.retiredTaskIds??[],taskId])],
     ...(plan.feedingTaskIds === undefined ? {} : {feedingTaskIds: plan.feedingTaskIds.filter(id => id !== taskId)}),
     ...(plan.taskOrderOverrides === undefined ? {} : {taskOrderOverrides: plan.taskOrderOverrides.filter(id => id !== taskId)}),
   });

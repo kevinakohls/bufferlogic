@@ -455,11 +455,12 @@ Restore recalculates the last calculated plan with the current engine, then
 reapplies pending edits, including unfinished calendar exceptions. Those edits
 remain stale until recalculated. A restore failure retains the browser copy.
 Discard requires confirmation. **Clear browser recovery** removes the copy and
-pauses automatic recovery for that tab until reload. Clearing browser data, private
+pauses automatic recovery for that tab until **Resume browser recovery** is selected. Other open editing tabs may save a new copy. Clearing browser data, private
 browsing, storage quotas, switching site address, or another device can make
 recovery unavailable. The app keeps working and shows a warning if storage fails.
-A second tab cannot silently overwrite a copy changed by another tab; download
-that tab's work and reopen it separately if needed. There is one recovery slot per
+A second tab cannot silently overwrite a copy changed by another tab. If the slot
+is cleared, open editing tabs can safely resume writing without reloading; the
+first successful writer owns the copy. Download each tab's work separately. There is one recovery slot per
 browser/site, not a workspace history. Do not rely on it as the only backup.
 
 The browser may warn before leaving when a workspace or captured baseline has
@@ -493,8 +494,8 @@ For example, entering good 8 and poor 5 on task A shows:
 
 The task row and both estimate fields are highlighted, with an inline explanation
 and accessibility descriptions. Recalculate shows a **Go to A** action in the
-error panel. It opens Tasks, clears a project filter hiding the row, scrolls to
-it and focuses an invalid estimate. Remaining-estimate errors also highlight the
+error panel. It opens Tasks, changes a filter only when it hides the row, scrolls to
+it and focuses an invalid estimate without hiding it behind the retained task identity. Remaining-estimate errors also highlight the
 Progress row; their Go to action opens Progress. Correcting the estimates clears
 the highlighting, but the schedule stays out of date until recalculation succeeds.
 Edits and browser recovery are retained. Imported invalid files receive readable
@@ -505,3 +506,41 @@ project filter or tab, then recalculate. Use Go to to find the task, correct eit
 value and recalculate successfully. Repeat with active remaining work, a blank
 estimate, multiple invalid tasks and a narrow screen. Verify a zero/zero original
 milestone is accepted and the task row returns to normal after correction.
+
+
+## Review correctness fixes
+
+- **Original estimates on active work:** Tasks has an expandable Original estimates
+  editor for active tasks. Invalid original estimates open it automatically. Go to
+  focuses those original fields, while remaining errors navigate to Progress.
+  Correcting originals does not reset status, actuals or remaining estimates.
+- **Retired identities:** deleting tasks/projects records their IDs in the workspace.
+  Manual additions and template copies skip those IDs after save/open, so Compare
+  reports an unrelated replacement as Removed plus Added. Already-reused IDs in
+  older files cannot be repaired automatically; keep original baselines as evidence.
+- **Visible feedback:** task deletion checks known dependents before asking for
+  confirmation (the server still enforces the dependency rule). Failed recalculation, blocked deletion, rejected edits and
+  refused saves appear in a viewport notification with relevant Go to actions.
+  Close dismisses that notification; the main error panel remains available.
+- **Narrow tables:** task identity stays visible during horizontal scrolling.
+  Estimate navigation scrolls the input into the remaining visible area. Original
+  controls live in that identity cell; Progress retains its identifying first cell.
+- **Recovery:** a cleared slot can be reclaimed without overwriting a newer copy.
+  Resume browser recovery retries explicitly without reloading or losing edits.
+  Storage failures also show a visible warning; success reports a local save time.
+  Discard warns that another tab may own the copy and may save again.
+- **Version labels:** the recalculation counter resumes from saved/recovered labels,
+  including a captured baseline, rather than restarting after a page reload.
+- **Presentation:** Compare shows old → new names for renamed tasks. Adding/deleting
+  projects or tasks recalculates all pending valid edits; ordinary field edits still
+  require Recalculate. The timeline distinguishes calculated bars from project P95
+  forecasts, and uses “locked commitments” consistently.
+
+Regression walkthrough: make original good/poor estimates 50/40, mark the task
+active, change remaining good to 30, then recalculate. Go to must expose the original
+50/40 fields; correct to 35/40 and verify active status, actual start and remaining
+30/40 survive. Capture a baseline, delete a leaf task, add unrelated work, save/open
+and compare to the original baseline file: require separate Removed and Added rows.
+In two tabs, discard recovery in the second and verify the first continues saving.
+Also verify explicit Clear/Resume, competing-tab protection, forward version labels,
+visible errors from deep in the page, old/new comparison names and mobile scrolling.

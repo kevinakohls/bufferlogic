@@ -82,7 +82,7 @@ function draw(){
   if(isMilestone)row.append(svg('polygon',{points:`${start},${p.y+8} ${start+8},${p.y+16} ${start},${p.y+24} ${start-8},${p.y+16}`,fill,stroke,'stroke-width':isSelected?3:task.locked?2:1}));
   else{row.append(svg('rect',{x:start,y:p.y+7,width:barWidth,height:18,rx:3,fill,stroke,'stroke-width':isSelected?3:task.locked?2:1}));if(barWidth>24)row.append(svg('text',{x:start+7,y:p.y+20,class:'bar-id'},task.id));}
   if(task.locked)row.append(svg('text',{x:start+(isMilestone?12:barWidth+5),y:p.y+20,class:'lock-label'},'L'));
-  row.append(svg('title',{},`${taskLabel(task.id)} · ${task.resource}${onChain?' · critical chain':''}${task.locked?' · locked':''}`));
+  row.append(svg('title',{},`${taskLabel(task.id)} · calculated task schedule (not P95) · ${task.resource}${onChain?' · critical chain':''}${task.locked?' · locked':''}`));
   row.addEventListener('click',()=>selectTask(task.id));row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectTask(task.id);}});canvas.append(row);
  }
  chart.append(axis,canvas);chart.scrollTop=oldTop;chart.scrollLeft=oldLeft;details();

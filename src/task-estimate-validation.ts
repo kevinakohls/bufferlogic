@@ -36,7 +36,7 @@ export function taskEstimateIssues(input: unknown): TaskEstimateIssue[] {
         }
         if (reason) issues.push({taskId: task.id, taskName: task.name,
           projectId: typeof project.id === 'string' ? project.id : '', kind,
-          fields: ['goodCase', 'poorCase'], message: `Task ${task.id} — ${task.name}: ${reason}`});
+          fields: ['goodCase', 'poorCase'], message: `Task ${task.id} — ${task.name}: ${kind==='original'&&task.status==='active'?'Original estimates: ':''}${reason}`});
       }
     }
   }

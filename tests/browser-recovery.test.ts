@@ -26,3 +26,11 @@ test('malformed and unsupported recovery records are reported and retained until
   assert.throws(()=>store.read(),{message:'Recovery data is unreadable or from an unsupported version.'});assert.equal(storage.getItem(recoveryKey),raw);store.clear();assert.equal(storage.getItem(recoveryKey),null);
  }
 });
+
+test('an editing tab can resume after its recovery slot is cleared, but cannot overwrite a replacement',()=>{
+ const storage=memory(),editing=createRecoveryStore(storage);editing.save(snapshot);
+ const second=createRecoveryStore(storage);second.clear();editing.resume();editing.save({...snapshot,dirty:false});
+ assert.equal(createRecoveryStore(storage).read().state.dirty,false);
+ const stale=createRecoveryStore(storage);editing.save(snapshot);
+ assert.throws(()=>stale.resume(),/Another tab/);assert.equal(createRecoveryStore(storage).read().state.dirty,true);
+});

@@ -13,8 +13,14 @@ export function createRecoveryStore(storage){
   },
   save(state){
    if(storage.getItem(recoveryKey)!==expected)throw new Error('Another tab changed the recovery copy. This tab will not overwrite it. Download your workspace before leaving.');
-   const next=JSON.stringify({version:1,savedAt:new Date().toISOString(),state});
-   storage.setItem(recoveryKey,next);expected=next;
+   const savedAt=new Date().toISOString();
+   const next=JSON.stringify({version:1,savedAt,state});
+   storage.setItem(recoveryKey,next);expected=next;return savedAt;
+  },
+  resume(){
+   const current=storage.getItem(recoveryKey);
+   if(current!==null&&current!==expected)throw new Error('Another tab has a recovery copy. This tab will not overwrite it. Download your work instead.');
+   expected=current;
   },
   clear(){
    if(storage.getItem(recoveryKey)!==expected)throw new Error('Another tab changed the recovery copy. Refresh before clearing it.');

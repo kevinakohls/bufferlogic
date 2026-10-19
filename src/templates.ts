@@ -25,8 +25,8 @@ export function instantiateTemplate(text:string, name:string, existing?:Portfoli
  if(!selected||!sources.includes(selected))throw new Error('Choose one source project from the template');
  const projectColumn=header.indexOf('Project');
  const rows=records.filter(row=>projectColumn===-1||row[projectColumn]!.trim()===selected);
- const base=existing?parsePortfolio(existing):{id:'template-portfolio',versionId:'template-v1',asOf:0,settings:{durationUnit:'days' as const},resources:[],projects:[]};
- const usedProjects=new Set(base.projects.map(p=>p.id)),usedTasks=new Set(base.projects.flatMap(p=>p.tasks.map(t=>t.id)));
+ const base:PortfolioPlan=existing?parsePortfolio(existing):{id:'template-portfolio',versionId:'template-v1',asOf:0,settings:{durationUnit:'days' as const},resources:[],projects:[]};
+ const usedProjects=new Set([...base.projects.map(p=>p.id),...base.retiredProjectIds??[]]),usedTasks=new Set([...base.projects.flatMap(p=>p.tasks.map(t=>t.id)),...base.retiredTaskIds??[]]);
  let number=1;while(usedProjects.has(`P${number}`)||rows.some((_,i)=>usedTasks.has(`P${number}-T${String(i+1).padStart(3,'0')}`)))number++;
  const projectId=`P${number}`;
  const cell=(row:string[],column:string)=>header.includes(column)?row[header.indexOf(column)]!.trim():'';

@@ -38,6 +38,9 @@ export interface Project extends Notes {
   readonly tasks: readonly PortfolioTask[];
 }
 export interface PortfolioPlan {
+  /** IDs retired by deletion must never identify unrelated replacement work. */
+  readonly retiredTaskIds?: readonly string[];
+  readonly retiredProjectIds?: readonly string[];
   readonly name?: string;
   readonly feedingTaskIds?: readonly string[];
   readonly id: string;
@@ -221,8 +224,16 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
   const knownTaskIds=new Set(projects.flatMap(project=>project.tasks.map(task=>task.id)));
   for(const id of value.feedingTaskIds as string[]|undefined??[])if(!knownTaskIds.has(id))throw new Error(`Unknown feeding task: ${id}`);
   if (value.taskOrderOverrides !== undefined && (!Array.isArray(value.taskOrderOverrides) || !value.taskOrderOverrides.every(text))) throw new Error('Invalid taskOrderOverrides');
+  const knownProjectIds=new Set(projects.map(project=>project.id));
+  for (const field of ['retiredTaskIds','retiredProjectIds'] as const) {
+    const retired=value[field];
+    if(retired!==undefined&&(!Array.isArray(retired)||!retired.every(text)||new Set(retired).size!==retired.length))throw new Error(`${field} must contain unique nonempty IDs`);
+    if(Array.isArray(retired)&&retired.some(id=>field==='retiredTaskIds'?knownTaskIds.has(id):knownProjectIds.has(id)))throw new Error(`${field} cannot include an active ID`);
+  }
   return { id: value.id, name: typeof value.name==='string'?value.name.trim():projects[0]?`${projects[0].name} workspace`:'Untitled workspace', versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days',...(value.settings.displayTime===undefined?{}:{displayTime:value.settings.displayTime}) },
     resources, projects,
+    ...(value.retiredTaskIds===undefined?{}:{retiredTaskIds:[...(value.retiredTaskIds as string[])]}),
+    ...(value.retiredProjectIds===undefined?{}:{retiredProjectIds:[...(value.retiredProjectIds as string[])]}),
     ...(value.feedingTaskIds===undefined?{}:{feedingTaskIds:[...value.feedingTaskIds] as string[]}),
     ...(resourceDetails===undefined?{}:{resourceDetails}),
     ...(calendar === undefined ? {} : { calendar }),

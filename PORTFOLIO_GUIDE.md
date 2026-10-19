@@ -323,3 +323,14 @@ The result includes project before/after P95 forecasts, target assessments, orde
 The UI supports both a session baseline captured from the current plan and a baseline chosen from a saved file. Capture does not automatically persist in workspace downloads; Download baseline saves the original plan separately. Session baselines survive recalculation and are cleared when another workspace opens. This API measures a supplied alternative; it does not optimize or claim a best schedule.
 
 Comparison equality ignores object-key insertion order. Dependency lists and supporting assignments are compared as unordered sets; task order, task-order overrides and Monday–Sunday calendar hours retain their ordering. Project change status uses the scheduling fields shown in the report, not full raw project objects, so project/task comments, descriptions, ownership notes and checklist updates alone do not mark a project schedule changed.
+
+
+### Retired task and project identities
+
+Optional `retiredTaskIds` and `retiredProjectIds` arrays retain deleted IDs within a
+workspace. Entries are unique nonempty strings and cannot also identify live work.
+Deletion records them; manual project/task creation and template copying skip them.
+Save/open preserves the arrays, preventing unrelated replacements from becoming
+“Changed” rows in scenario comparison. These fields do not reserve resources or
+change scheduling priorities. Legacy plans without them remain accepted; deletions
+made before these fields existed cannot be reconstructed automatically.
