@@ -23,6 +23,6 @@ test('stale tabs cannot overwrite or clear a newer recovery copy',()=>{
 test('malformed and unsupported recovery records are reported and retained until explicit discard',()=>{
  for(const raw of ['{broken',JSON.stringify({version:8,state:snapshot}),JSON.stringify({version:1,savedAt:'today',state:{}})]){
   const storage=memory();storage.setItem(recoveryKey,raw);const store=createRecoveryStore(storage);
-  assert.throws(()=>store.read());assert.equal(storage.getItem(recoveryKey),raw);store.clear();assert.equal(storage.getItem(recoveryKey),null);
+  assert.throws(()=>store.read(),{message:'Recovery data is unreadable or from an unsupported version.'});assert.equal(storage.getItem(recoveryKey),raw);store.clear();assert.equal(storage.getItem(recoveryKey),null);
  }
 });

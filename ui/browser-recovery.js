@@ -5,7 +5,9 @@ export function createRecoveryStore(storage){
  return {
   read(){
    if(!expected)return null;
-   const record=JSON.parse(expected);
+   let record;
+   try{record=JSON.parse(expected);}
+   catch{throw new Error('Recovery data is unreadable or from an unsupported version.');}
    if(record?.version!==1||typeof record.savedAt!=='string'||!record.state?.plan||!record.state?.calculatedPlan||!Array.isArray(record.state.exceptions))throw new Error('Recovery data is unreadable or from an unsupported version.');
    return record;
   },
