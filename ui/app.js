@@ -1,3 +1,4 @@
+import {taskEstimateIssues,TaskEstimateValidationError} from './task-estimate-validation.js';
 import {createRecoveryStore} from './browser-recovery.js';
 import {workspaceFilename} from './workspace-name.js';
 import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineTargetState,daysLateText,supportingAllocationError} from './forecast-state.js';
@@ -13,10 +14,16 @@ function dateText(value){if(!value)return '—';const [year,month,day]=value.spl
 function valueText(f,key){if(f.withheldReason)return forecastState(f).completionLabel;return usesCalendarDates(result.plan)&&f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
 function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>{if(n.id!=='open-help'&&!n.closest('#help-dialog'))n.disabled=value;});if(!value&&plan){renderProgress();renderProjectOrder();$('show-add-task').disabled=!plan.projects.length;$('create-task').disabled=!plan.projects.length;for(const node of document.querySelectorAll('[data-add-support]'))node.disabled=allTasks().find(t=>t.id===node.dataset.addSupport)?.durationMode==='elapsed';if(plan.calendar)renderExceptions();renderTimeDisplay();}}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
-function failure(error){$('error').textContent=error.message??String(error);$('error').classList.remove('hidden');if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
+function failure(error){
+ const panel=$('error');panel.replaceChildren(element('p',error.message??String(error)));
+ for(const issue of taskEstimateIssues(plan)){
+  if(!error.issues?.some(item=>item.taskId===issue.taskId&&item.kind===issue.kind))continue;
+  const jump=element('button',`Go to ${issue.taskId}${issue.kind==='remaining'?' remaining estimates':''}`,'secondary');jump.type='button';jump.dataset.estimateTask=issue.taskId;jump.dataset.estimateKind=issue.kind;panel.append(jump);
+ }
+ panel.classList.remove('hidden');highlightEstimateIssues();if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}}
 function rejectedEdit(text){$('error').textContent=text;$('error').classList.remove('hidden');message(dirty?'Edit not applied. Earlier edits are still pending.':'Edit not applied. Calculated results are unchanged.',dirty);}
-function changed(){if(!plan)return;dirty=true;unsavedWorkspace=true;invalidateComparison();renderFreshness();persistRecovery();$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
-async function request(path,data){const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const value=await response.json();if(!response.ok)throw new Error(value.error??'Unable to calculate');return value;}
+function changed(){if(!plan)return;dirty=true;unsavedWorkspace=true;invalidateComparison();renderFreshness();persistRecovery();highlightEstimateIssues();$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
+async function request(path,data){if(data.plan){const issues=taskEstimateIssues(data.plan);if(issues.length)throw new TaskEstimateValidationError(issues);}const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const value=await response.json();if(!response.ok)throw Object.assign(new Error(value.error??'Unable to calculate'),{issues:value.issues});return value;}
 function resourceName(id,source=plan){const name=source?.resourceDetails?.find(r=>r.id===id)?.name;return name&&name!==id?`${name} (${id})`:id;}
 function assignmentsOf(task){return [{resource:task.resource,allocationPercent:task.allocationPercent??100},...(task.supportingResources??[])];}
 function hasUnassigned(task){return assignmentsOf(task).some(a=>!a.resource);}
@@ -91,12 +98,12 @@ function renderTasks(){
   const row=element('tr');row.dataset.id=task.id;row.append(element('td',task.id,'task-id'),element('td',plan.projects.find(p=>p.id===task.projectId).name));
   const fields=[['name',input(task.name,`${task.id} task name`,{class:'task-name'})],['resource',select(task.resource,`${task.id} resource`,[['','Unassigned — choose a resource'],...plan.resources.map(r=>[r,resourceName(r)])])],['dependsOn',input(task.dependsOn.join(', '),`${task.id} dependencies`,{class:'dependencies'})]];
   const estimates=task.status==='active'?task.remaining:task;
-  for(const field of ['goodCase','poorCase'])fields.push([field,input(estimates?.[field]??'',`${task.id} ${task.status==='active'?'remaining ':''}${field}`,{type:'number',min:0,step:'any'})]);
+  for(const field of ['goodCase','poorCase'])fields.push([field,input(estimates?.[field]??'',`${task.id} ${task.status==='active'?'remaining ':''}${field==='goodCase'?'good estimate (P20)':'poor estimate (P80)'}`,{type:'number',min:0,step:'any'})]);
   fields.push(['priority',input(task.priority,`${task.id} priority`,{type:'number',step:'any'})],['allocationPercent',input(task.allocationPercent??100,`${task.id} allocation percent`,{type:'number',min:1,max:100,step:'any'})],['durationMode',select(task.durationMode??'working',`${task.id} duration type`,[['working','Working effort'],['elapsed','Elapsed waiting']])]);
   for(const [field,node] of fields){node.dataset.field=field;row.append(cell(node));if(field==='resource')row.append(cell(supportingEditor(task)));}
   row.append(cell(element('span',`${task.status??'planned'}${task.status==='active'?' · remaining estimates':''}${task.locked?' · locked':''}`,'lifecycle')));const remove=element('button','Delete task','secondary');remove.type='button';remove.dataset.deleteTask=task.id;remove.setAttribute('aria-label',`Delete task: ${task.name} (${task.id})`);remove.disabled=busy;row.append(cell(remove));tbody.append(row);
  }
- $('task-count').textContent=`${count} tasks`;
+ $('task-count').textContent=`${count} tasks`;highlightEstimateIssues();
 }
 $('tasks-body').addEventListener('click',async event=>{
  const button=event.target.closest('button[data-delete-task]');
@@ -245,10 +252,11 @@ function renderProgress(){
  for(const task of allTasks()){
   const status=task.status??'planned',row=element('tr');row.dataset.id=task.id;row.append(element('td',`${task.id} · ${task.name}`),element('td',plan.projects.find(p=>p.id===task.projectId).name));
   const fields=[['status',select(status,`${task.id} progress status`,[['planned','Not started'],['active','In progress'],['completed','Complete']])],['start',progressInput(task.actuals?.start??task.actualStart,`${task.id} actual start`)],['finish',progressInput(task.actuals?.finish,`${task.id} actual finish`)]];
-  for(const field of ['goodCase','poorCase'])fields.push([field,input(task.remaining?.[field]??'',`${task.id} remaining ${field}`,{type:'number',min:0,step:'any'})]);
+  for(const field of ['goodCase','poorCase'])fields.push([field,input(task.remaining?.[field]??'',`${task.id} remaining ${field==='goodCase'?'good estimate (P20)':'poor estimate (P80)'}`,{type:'number',min:0,step:'any'})]);
   fields.push(['review',select(estimateReviewValue(task),`${task.id} estimate review`,status==='active'?[['stale','Needs review'],['current','Reviewed']]:[['','']])]);
   for(const [field,node] of fields){node.dataset.progress=field;node.disabled=field==='start'?status==='planned':field==='finish'?status!=='completed':['goodCase','poorCase','review'].includes(field)?status!=='active':false;row.append(cell(node));}body.append(row);
  }
+ highlightEstimateIssues();
 }
 $('progress-asof').addEventListener('change',event=>{const day=progressDay(event.target);if(!Number.isFinite(day)||day<plan.asOf){failure(new Error('Progress date must not move backward.'));event.target.value=progressValue(plan.asOf);return;}if(day>plan.asOf)for(const task of allTasks())if(task.status==='active'&&task.remaining)task.remaining.estimateStatus='stale';plan.asOf=day;changed();for(const row of $('progress-body').rows){const task=allTasks().find(t=>t.id===row.dataset.id);if(task.status==='active'&&task.remaining)row.querySelector('[data-progress="review"]').value=task.remaining.estimateStatus;}});
 $('progress-body').addEventListener('change',event=>{
@@ -579,7 +587,9 @@ $('restore-recovery').addEventListener('click',async()=>{
   }
   if(capturedBaseline)$('compare-status').textContent=`Baseline recovered: ${capturedBaseline.name}. Compare versions after recalculating pending edits.`;
   if(state.pendingInput){
-   const field=state.pendingInput.id?$(state.pendingInput.id):document.querySelector(`[aria-label="${CSS.escape(state.pendingInput.label)}"]`);
+   const label=state.pendingInput.label??'';
+   const legacyLabel=label.replace(/goodCase$/, 'good estimate (P20)').replace(/poorCase$/, 'poor estimate (P80)');
+   const field=state.pendingInput.id?$(state.pendingInput.id):document.querySelector(`[aria-label="${CSS.escape(label)}"]`)??document.querySelector(`[aria-label="${CSS.escape(legacyLabel)}"]`);
    if(field){field.value=state.pendingInput.value;field.dispatchEvent(new Event('change',{bubbles:true}));}
   }
   pendingEditorInput=null;
@@ -609,3 +619,39 @@ try{
  if(pendingRecovery){$('recovery-description').textContent=`${pendingRecovery.state.plan.name??'Untitled workspace'} · saved ${new Date(pendingRecovery.savedAt).toLocaleString()}${pendingRecovery.state.capturedBaseline?' · includes a captured baseline':''}`;$('recovery-prompt').classList.remove('hidden');}
  $('recovery-status').textContent=pendingRecovery?'A recovery copy is available. Restore or discard it before starting.':'Browser recovery enabled on this device. Download workspace files for portable backups.';
 }catch(error){recoveryPaused=true;recoveryProblem(error);}
+
+
+function highlightEstimateIssues(){
+ if(!plan)return;
+ const issues=taskEstimateIssues(plan),tasksById=new Map(allTasks().map(task=>[task.id,task]));
+ const issuesByTask=new Map();for(const issue of issues){if(!issuesByTask.has(issue.taskId))issuesByTask.set(issue.taskId,[]);issuesByTask.get(issue.taskId).push(issue);}
+ for(const bodyId of ['tasks-body','progress-body']){
+  const body=$(bodyId),progress=bodyId==='progress-body';
+  for(const row of body.rows){
+   row.classList.remove('task-estimate-invalid');
+   row.querySelectorAll('.task-estimate-message').forEach(node=>node.remove());
+   for(const field of row.querySelectorAll('[aria-invalid="true"]')){field.removeAttribute('aria-invalid');field.removeAttribute('aria-describedby');}
+   const task=tasksById.get(row.dataset.id);
+   for(const issue of issuesByTask.get(row.dataset.id)??[]){
+    row.classList.add('task-estimate-invalid');
+    const message=element('p',issue.message,'task-estimate-message');
+    message.id=`estimate-${progress?'progress':'tasks'}-${encodeURIComponent(issue.taskId)}-${issue.kind}`;
+    row.cells[progress?0:2].append(message);
+    const visible=progress?issue.kind==='remaining':(task.status==='active')===(issue.kind==='remaining');
+    if(visible)for(const field of issue.fields){
+     const node=row.querySelector(`[${progress?'data-progress':'data-field'}="${field}"]`);
+     if(node){node.setAttribute('aria-invalid','true');node.setAttribute('aria-describedby',message.id);}
+    }
+   }
+  }
+ }
+}
+$('error').addEventListener('click',event=>{
+ const button=event.target.closest('[data-estimate-task]');if(!button||!plan||busy)return;
+ const progress=button.dataset.estimateKind==='remaining',tab=progress?'progress':'tasks';
+ if(!progress){$('project-filter').value='all';renderTasks();}
+ document.querySelector(`[data-tab="${tab}"]`).click();
+ const row=[...$(progress?'progress-body':'tasks-body').rows].find(row=>row.dataset.id===button.dataset.estimateTask);
+ row?.scrollIntoView({block:'center',inline:'nearest'});
+ row?.querySelector('[aria-invalid="true"]')?.focus({preventScroll:true});
+});

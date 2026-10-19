@@ -184,3 +184,15 @@ test('hosted demo accepts only its configured HTTPS origin and ignores spoofed f
   assert.equal((await fetch(base)).status,200);
  }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
 });
+
+test('estimate validation returns readable structured task errors, including active remaining work',async()=>withServer(async base=>{
+ const source=JSON.parse(await readFile('examples/feeding-protection.json','utf8'));
+ const task=source.projects[0].tasks[0];task.goodCase=8;task.poorCase=5;
+ const response=await post(base,'/api/schedule',{plan:source});assert.equal(response.status,400);
+ const error=await response.json();assert.match(error.error,/Good estimate \(8 days\).*poor estimate \(5 days\)/);
+ assert.doesNotMatch(error.error,/goodCase|poorCase/);assert.equal(error.issues[0].taskId,task.id);
+ task.goodCase=2;task.poorCase=3;task.status='active';task.actualStart=0;task.remaining={goodCase:6,poorCase:4,estimateStatus:'current'};
+ const remaining=await (await post(base,'/api/schedule',{plan:source})).json();assert.equal(remaining.issues[0].kind,'remaining');assert.match(remaining.error,/Remaining good estimate/);
+ const imported=await post(base,'/api/load',{projectText:JSON.stringify(source),format:'json'});assert.equal(imported.status,400);assert.ok((await imported.json()).issues.length);
+ const module=await fetch(base+'/task-estimate-validation.js');assert.equal(module.status,200);assert.match(await module.text(),/taskEstimateIssues/);
+}));

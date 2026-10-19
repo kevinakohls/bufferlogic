@@ -480,3 +480,28 @@ Repeat with an unfinished calendar exception, an invalid dependency, an unassign
 draft, a renamed workspace, notes and checklist edits. Check warning behavior when
 replacing a workspace, Discard confirmation, Clear recovery, blocked/full storage,
 two tabs, and narrow screens. Browser recovery must not change scheduling logic.
+
+## Estimate errors identify the task
+
+Good estimates must be no greater than poor estimates. Task inputs use P20/P80;
+both original estimates may be zero for a milestone, while remaining estimates
+for active work must be positive. Blank and nonnumeric values are also flagged.
+For example, entering good 8 and poor 5 on task A shows:
+
+> Task A — Build: Good estimate (8 days) must be no greater than poor estimate
+> (5 days). Adjust either estimate, then recalculate.
+
+The task row and both estimate fields are highlighted, with an inline explanation
+and accessibility descriptions. Recalculate shows a **Go to A** action in the
+error panel. It opens Tasks, clears a project filter hiding the row, scrolls to
+it and focuses an invalid estimate. Remaining-estimate errors also highlight the
+Progress row; their Go to action opens Progress. Correcting the estimates clears
+the highlighting, but the schedule stays out of date until recalculation succeeds.
+Edits and browser recovery are retained. Imported invalid files receive readable
+task errors; they do not replace the current workspace or highlight unrelated rows.
+
+Manual check: make a good estimate larger than its poor estimate, switch the
+project filter or tab, then recalculate. Use Go to to find the task, correct either
+value and recalculate successfully. Repeat with active remaining work, a blank
+estimate, multiple invalid tasks and a narrow screen. Verify a zero/zero original
+milestone is accepted and the task row returns to normal after correction.
