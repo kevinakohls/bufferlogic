@@ -14,19 +14,22 @@ Hosted on **Google Cloud Run**. No installation or Google account required. Use 
 for calculation, but workspaces are not saved on the server. Visitors have separate
 browser state; there are no accounts or automatic cloud saves.
 
-### A two-minute walkthrough
+### Quick walkthrough: change an estimate and compare
 
-1. Choose **Load two-house example** to see projects sharing construction crews
-   and equipment.
-2. Open **Compare** and choose **Set current as baseline**.
-3. Use **Move up** in Project order to give the other project first choice of
-   shared resources, then **Recalculate schedule**.
-4. Inspect each project's delivery forecast. Open **Compare → Compare versions**
-   to see which projects move earlier or later and which task timings change.
-5. Open **Timeline** and select **Highlight project** to trace that project's
-   critical chain. Choose **All dependencies and waits** to see every connection.
-6. Choose **Save workspace** to download your scenario. Download the baseline
-   separately if you want to keep the original too.
+1. Choose **Load two-house example** to see projects sharing crews and equipment.
+2. Open **Timeline**, choose a project in **Highlight project**, and note an amber
+   critical-chain task to change. Choose **All dependencies and waits** to see links.
+3. Open **Compare → Set current as baseline**. Choose **Download baseline** if you
+   want to keep this original plan.
+4. In **Tasks**, increase that task's **Poor days · P80** estimate, leaving its
+   good estimate unchanged. Click **Recalculate schedule**.
+5. Open **Compare → Compare versions**. Inspect the before/after task timings and
+   each project's P95 delivery shift. The timeline shows the revised task schedule;
+   forecasts show the estimated delivery impact. Not every task delay moves a
+   project's completion—dependencies, resource waits and available slack matter.
+6. For a separate priority experiment, set the current calculation as a new
+   baseline, use **Move up** in Project order, recalculate and compare again.
+7. Choose **Save workspace** to download the scenario you want to keep.
 
 The header's **Help** button explains the main workflows. You can also choose **New project** to
 start without a file, or create projects from housing and software templates.
