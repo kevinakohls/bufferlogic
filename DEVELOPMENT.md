@@ -1,4 +1,4 @@
-# Deterministic P50 engine (v0.1)
+# BufferLogic development
 
 Requires Node.js 22 or newer and npm. There are no runtime dependencies.
 TypeScript and Node type declarations are development dependencies; tests use
@@ -330,7 +330,28 @@ can use the same typed task model without duplicating scheduling logic.
 
 ## Local review UI
 
-`npm run ui` builds and starts `src/ui-server.ts` on local port 3000. `ui/` contains the dependency-free browser view. API load/schedule routes call the existing parsers and engine without persisting files. `tests/ui-server.test.ts` exercises the local API. `BUFFERLOGIC_PORT` can select another port. See [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md).
+Running locally is optional; it is not required to use the
+[hosted demo](https://bufferlogic-859125571309.us-central1.run.app).
+Use Node.js 22 or 24 and npm. From the repository root:
+
+```sh
+npm ci
+npm test
+npm run ui
+```
+
+On Windows PowerShell, use `npm.cmd` in place of `npm`. Leave the server running
+and open `http://localhost:3000`. Stop it with Ctrl+C. This runs a separate copy
+on your computer; its calculations do not run on Google Cloud. Download workspaces
+to move them between the local and hosted copies. Browser recovery is specific to
+the browser and site address, so recovery from one copy does not appear in the other.
+
+`npm run ui` builds and starts `src/ui-server.ts`. `ui/` contains the dependency-free
+browser view. API load/schedule routes call the parsers and engine without saving
+workspace files on the server. `tests/ui-server.test.ts` exercises the API.
+`BUFFERLOGIC_PORT` selects another local port; Cloud Run supplies `PORT` and uses
+`BUFFERLOGIC_PUBLIC_ORIGIN`. See [Cloud Run setup and releases](CLOUD_RUN.md) and
+[UI review instructions](UI_REVIEW_GUIDE.md).
 
 ## Templates and utilization
 
@@ -339,7 +360,7 @@ can use the same typed task model without duplicating scheduling logic.
 ## GitLab delivery and checks
 
 GitLab is the primary review destination:
-https://gitlab.com/DarkVole/bufferlogic. Start feature branches from its latest
+https://gitlab.com/darkvole1/BufferLogic. Start feature branches from its latest
 `main`, push them to the GitLab remote, and create a merge request targeting
 `main`. Cloud checkouts without GitLab write authentication can prepare commits;
 authenticate and push from your local Git client. Do not put credentials in files
@@ -351,3 +372,74 @@ secret detection configuration remains enabled. Dependency caches contain npm
 package downloads, not installed dependencies. Check the application test jobs
 as well as security jobs before merging. Account verification and runner access
 must be configured in GitLab.
+
+## Portfolio command-line example
+
+The portfolio CLI also supports JSON plans and CSV files with a `Project` column:
+
+```sh
+npm run portfolio -- examples/portfolio.json --format table
+```
+
+Add `--calendar examples/house-resource-calendars.csv` to a portfolio run for
+dated schedules; the start date defaults to today.
+The `--recommend-resources` option evaluates extra Saturday hours for one resource
+at a time.
+
+
+## Review, merge and release
+
+
+GitLab `main` is the reviewed release source. Work on a branch, open a merge
+request, address Duo feedback, check the pipeline and merge after human review.
+A merge updates the repository; it does **not** deploy Cloud Run or update local
+installations. Cloud deployment is currently manual, with no deployment CI job.
+If Duo review is unavailable because credits are exhausted, record that limitation
+and the manual review performed; do not describe it as automated approval.
+
+To update a local PowerShell checkout after merging, stop the app with Ctrl+C.
+Replace `C:\path\to\bufferlogic` with your checkout folder:
+
+```powershell
+cd "C:\path\to\bufferlogic"
+git switch main
+git pull --ff-only duo main
+npm.cmd ci
+npm.cmd run ui
+```
+
+These commands assume `duo` points to the GitLab repository. To configure that
+name in an existing checkout if needed, run
+`git remote add duo https://gitlab.com/darkvole1/BufferLogic.git`.
+If `duo` already exists, check it with `git remote get-url duo` instead. Refresh the browser
+with Ctrl+F5 after restarting. If Git reports local changes or untracked files
+blocking the update, preserve them before retrying.
+
+For a hosted release, use a clean checkout of the intended GitLab `main` commit,
+run the checks and explicitly deploy it. Record the deployed commit and test the
+public URL. See [Cloud Run releases](CLOUD_RUN.md#release-an-update).
+The initial demo was deployed from GitHub's `cloud-run-preparation` branch because
+GitLab authentication was unavailable in Cloud Shell. That branch is an initial
+snapshot, not an automatically synchronized release source.
+
+
+## Reproduce the supervised review workflow
+
+
+1. Run `npm test` on the latest `main` and confirm the baseline passes.
+2. Enable GitLab Duo's automated Code Review flow for the project/group, with the
+   required Duo access and CI runners configured.
+3. Create a separate demo branch. In `src/deadlines.ts`, change the calendar-date
+   status comparison from `difference>0` to `difference>=0`. Leave tests unchanged.
+4. Run `npm test`. The test for whole-date calendar deadlines should fail because
+   completion on the deadline date is incorrectly classified as late.
+5. Push the branch and create a merge request clearly marked as a controlled
+   demonstration. Leave auto-merge off and inspect Duo's review activity.
+6. Review and approve a correction that restores inclusive deadline-date behavior
+   without weakening tests. Applying a suggestion commits the approved change.
+7. Inspect the resulting application and security job results. Merge only after
+   validation and human review, preserving the merge request and pipeline history.
+
+This workflow uses agent review, human approval and CI validation. The scheduling
+engine does not currently call Duo or dispatch agents based on critical-chain
+priorities. The deliberate regression is for demonstration only.

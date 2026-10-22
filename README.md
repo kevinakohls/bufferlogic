@@ -2,155 +2,109 @@
 
 **Protect the Buffer. Finish Faster.**
 
-BufferLogic is a TypeScript scheduling prototype for projects that share limited
-resources. It calculates resource-constrained critical chains and approximate
-project completion forecasts, and provides a browser interface for updating
-plans and actual progress.
+BufferLogic helps teams plan competing projects that share people and equipment.
+Change a priority, resource assignment or estimate, then compare how that decision
+affects delivery across the portfolio. It combines shared-resource scheduling with approximate completion forecasts.
 
-GitLab Duo Code Review flow supports supervised review of proposed changes.
-GitLab CI validates the application with build, test and security jobs. The
-workflow below explains how to reproduce a controlled deadline-regression demo.
+## Try it online — no installation required
 
-## Try the hosted demo
+[**Open the live BufferLogic demo**](https://bufferlogic-859125571309.us-central1.run.app)
 
-[Open BufferLogic](https://bufferlogic-859125571309.us-central1.run.app)
+Hosted on **Google Cloud Run**. No installation or Google account required. Use fictional data. Plans are sent to the server
+for calculation, but workspaces are not saved on the server. Visitors have separate
+browser state; there are no accounts or automatic cloud saves.
 
-No installation or Google account is required. Use the bundled examples or
-fictional data. The hosted server processes uploaded plans for calculation;
-workspaces are not stored on the server. Choose **Save workspace** to download
-your changes, then reopen that file when you return. Visitors have separate
-browser state; there are no accounts or automatic cloud saves. Browser recovery
-keeps a local copy of workspace edits and captured baselines when storage is
-available. On return, choose Restore workspace. This is specific to the browser
-and site address; private browsing or cleared browser data can lose the copy.
-Download files as portable backups and clear recovery on shared computers.
+### A two-minute walkthrough
 
-## Run the prototype
+1. Choose **Load two-house example** to see projects sharing construction crews
+   and equipment.
+2. Open **Compare** and choose **Set current as baseline**.
+3. Use **Move up** in Project order to give the other project first choice of
+   shared resources, then **Recalculate schedule**.
+4. Inspect each project's delivery forecast. Open **Compare → Compare versions**
+   to see which projects move earlier or later and which task timings change.
+5. Open **Timeline** and select **Highlight project** to trace that project's
+   critical chain. Choose **All dependencies and waits** to see every connection.
+6. Choose **Save workspace** to download your scenario. Download the baseline
+   separately if you want to keep the original too.
 
-Requires Node.js 22 or 24 and npm. From the repository root:
+The header's **Help** button explains the main workflows. You can also choose **New project** to
+start without a file, or create projects from housing and software templates.
 
-```sh
-npm ci
-npm test
-npm run ui
-```
+## What you can do
 
-On Windows PowerShell, use `npm.cmd` in place of `npm`. Leave the server running
-and open `http://localhost:3000`. Stop it with Ctrl+C. In this local setup, calculations run on your computer. Save the workspace to
-retain edits between sessions. The hosted demo instead sends calculations to
-the Cloud Run server.
+- **Coordinate shared resources:** assign a primary person or crew plus supporting
+  people or equipment, with allocations, availability calendars and exceptions.
+- **Explore priorities:** reorder projects, put projects on hold, and compare a
+  captured or saved baseline against a proposed scenario.
+- **Protect downstream work:** select eligible feeding tasks for later starts
+  with estimated P99 − P50 protection, subject to scheduling safety checks.
+- **Review delivery risk:** inspect approximate completion percentiles and
+  deadline status based on the project's P95 planning target.
+- **Maintain the plan:** add or delete projects/tasks, record actual progress and
+  remaining estimates, and keep task notes and checklists.
+- **Understand the result:** follow cross-project dependencies and resource waits
+  on the timeline, inspect weekly utilization, and export reports for Excel.
 
-To build a plan without importing a file, choose **New project** in the review UI, add resources in **Resources & calendars**, then use **Add task** in **Tasks**. Blank and unassigned workspaces can be saved as drafts.
+Pending edits produce a prominent **Schedule out of date** warning and muted
+previous results. Estimate errors identify the task and offer **Go to** navigation.
+Adding or deleting tasks/projects recalculates other pending valid edits.
 
-## Implemented features
+## Save your work
 
-- Projects sharing resources, project order and task order exceptions.
-- Nonpreemptive scheduling, primary and multiple supporting resources, allocations, locked commitments and milestones.
-- Approximate fixed-critical-chain P50/P80/P95/P98/P99 completion forecasts.
-- Resource calendars, dated exceptions and project/task deadline warnings.
-- CSV templates, editable task notes and checklists.
-- Actual progress and explicit remaining estimates.
-- Interactive schedule timeline and weekly resource utilization graphs.
-- Workspace save/open, local browser recovery, captured or saved-file baseline comparison, and Excel-compatible report exports.
-- A prominent stale-schedule warning and muted previous results until recalculation.
-- CLI ranking of extra Saturday hours one resource at a time.
+**Save workspace** downloads a JSON file that can be reopened in BufferLogic.
+Browser recovery also keeps a local copy of edits and captured baselines when
+storage is available; choose **Restore workspace** on return. Recovery belongs to
+that browser and site address, and can be lost in private browsing or when browser
+data is cleared. Download files as portable backups. Clear recovery on shared
+computers and close other editing tabs, which may save another copy.
 
-Percentile forecasts use independent lognormal task durations and a fixed critical
-chain; they are approximations, not simulated guarantees. Deadline targets flag
-risk without changing dispatch order or locking dates.
+## GitLab Duo, testing and Google Cloud
 
-## Examples and documentation
+Development uses [GitLab merge requests](https://gitlab.com/darkvole1/BufferLogic),
+Duo Code Review, human review and CI validation. CI builds TypeScript and runs tests on Node.js 22 and 24, with SAST and secret-detection
+configuration. Inspect each pipeline's results.
 
-Load the two-house example in the UI to see projects competing for shared crews.
-The **Timeline** highlights a project's critical chain across project boundaries.
-Choose **Highlight project** for the project you want to inspect; scrolling or selecting
-a task does not change the highlighted project. Use **Show links → All dependencies
-and waits** to see connections filtered out by the default view.
-Create project copies from housing or software CSV templates (the housing template includes shared equipment and spotting support), update progress and
-deadlines, and use **Save workspace** to retain the plan.
+Our controlled review demonstration deliberately changed a deadline comparison
+so finishing on the deadline was incorrectly marked late. Tests failed, Duo
+identified the boundary error and suggested the correction, and the corrected
+code passed before merging. Historical evidence:
 
-The portfolio CLI also supports JSON plans and CSV files with a `Project` column:
+- [Failed regression pipeline](https://gitlab.com/darkvole1/BufferLogic/-/pipelines/2933613176)
+- [Passing corrective pipeline](https://gitlab.com/darkvole1/BufferLogic/-/pipelines/2933618810)
 
-```sh
-npm run portfolio -- examples/portfolio.json --format table
-```
+Duo supports development; it is not called by the scheduling engine. The hosted
+app runs as a container on Cloud Run. Merging code, updating a local installation
+and deploying the public demo are separate steps; deployment is currently manual.
 
-Add `--calendar examples/house-resource-calendars.csv` to a portfolio run for
-dated schedules; the start date defaults to today.
-The `--recommend-resources` option evaluates extra Saturday hours for one resource
-at a time.
+## Planning assumptions and limits
 
-- [Development](DEVELOPMENT.md): input formats and development workflow.
-- [Reviewer Guide](REVIEWER_GUIDE.md): CLI examples and expected behavior.
-- [UI Review Guide](UI_REVIEW_GUIDE.md): Windows startup, editing and workspace save/open.
-- [Portfolio Guide](PORTFOLIO_GUIDE.md): shared resources and fixed commitments.
-- [House Build Review](HOUSE_BUILD_REVIEW.md): the two-house example.
-- [Resource Calendars](RESOURCE_CALENDARS.md): calendars and availability changes.
-- [Templates and Utilization](TEMPLATES_AND_UTILIZATION.md): templates, notes and reporting.
+Forecasts use independent lognormal task durations and a fixed critical chain.
+They are approximate planning estimates, not delivery guarantees. Timeline bars show the calculated task schedule, not P95-duration bars.
+Locked commitments are assumed to be met; infeasible forecasts require attention.
+Deadlines indicate risk without forcing dispatch order or locking task dates.
 
-## GitLab automation
+Calendars represent daily capacity and date-only commitments, not clock-time
+appointments or shift scheduling. Cloud workspace history, multiuser collaboration, historical calibration,
+Monte Carlo simulation and AI scenario selection remain future work. The CLI
+provides limited Saturday-hours resource sensitivity rankings.
 
-The project repository is [darkvole1/BufferLogic](https://gitlab.com/darkvole1/BufferLogic).
-The CI configuration installs locked dependencies, builds TypeScript and runs
-application tests on Node.js 22 and 24. It also includes GitLab's SAST and Secret
-Detection templates. Job execution can differ between branch and merge-request
-pipelines; inspect the actual jobs and logs for each run.
+## Optional: run locally for development
 
-### Review, merge and release
+The online demo above requires no setup. To run a separate copy on your computer,
+see [DEVELOPMENT.md](DEVELOPMENT.md#local-review-ui) for Node.js requirements,
+installation, tests and startup commands. Local startup does not update Cloud Run.
 
-GitLab `main` is the reviewed release source. Work on a branch, open a merge
-request, address Duo feedback, check the pipeline and merge after human review.
-A merge updates the repository; it does **not** deploy Cloud Run or update local
-installations. Cloud deployment is currently manual, with no deployment CI job.
+## Documentation
 
-To update a local PowerShell checkout after merging, stop the app with Ctrl+C.
-Replace `C:\path\to\bufferlogic` with your checkout folder:
-
-```powershell
-cd "C:\path\to\bufferlogic"
-git switch main
-git pull --ff-only duo main
-npm.cmd ci
-npm.cmd run ui
-```
-
-These commands assume `duo` points to the GitLab repository. Refresh the browser
-with Ctrl+F5 after restarting. If Git reports local changes or untracked files
-blocking the update, preserve them before retrying.
-
-For a hosted release, use a clean checkout of the intended GitLab `main` commit,
-run the checks and explicitly deploy it. Record the deployed commit and test the
-public URL. See [Cloud Run releases](CLOUD_RUN.md#release-an-update).
-The initial demo was deployed from GitHub's `cloud-run-preparation` branch because
-GitLab authentication was unavailable in Cloud Shell. That branch is an initial
-snapshot, not an automatically synchronized release source.
-
-### Reproduce the supervised review workflow
-
-1. Run `npm test` on the latest `main` and confirm the baseline passes.
-2. Enable GitLab Duo's automated Code Review flow for the project/group, with the
-   required Duo access and CI runners configured.
-3. Create a separate demo branch. In `src/deadlines.ts`, change the calendar-date
-   status comparison from `difference>0` to `difference>=0`. Leave tests unchanged.
-4. Run `npm test`. The test for whole-date calendar deadlines should fail because
-   completion on the deadline date is incorrectly classified as late.
-5. Push the branch and create a merge request clearly marked as a controlled
-   demonstration. Leave auto-merge off and inspect Duo's review activity.
-6. Review and approve a correction that restores inclusive deadline-date behavior
-   without weakening tests. Applying a suggestion commits the approved change.
-7. Inspect the resulting application and security job results. Merge only after
-   validation and human review, preserving the merge request and pipeline history.
-
-This workflow uses agent review, human approval and CI validation. The scheduling
-engine does not currently call Duo or dispatch agents based on critical-chain
-priorities. The deliberate regression is for demonstration only.
-
-## Future work
-
-Automatic saved progress history, buffer consumption and a CCPM fever chart
-remain future work. Historical duration calibration, Monte Carlo simulation,
-cost/OT optimization and agents acting on scheduling recommendations are also
-future work.
+- [Development](DEVELOPMENT.md): local setup, CLI commands, GitLab review and updates.
+- [UI review guide](UI_REVIEW_GUIDE.md): editing, recovery and manual checks.
+- [Reviewer guide](REVIEWER_GUIDE.md): command-line examples and expected behavior.
+- [Portfolio guide](PORTFOLIO_GUIDE.md): shared resources, forecasts and commitments.
+- [House build review](HOUSE_BUILD_REVIEW.md): the two-house example.
+- [Resource calendars](RESOURCE_CALENDARS.md): availability and exceptions.
+- [Templates and utilization](TEMPLATES_AND_UTILIZATION.md): templates and reports.
+- [Cloud Run](CLOUD_RUN.md): hosting configuration and release instructions.
 
 ## License
 
