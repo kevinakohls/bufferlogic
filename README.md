@@ -101,6 +101,7 @@ installation, tests and startup commands. Local startup does not update Cloud Ru
 ## Documentation
 
 - [Development](DEVELOPMENT.md): local setup, CLI commands, GitLab review and updates.
+- [CSV import guide](CSV_IMPORT_GUIDE.md): task/template columns, aliases and calendar validation.
 - [UI review guide](UI_REVIEW_GUIDE.md): editing, recovery and manual checks.
 - [Reviewer guide](REVIEWER_GUIDE.md): command-line examples and expected behavior.
 - [Portfolio guide](PORTFOLIO_GUIDE.md): shared resources, forecasts and commitments.

@@ -146,7 +146,7 @@ milestones, keyboard focus and the narrow-screen layout.
 
 ## Templates, notes and utilization
 
-Use **Create from template** to make named project copies with unique IDs and row-order priorities. **Descriptions & comments** edits project/task/resource notes. **Resource utilization** reports weekly capacity and project allocations, with CSV download. Follow [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md) for the software example and counting rules.
+Use **Create from template** to make named project copies with unique IDs and supplied priorities (or row-order defaults when omitted). **Descriptions & comments** edits project/task/resource notes. **Resource utilization** reports weekly capacity and project allocations, with CSV download. Follow [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md) for the software example and counting rules.
 
 ## Update progress
 
@@ -544,3 +544,12 @@ and compare to the original baseline file: require separate Removed and Added ro
 In two tabs, discard recovery in the second and verify the first continues saving.
 Also verify explicit Clear/Resume, competing-tab protection, forward version labels,
 visible errors from deep in the page, old/new comparison names and mobile scrolling.
+
+
+## Consistent CSV imports
+
+File loads and templates use the [same task schema](CSV_IMPORT_GUIDE.md). Test
+`examples/manufacturing-template.csv` in both modes, including a BOM, missing
+Priority, aliases and dependencies. Explicit Priority values are now honored in
+templates too. Test combined invalid project/calendar files and multiple row errors.
+A failed import must retain the existing workspace, calendars and captured baseline.

@@ -1,46 +1,27 @@
-import {supportingResourcesCell} from './supporting-resources-input.js';
 import {taskAssignments} from './task-resources.js';
-import { csvRecords } from './csv-input.js';
+import { readTaskCsv } from './csv-schema.js';
 import { parsePortfolio, type PortfolioPlan } from './portfolio.js';
 
-const aliases:Record<string,string>={'Predecessors':'Depends on','Low Estimate P20 (days)':'Good days','High Estimate P80 (days)':'Poor days'};
-function templateRows(text:string){
- const rows=csvRecords(text),raw=rows.shift()?.map(c=>c.trim());
- if(!raw)throw new Error('Template CSV requires a header');
- const header=raw.map(c=>aliases[c]??c);
- if(new Set(header).size!==header.length)throw new Error('Template CSV has duplicate or ambiguous columns');
- for(const column of ['Task','Resource','Good days','Poor days'])if(!header.includes(column))throw new Error(`Template is missing ${column}`);
- const records=rows.filter(row=>row.some(c=>c.trim())&&!(row.length===raw.length&&row.every((c,i)=>c.trim()===raw[i])));
- for(const row of records)if(row.length!==header.length)throw new Error('Template row has the wrong number of fields');
- if(!records.length)throw new Error('Template has no tasks');
- return {header,records};
+function templateRows(text:string){return readTaskCsv(text,{template:true});}
+export function templateProjects(text:string):string[]{
+ const {header,records}=templateRows(text);
+ return header.includes('Project')?[...new Set(records.map(record=>record.projectId))]:['Template'];
 }
-export function templateProjects(text:string):string[]{const {header,records}=templateRows(text);const index=header.indexOf('Project');return index===-1?['Template']:[...new Set(records.map(r=>{const id=r[index]!.trim();if(!id)throw new Error('Template Project cannot be blank');return id;}))];}
 
-/** Instantiate one selected template project; row order, never imported priority, controls defaults. */
+/** Instantiate fresh identities using the same CSV columns/defaults as file loads. */
 export function instantiateTemplate(text:string, name:string, existing?:PortfolioPlan, sourceProjectId?:string):PortfolioPlan {
  if(typeof name!=='string'||!name.trim())throw new Error('Give the new project a name');
- const {header,records}=templateRows(text),sources=templateProjects(text);
+ const {header,records}=templateRows(text),sources=header.includes('Project')?[...new Set(records.map(record=>record.projectId))]:['Template'];
  const selected=sourceProjectId??(sources.length===1?sources[0]:undefined);
  if(!selected||!sources.includes(selected))throw new Error('Choose one source project from the template');
- const projectColumn=header.indexOf('Project');
- const rows=records.filter(row=>projectColumn===-1||row[projectColumn]!.trim()===selected);
+ const rows=records.filter(record=>!header.includes('Project')||record.projectId===selected);
  const base:PortfolioPlan=existing?parsePortfolio(existing):{id:'template-portfolio',versionId:'template-v1',asOf:0,settings:{durationUnit:'days' as const},resources:[],projects:[]};
  const usedProjects=new Set([...base.projects.map(p=>p.id),...base.retiredProjectIds??[]]),usedTasks=new Set([...base.projects.flatMap(p=>p.tasks.map(t=>t.id)),...base.retiredTaskIds??[]]);
  let number=1;while(usedProjects.has(`P${number}`)||rows.some((_,i)=>usedTasks.has(`P${number}-T${String(i+1).padStart(3,'0')}`)))number++;
  const projectId=`P${number}`;
- const cell=(row:string[],column:string)=>header.includes(column)?row[header.indexOf(column)]!.trim():'';
- const ids=rows.map((row,index)=>header.includes('ID')?cell(row,'ID'):String(index+1));
- if(ids.some(id=>!id)||new Set(ids).size!==ids.length)throw new Error('Template task references must be nonempty and unique within the selected project');
- const remap=new Map(ids.map((id,index)=>[id,`${projectId}-T${String(index+1).padStart(3,'0')}`]));
- const numeric=(value:string)=>{if(!/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)||!Number.isFinite(Number(value)))throw new Error('Template estimates must be finite numbers');return Number(value);};
- const tasks=rows.map((row,index)=>{
-  const predecessors=cell(row,'Depends on');
-  const dependsOn=!predecessors||predecessors.toLowerCase()==='none'?[]:predecessors.split(',').map(id=>{const mapped=remap.get(id.trim());if(!mapped)throw new Error(`Template dependency ${id} is outside the selected project or missing`);return mapped;});
-  return {id:remap.get(ids[index]!)!,projectId,name:cell(row,'Task'),resource:cell(row,'Resource'),...supportingResourcesCell(cell(row,'Supporting resources')),goodCase:numeric(cell(row,'Good days')),poorCase:numeric(cell(row,'Poor days')),dependsOn,priority:index+1,status:'planned' as const,
-   ...(header.includes('Checklist')?{checklist:cell(row,'Checklist').split(/\r?\n/).map(text=>text.trim()).filter(Boolean).map(text=>({text,completed:false}))}:{}),
-   ...Object.fromEntries([['Description','description'],['Comments','comments'],['Completion criteria','completionCriteria'],['Lock reason','lockReason']].filter(([column])=>header.includes(column!)).map(([column,field])=>[field,cell(row,column!)]))};
- });
+ const remap=new Map(rows.map((record,index)=>[record.task.id,`${projectId}-T${String(index+1).padStart(3,'0')}`]));
+ const tasks=rows.map(({task})=>({...task,id:remap.get(task.id)!,projectId,status:'planned' as const,
+  dependsOn:task.dependsOn.map(id=>remap.get(id)!)}));
  const resources=[...new Set([...base.resources,...tasks.flatMap(t=>taskAssignments(t).map(a=>a.resource)).filter(Boolean)])];
  // New resources default to 40-hour weeks; hoursPerWorkday is an estimate conversion, not availability.
  const calendar=base.calendar?{...base.calendar,resources:[...base.calendar.resources,...resources.filter(r=>!base.calendar!.resources.some(c=>c.resource===r)).map(resource=>({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}))]}:undefined;

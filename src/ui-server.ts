@@ -1,3 +1,4 @@
+import {CsvValidationError} from './csv-schema.js';
 import {taskEstimateIssues,TaskEstimateValidationError} from './task-estimate-validation.js';
 import {compareScenarios} from './scenario-comparison.js';
 import {taskAssignments} from './task-resources.js';
@@ -9,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { parsePortfolio, schedulePortfolio } from './portfolio.js';
-import { parsePortfolioCsv } from './portfolio-csv.js';
+import { parsePlanCsv } from './portfolio-csv.js';
 import { parseResourceCalendarsCsv, todayDate } from './resource-calendars.js';
 
 function parseReviewPlan(input:unknown){
@@ -95,15 +96,25 @@ export function createReviewServer(options: ReviewServerOptions = {}) {
       if(request.method==='POST'&&path==='/api/load'){
         const data=await body(request);
         if(typeof data.projectText!=='string'||(data.format!=='csv'&&data.format!=='json'))throw new Error('Choose a project CSV or JSON file');
-        let plan;
-        if(data.format==='csv')plan=parsePortfolioCsv(data.projectText,'review-project','review-v1');
-        else {const parsed=JSON.parse(data.projectText);plan=parseReviewPlan(parsed && typeof parsed==='object' ? parsed.plan??parsed : parsed);}
+        let plan,calendarResources;const errors:Error[]=[];
+        try{
+          if(data.format==='csv')plan=parsePlanCsv(data.projectText,'review-project','review-v1');
+          else {const parsed=JSON.parse(data.projectText.replace(/^\uFEFF/,''));plan=parseReviewPlan(parsed && typeof parsed==='object' ? parsed.plan??parsed : parsed);}
+        }catch(error){errors.push(error as Error);}
         if(data.calendarText!==undefined){
-          if(typeof data.calendarText!=='string')throw new Error('Choose a calendar CSV file');
+          try{
+            if(typeof data.calendarText!=='string')throw new Error('Choose a calendar CSV file');
+            calendarResources=parseResourceCalendarsCsv(data.calendarText);
+          }catch(error){errors.push(error as Error);}
+        }
+        if(errors.length===1)throw errors[0];
+        if(errors.length>1)throw new CsvValidationError(errors.flatMap(error=>error instanceof CsvValidationError?error.problems:[error.message]));
+        if(!plan)throw new Error('Choose a valid project plan');
+        if(calendarResources!==undefined){
           const timeZone=typeof data.timeZone==='string'?data.timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone;
           const startDate=typeof data.startDate==='string'&&data.startDate?data.startDate:todayDate(timeZone);
           if(plan.calendar && plan.calendar.startDate!==startDate && plan.projects.some(p=>p.tasks.some(t=>t.locked||t.actuals)))throw new Error('This plan contains fixed commitments or actuals. Keep its recorded schedule start date.');
-          plan={...plan,calendar:{startDate,timeZone,hoursPerWorkday:plan.calendar?.hoursPerWorkday??8,resources:parseResourceCalendarsCsv(data.calendarText)}};
+          plan={...plan,calendar:{startDate,timeZone,hoursPerWorkday:plan.calendar?.hoursPerWorkday??8,resources:calendarResources}};
         }
         json(reviewResult(plan));return;
       }
@@ -114,7 +125,7 @@ export function createReviewServer(options: ReviewServerOptions = {}) {
       const files:Record<string,{file:string;type:string}>={'/':{file:'index.html',type:'text/html'},'/favicon.svg':{file:'favicon.svg',type:'image/svg+xml'},'/workspace-name.js':{file:'workspace-name.js',type:'text/javascript'},'/app.js':{file:'app.js',type:'text/javascript'},'/help.js':{file:'help.js',type:'text/javascript'},'/browser-recovery.js':{file:'browser-recovery.js',type:'text/javascript'},'/timeline.js':{file:'timeline.js',type:'text/javascript'},'/forecast-state.js':{file:'forecast-state.js',type:'text/javascript'},'/feeding-visuals.js':{file:'feeding-visuals.js',type:'text/javascript'},'/styles.css':{file:'styles.css',type:'text/css'},'/bufferlogic-logo.png':{file:'bufferlogic-logo.png',type:'image/png'}};
       if(request.method==='GET'&&files[path]){const asset=files[path]!;response.setHeader('Content-Type',asset.type.startsWith('image/')?asset.type:asset.type+'; charset=utf-8');response.end(await readFile(new URL('ui/'+asset.file,root)));return;}
       json({error:'Not found'},404);
-    } catch(error){json({error:error instanceof Error?error.message:'Unable to calculate the schedule',...(error instanceof TaskEstimateValidationError?{issues:error.issues}:{})},400);}
+    } catch(error){json({error:error instanceof Error?error.message:'Unable to calculate the schedule',...(error instanceof TaskEstimateValidationError?{issues:error.issues}:{}),...(error instanceof CsvValidationError?{validationErrors:error.problems}:{})},400);}
   });
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

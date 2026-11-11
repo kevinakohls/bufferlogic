@@ -1,0 +1,9 @@
+ID,Task,Resource,Predecessors,Low Estimate P20 (days),High Estimate P80 (days)
+1,A,Mechanical,,5,7
+2,B,Electrical,1,2,3
+3,C,Machinist,2,6,9
+4,D,Assembly,3,3,4
+5,E,Panel Builder,4,1,2
+6,F,Carlos,5,4,6
+7,G,Carlos,6,8,10
+8,H,Testing,7,2,3

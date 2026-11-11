@@ -196,3 +196,16 @@ test('estimate validation returns readable structured task errors, including act
  const imported=await post(base,'/api/load',{projectText:JSON.stringify(source),format:'json'});assert.equal(imported.status,400);assert.ok((await imported.json()).issues.length);
  const module=await fetch(base+'/task-estimate-validation.js');assert.equal(module.status,200);assert.match(await module.text(),/taskEstimateIssues/);
 }));
+
+test('CSV load and template APIs share aliases/default Priority, and combine project/calendar errors',async()=>withServer(async base=>{
+ const csv='\uFEFFID,Task,Resource,Predecessors,Low Estimate P20 (days),High Estimate P80 (days)\n1,A,Mechanical,,5,7\n2,B,Electrical,1,2,3';
+ const loadedResponse=await post(base,'/api/load',{projectText:csv,format:'csv'});assert.equal(loadedResponse.status,200);const loaded=await loadedResponse.json();
+ assert.deepEqual(loaded.plan.projects[0].tasks.map((t:{priority:number})=>t.priority),[1,2]);
+ assert.deepEqual(loaded.plan.projects[0].tasks[1].dependsOn,['1']);
+ const info=await (await post(base,'/api/template-info',{csvText:csv})).json();assert.deepEqual(info.projects,['Template']);
+ const copiedResponse=await post(base,'/api/template',{csvText:csv,name:'Manufacturing',startDate:'2026-11-11'});assert.equal(copiedResponse.status,200);
+ const copied=await copiedResponse.json();assert.deepEqual(copied.plan.projects[0].tasks.map((t:{priority:number})=>t.priority),[1,2]);assert.deepEqual(copied.plan.projects[0].tasks[1].dependsOn,['P1-T001']);
+ const bad=await post(base,'/api/load',{projectText:'Task,Resource,Good days,Poor days\nA,Crew,bad,3\nB,Crew,8,2',format:'csv',calendarText:'Resource,Row type,Date,Date\nCrew,weekly,,'});
+ assert.equal(bad.status,400);const errors=await bad.json();assert.ok(errors.validationErrors.length>5);assert.match(errors.error,/CSV record 2/);assert.match(errors.error,/CSV record 3/);assert.match(errors.error,/Calendar CSV/);assert.match(errors.error,/Monday hours/);
+ assert.deepEqual(loaded.plan.projects[0].tasks[1].dependsOn,['1']);
+}));

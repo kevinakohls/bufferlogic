@@ -2,7 +2,7 @@ import { recommendSaturdayHours } from './resource-recommendations.js';
 import { readFile, writeFile } from 'node:fs/promises';
 import { parseResourceCalendarsCsv, parseDate, todayDate } from './resource-calendars.js';
 import { basename, extname } from 'node:path';
-import { parsePortfolioCsv } from './portfolio-csv.js';
+import { parsePlanCsv } from './portfolio-csv.js';
 import { parseOptions } from './cli-options.js';
 import { parsePortfolio, schedulePortfolio, comparePortfolioVersions, type PortfolioResult } from './portfolio.js';
 
@@ -42,7 +42,7 @@ try {
     const inputFile = options.files[0]!;
     const source = await readFile(inputFile, 'utf8');
     const plan = extname(inputFile).toLowerCase() === '.csv'
-      ? parsePortfolioCsv(source, basename(inputFile, extname(inputFile)), previous ? `${previous.plan.versionId}-revision` : 'csv-v1')
+      ? parsePlanCsv(source, basename(inputFile, extname(inputFile)), previous ? `${previous.plan.versionId}-revision` : 'csv-v1')
       : parsePortfolio(JSON.parse(source));
     const configuredPlan=calendarFile ? { ...plan, calendar:{ startDate:startDate!, timeZone, hoursPerWorkday:hoursPerDay===undefined?8:Number(hoursPerDay), resources:parseResourceCalendarsCsv(await readFile(calendarFile,'utf8')) } } : plan;
     const result = schedulePortfolio(configuredPlan, previous);

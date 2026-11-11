@@ -1,30 +1,17 @@
-import {supportingResourcesCell} from './supporting-resources-input.js';
-import { csvRecords, parseProjectCsv } from './csv-input.js';
-import { parsePortfolio, type PortfolioPlan } from './portfolio.js';
+import {readTaskCsv,type CsvTaskRecord} from './csv-schema.js';
+import {parsePortfolio,type PortfolioPlan} from './portfolio.js';
 
-/** Baseline portfolio CSV: existing task columns plus Project. First appearance determines project order. */
-export function parsePortfolioCsv(text: string, id = 'csv-portfolio', versionId = 'csv-v1'): PortfolioPlan {
-  const rows = csvRecords(text);
-  const header = rows.shift()?.map(cell => cell.trim());
-  if (!header || new Set(header).size !== header.length || !header.includes('Project')) {
-    throw new Error('Portfolio CSV requires unique column names including Project');
-  }
-  const projectIndex = header.indexOf('Project');
-  const groups = new Map<string, string[][]>();
-  for (const [index,row] of rows.entries()) {
-    if (row.every(cell => !cell.trim())) continue;
-    // Concatenating Excel project tables often repeats the exact header.
-    if (row.length === header.length && row.every((cell,i) => cell.trim() === header[i])) continue;
-    if (row.length !== header.length) throw new Error(`CSV record ${index+2} has the wrong number of fields`);
-    const projectId = row[projectIndex]!.trim();
-    if (!projectId) throw new Error(`CSV record ${index+2} requires a Project`);
-    const group = groups.get(projectId) ?? [];
-    group.push(row); groups.set(projectId,group);
-  }
-  const cell = (value:string) => '"' + value.replaceAll('"','""') + '"';
-  const projects = [...groups].map(([projectId,records]) => {
-    const csv = [header,...records].map(row=>row.map(cell).join(',')).join('\n');
-    return { id:projectId,name:projectId,tasks:parseProjectCsv(csv).map((task,index)=>({...task,projectId,...supportingResourcesCell(header.includes('Supporting resources')?records[index]![header.indexOf('Supporting resources')]!:''),...(header.includes('Checklist')?{checklist:records[index]![header.indexOf('Checklist')]!.split(/\r?\n/).map(text=>text.trim()).filter(Boolean).map(text=>({text,completed:false}))}:{}),...Object.fromEntries([['Description','description'],['Comments','comments'],['Completion criteria','completionCriteria'],['Lock reason','lockReason']].filter(([column])=>header.includes(column!)).map(([column,field])=>[field,records[index]![header.indexOf(column!)]!]))})) };
-  });
-  return parsePortfolio({id,versionId,asOf:0,settings:{durationUnit:'days'},resources:[...new Set(projects.flatMap(p=>p.tasks.map(t=>t.resource)))],projects});
+function buildPlan(records:readonly CsvTaskRecord[],id:string,versionId:string):PortfolioPlan {
+  const groups=new Map<string,CsvTaskRecord['task'][]>();
+  for(const record of records){const tasks=groups.get(record.projectId)??[];tasks.push(record.task);groups.set(record.projectId,tasks);}
+  return parsePortfolio({id,versionId,asOf:0,settings:{durationUnit:'days'},resources:[],
+    projects:[...groups].map(([projectId,tasks])=>({id:projectId,name:projectId,tasks:tasks.map(task=>({...task,projectId}))}))});
+}
+/** Explicit portfolio input requires a unique Project header. */
+export function parsePortfolioCsv(text:string,id='csv-portfolio',versionId='csv-v1'):PortfolioPlan {
+  return buildPlan(readTaskCsv(text,{requireProject:true}).records,id,versionId);
+}
+/** UI/portfolio CLI also accept the same schema without Project for one project. */
+export function parsePlanCsv(text:string,id='csv-portfolio',versionId='csv-v1'):PortfolioPlan {
+  return buildPlan(readTaskCsv(text).records,id,versionId);
 }

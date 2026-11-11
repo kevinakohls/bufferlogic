@@ -108,9 +108,12 @@ npm run schedule -- project.csv
 npm run compare -- current.csv what-if.csv
 ```
 
-Required column names are `ID`, `Task`, `Resource`, `Depends on`, `Good days`,
-`Poor days`, and `Priority`. Column order may vary; extra metadata columns
-are ignored. Use a blank dependency cell or `none` for no dependencies.
+Required headings are `Task`, `Resource`, `Good days` and `Poor days`.
+`ID`, `Depends on` and `Priority` are optional. Recognized software estimate aliases
+and `Predecessors` are accepted. Missing IDs are generated; missing/blank Priority
+uses row order within the project. Column order may vary.
+See [CSV import rules](CSV_IMPORT_GUIDE.md) for metadata, template behavior and
+combined validation errors. Use a blank dependency cell or `none` for no dependencies.
 Multiple dependencies are comma-separated IDs within a quoted CSV field,
 such as `"B,C,D"`; Excel adds the quotes when exporting. Numbers must use
 a decimal point. UTF-8 markers, Windows line endings, quoted commas,

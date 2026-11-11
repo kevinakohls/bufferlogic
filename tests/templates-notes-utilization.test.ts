@@ -11,11 +11,11 @@ const csv=header+'\nA,Design,Alice,none,2,2,99\nB,Build,Alice,A,3,3,0';
 const task=(id:string,extra:Partial<PortfolioTask>={}):PortfolioTask=>({id,projectId:'P1',name:id,resource:'Alice',goodCase:2,poorCase:2,dependsOn:[],priority:1,...extra});
 function plan(tasks:PortfolioTask[]):PortfolioPlan{return {id:'notes',versionId:'v1',asOf:0,settings:{durationUnit:'days'},resources:['Alice','Bob'],projects:[{id:'P1',name:'One',tasks}],calendar:{startDate:'2026-10-09',hoursPerWorkday:8,resources:['Alice','Bob'].map(resource=>({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}))}};}
 
-test('template copies generate unique IDs, row-order priorities and remapped dependencies',()=>{
+test('template copies generate unique IDs, preserve supplied priorities and remap dependencies',()=>{
  const first=instantiateTemplate(csv,'First');const snapshot=structuredClone(first);const second=instantiateTemplate(csv,'Second',first);
  assert.deepEqual(first,snapshot);assert.deepEqual(second.projects.map(p=>p.id),['P1','P2']);
  assert.deepEqual(second.projects[0]!.tasks.map(t=>t.id),['P1-T001','P1-T002']);assert.deepEqual(second.projects[1]!.tasks.map(t=>t.id),['P2-T001','P2-T002']);
- assert.deepEqual(second.projects[1]!.tasks.map(t=>t.priority),[1,2]);assert.deepEqual(second.projects[1]!.tasks[1]!.dependsOn,['P2-T001']);
+ assert.deepEqual(second.projects[1]!.tasks.map(t=>t.priority),[99,0]);assert.deepEqual(second.projects[1]!.tasks[1]!.dependsOn,['P2-T001']);
  const schedule=schedulePortfolio(second);assert.equal(schedule.tasks.find(t=>t.id==='P2-T001')!.start,5);assert.equal(schedule.tasks.find(t=>t.id==='P1-T002')!.start,2);
 });
 test('regular import preserves priorities and IDs rather than applying template defaults',()=>{

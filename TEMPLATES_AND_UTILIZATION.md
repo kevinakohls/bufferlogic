@@ -15,7 +15,7 @@ The software template is the user's 26-task CSV, checked in as
 `examples/software-template.csv`. Its original task IDs, resources, dependencies and estimates are preserved. Draft
 Description and Comments columns explain the intended work and assumptions for review;
 revise them to match the actual project. No Priority
-or Project columns are needed in template mode. These software headings are accepted:
+or Project columns are needed in either single-project load or template mode. These software headings are accepted:
 
 | Template heading | Engine field |
 | --- | --- |
@@ -35,15 +35,16 @@ serve only as dependency references during copying:
 
 - A new unused project ID is chosen (`P1`, `P2`, etc.).
 - Tasks receive IDs such as `P1-T001`, `P1-T002`.
-- Priorities are assigned **1, 2, 3... from CSV row order**. Imported Priority values
-  are deliberately ignored in template mode.
+- Supplied Priority values are preserved. Missing or blank values default to
+  **1, 2, 3... from row order within the project**, in both loads and templates.
 - Dependencies are remapped to the new task IDs. A second copy has its own IDs and
   belongs only to its new project. Copies begin as planned tasks, without progress
   history or fixed commitments from an earlier schedule.
 
 Normal **Load files** import keeps existing IDs, priorities and project grouping.
-Template mode is a separate action, so Excel priority changes do not affect template
-defaults. Excel row reordering does change the template's default order.
+Template mode is a separate action that creates fresh IDs. Excel priority changes
+affect both modes; row reordering controls default priorities when values are omitted.
+See [CSV import rules](CSV_IMPORT_GUIDE.md) for the shared schema and validation.
 
 Resource labels are shared across copies; `Frontend Developer` means the same planned
 capacity in both projects. This is not a new developer per project. New resource labels
