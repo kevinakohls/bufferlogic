@@ -1,9 +1,11 @@
+import {createSimulationPanel} from './monte-carlo-ui.js';
 import {taskEstimateIssues,TaskEstimateValidationError} from './task-estimate-validation.js';
 import {createRecoveryStore} from './browser-recovery.js';
 import {workspaceFilename} from './workspace-name.js';
 import {forecastState,holdAction,usesCalendarDates,estimateReviewValue,deadlineTargetState,daysLateText,supportingAllocationError} from './forecast-state.js';
 import { renderTimeline, refreshTimeline } from './timeline.js';
 const $=id=>document.getElementById(id);
+let simulationPanel=null;
 let plan=null,result=null,dirty=false,busy=false,revision=1,exceptions=[],templateText='',comparison=null,capturedBaseline=null;
 let recoveryStore=null,pendingRecovery=null,recoveryPaused=false,recoveryRestoring=false,recoveryManuallyPaused=false,unsavedWorkspace=false,unsavedBaseline=false,recoveryTimer;
 const zone=Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -12,7 +14,7 @@ $('start-date').value=today();
 function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);if(className)node.className=className;return node;}
 function dateText(value){if(!value)return '—';const [year,month,day]=value.split('-').map(Number);return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,month-1,day)));}
 function valueText(f,key){if(f.withheldReason)return forecastState(f).completionLabel;return usesCalendarDates(result.plan)&&f.completionDates?dateText(f.completionDates[key]):`${Math.ceil(key==='deterministic'?f.deterministicCompletion:f.completionPercentiles[key])} days`;}
-function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>{if(n.id!=='open-help'&&!n.closest('#help-dialog'))n.disabled=value;});if(!value&&plan){renderProgress();renderProjectOrder();$('show-add-task').disabled=!plan.projects.length;$('create-task').disabled=!plan.projects.length;for(const node of document.querySelectorAll('[data-add-support]'))node.disabled=allTasks().find(t=>t.id===node.dataset.addSupport)?.durationMode==='elapsed';if(plan.calendar)renderExceptions();renderTimeDisplay();}}
+function setBusy(value){busy=value;document.querySelectorAll('button,input,select,textarea').forEach(n=>{if(n.id!=='open-help'&&!n.closest('#help-dialog'))n.disabled=value;});if(!value&&plan){renderProgress();renderProjectOrder();$('show-add-task').disabled=!plan.projects.length;$('create-task').disabled=!plan.projects.length;for(const node of document.querySelectorAll('[data-add-support]'))node.disabled=allTasks().find(t=>t.id===node.dataset.addSupport)?.durationMode==='elapsed';if(plan.calendar)renderExceptions();renderTimeDisplay();}simulationPanel?.controls();}
 function message(text,pending=false){$('status').textContent=text;$('status').classList.toggle('pending',pending);}
 function failure(error){
  const panel=$('error');panel.replaceChildren(element('p',error.message??String(error)));
@@ -20,9 +22,9 @@ function failure(error){
   if(!error.issues?.some(item=>item.taskId===issue.taskId&&item.kind===issue.kind))continue;
   const jump=element('button',`Go to ${issue.taskId}${issue.kind==='remaining'?' remaining estimates':''}`,'secondary');jump.type='button';jump.dataset.estimateTask=issue.taskId;jump.dataset.estimateKind=issue.kind;panel.append(jump);
  }
- panel.classList.remove('hidden');showActionFeedback(panel);highlightEstimateIssues();if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}if(error.validationErrors){renderFreshness();message(plan?'Import failed. Your existing workspace and comparison baseline were kept.':'Import failed. Correct the CSV problems and try again.',dirty);}}
+ panel.classList.remove('hidden');showActionFeedback(panel);highlightEstimateIssues();if(result){$('freshness').textContent='Previous calculation · resolve the error and recalculate';message('Your edits are retained. Displayed forecasts are from the previous calculation.',true);}if(error.validationErrors){renderFreshness();message(plan?'Import failed. Your existing plan and comparison baseline were kept.':'Import failed. Correct the CSV problems and try again.',dirty);}}
 function rejectedEdit(text){$('error').textContent=text;$('error').classList.remove('hidden');showActionFeedback($('error'));message(dirty?'Edit not applied. Earlier edits are still pending.':'Edit not applied. Calculated results are unchanged.',dirty);}
-function changed(){if(!plan)return;$('action-feedback').classList.add('hidden');dirty=true;unsavedWorkspace=true;invalidateComparison();renderFreshness();persistRecovery();highlightEstimateIssues();$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
+function changed(){if(!plan)return;simulationPanel?.invalidate();$('action-feedback').classList.add('hidden');dirty=true;unsavedWorkspace=true;invalidateComparison();renderFreshness();persistRecovery();highlightEstimateIssues();$('error').classList.add('hidden');$('freshness').textContent='Changes pending · results below are from the previous calculation';message('Recalculate to update forecasts and resource waits.',true);}
 async function request(path,data){if(data.plan){const issues=taskEstimateIssues(data.plan);if(issues.length)throw new TaskEstimateValidationError(issues);}const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const value=await response.json();if(!response.ok)throw Object.assign(new Error(value.error??'Unable to calculate'),{issues:value.issues,validationErrors:value.validationErrors});return value;}
 function resourceName(id,source=plan){const name=source?.resourceDetails?.find(r=>r.id===id)?.name;return name&&name!==id?`${name} (${id})`:id;}
 function assignmentsOf(task){return [{resource:task.resource,allocationPercent:task.allocationPercent??100},...(task.supportingResources??[])];}
@@ -123,11 +125,11 @@ $('tasks-body').addEventListener('click',async event=>{
  if(!task)return;
  const dependents=allTasks().filter(other=>other.dependsOn.includes(task.id));
  if(dependents.length){rejectedEdit(`Cannot delete ${task.name} (${task.id}). Remove or reassign dependencies first: ${dependents.map(other=>`${other.name} (${other.id})`).join('; ')}`);return;}
- if(!confirm(`Are you sure you want to delete ${task.name} (${task.id})? Its checklist, comments and progress will also be deleted. Resources will be kept. Save a workspace copy first if you may need to restore this task.`))return;
+ if(!confirm(`Are you sure you want to delete ${task.name} (${task.id})? Its checklist, comments and progress will also be deleted. Resources will be kept. Save a plan copy first if you may need to restore this task.`))return;
  setBusy(true);
  try{
   loadResult(await request('/api/task/delete',{plan:editablePlan(),taskId:task.id}));
-  message(`Deleted ${task.name}. Resources were retained. Save workspace to keep this change.`,true);
+  message(`Deleted ${task.name}. Resources were retained. Save plan to keep this change.`,true);
  }catch(error){rejectedEdit(error.message);}finally{setBusy(false);}
 });
 function renderResources(){
@@ -180,8 +182,8 @@ function renderExceptions(){
  for(const [field,node] of [['resource',select(exception.resource,`Exception ${index+1} resource`,plan.calendar.resources.map(c=>[c.resource,c.resource]))],['date',input(exception.date,`Exception ${index+1} date`,{type:'date'})],['hours',input(exception.hours,`Exception ${index+1} hours`,{type:'number',min:0,max:24,step:'any'})]]){node.dataset.exception=field;row.append(cell(node));}
  const remove=element('button','Remove','remove');remove.dataset.remove=index;remove.type='button';row.append(cell(remove));body.append(row);});
 }
-function loadResult(value){$('action-feedback').classList.add('hidden');pendingEditorInput=null;revision=Math.max(revision,reviewNumber(value.plan.versionId));invalidateComparison();result=(value.needsAssignments||value.needsTasks)?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;unsavedWorkspace=true;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
- $('workspace-name').value=plan.name??'Untitled workspace';document.title=`${$('workspace-name').value} · BufferLogic`;$('show-new-project').textContent='Add project';
+function loadResult(value){simulationPanel?.invalidate();$('action-feedback').classList.add('hidden');pendingEditorInput=null;revision=Math.max(revision,reviewNumber(value.plan.versionId));invalidateComparison();result=(value.needsAssignments||value.needsTasks)?{...value,projects:[],tasks:[],conflicts:[]}:value;plan=structuredClone(value.plan);dirty=false;unsavedWorkspace=true;exceptions=plan.calendar?plan.calendar.resources.flatMap(c=>Object.entries(c.exceptions).map(([date,hours])=>({resource:c.resource,date,hours}))):[];
+ $('workspace-name').value=plan.name??'Untitled plan';document.title=`${$('workspace-name').value} · BufferLogic`;$('show-new-project').textContent='Add project';
  if(plan.calendar)$('start-date').value=plan.calendar.startDate;
  if(!$('calendar-file').files.length)$('calendar-name').textContent=plan.calendar?'Calendar included in the loaded plan':'No calendar loaded · results are in abstract days.';
  $('workspace').classList.remove('hidden');$('error').classList.add('hidden');$('freshness').textContent='Calculated from the current plan';
@@ -191,7 +193,7 @@ function loadResult(value){$('action-feedback').classList.add('hidden');pendingE
 $('example').addEventListener('click',async()=>{if(!allowWorkspaceReplacement())return;setBusy(true);message('Loading the two-house example…');try{const response=await fetch('/api/example');if(!response.ok)throw new Error('Unable to load the example');const source=await response.json();const loaded=await request('/api/load',{...source,format:'csv',startDate:$('start-date').value,timeZone:zone});clearComparisonBaseline();loadResult(loaded);$('project-file').value='';$('calendar-file').value='';$('project-name').textContent='Two-house example · 72 tasks';$('calendar-name').textContent='Example calendar · 21 resources';}catch(error){failure(error);}finally{setBusy(false);}});
 for(const [id,label] of [['project-file','project-name'],['calendar-file','calendar-name']])$(id).addEventListener('change',()=>{$(label).textContent=$(id).files[0]?.name??'No file selected';});
 $('load').addEventListener('click',async()=>{if(!allowWorkspaceReplacement())return;setBusy(true);try{
- const project=$('project-file').files[0],calendar=$('calendar-file').files[0];if(!project&&!plan)throw new Error('Select a project CSV or saved workspace first');if(!project&&!calendar)throw new Error('Select a file to load, or edit the existing plan below');
+ const project=$('project-file').files[0],calendar=$('calendar-file').files[0];if(!project&&!plan)throw new Error('Select a project CSV or saved plan first');if(!project&&!calendar)throw new Error('Select a file to load, or edit the existing plan below');
  const format=project?project.name.toLowerCase().endsWith('.csv')?'csv':'json':'json';
  const data={projectText:project?await project.text():JSON.stringify(plan),format,timeZone:zone,startDate:$('start-date').value};if(calendar)data.calendarText=await calendar.text();
  const loaded=await request('/api/load',data);clearComparisonBaseline();loadResult(loaded);
@@ -326,11 +328,11 @@ $('project-order').addEventListener('click',async event=>{
   if(busy||remove.disabled)return;
   const project=plan.projects.find(project=>project.id===remove.dataset.deleteProject);
   if(!project)return;
-  if(!confirm(`Are you sure you want to delete ${project.name} and all ${project.tasks.length} of its tasks? Resources will be kept. Save a workspace copy first if you may need to restore this project.`))return;
+  if(!confirm(`Are you sure you want to delete ${project.name} and all ${project.tasks.length} of its tasks? Resources will be kept. Save a plan copy first if you may need to restore this project.`))return;
   setBusy(true);
   try{
    loadResult(await request('/api/project/delete',{plan:editablePlan(),projectId:project.id}));
-   message(`Deleted ${project.name}. Resources were retained. Save workspace to keep this change.`,true);
+   message(`Deleted ${project.name}. Resources were retained. Save plan to keep this change.`,true);
   }catch(error){failure(error);}finally{setBusy(false);}
   return;
  }
@@ -346,7 +348,7 @@ $('open-workspace').addEventListener('click',()=>{$('workspace-file').value='';$
 $('workspace-file').addEventListener('change',async()=>{
  const file=$('workspace-file').files[0];if(!file)return;
  if(!allowWorkspaceReplacement())return;
- setBusy(true);message('Opening saved workspace…');
+ setBusy(true);message('Opening saved plan…');
  try{const loaded=await request('/api/load',{projectText:await file.text(),format:'json'});clearComparisonBaseline();loadResult(loaded);$('project-file').value='';$('calendar-file').value='';$('project-name').textContent=file.name;}
  catch(error){failure(error);}finally{setBusy(false);}
 });
@@ -383,7 +385,7 @@ function renderFeeding(){
 $('feeding-tasks').addEventListener('change',event=>{const node=event.target,id=node.dataset.feedingTask;if(!id)return;const ids=new Set(plan.feedingTaskIds??[]);if(node.checked)ids.add(id);else ids.delete(id);plan.feedingTaskIds=[...ids];changed();});
 
 function renderTimeDisplay(){const control=$('time-display');control.value=usesCalendarDates(result.plan)?'dates':'days';const dates=control.querySelector('[value="dates"]');dates.disabled=!result.plan.calendar;dates.textContent=result.plan.calendar?'Calendar dates':'Dates (calendar required)';$('time-display-note').textContent=result.plan.calendar?(usesCalendarDates(result.plan)?'Calendar dates use resource availability. Estimates remain working days.':'Day numbers are elapsed calendar days from schedule start, including weekends and holidays.'):'Abstract day numbers. Load a resource calendar to view completion dates.';}
-$('time-display').addEventListener('change',()=>{if(!plan)return;invalidateComparison();const mode=$('time-display').value;plan.settings.displayTime=mode;result.plan.settings.displayTime=mode;renderTimeDisplay();renderResults();renderFeeding();unsavedWorkspace=true;persistRecovery();});
+$('time-display').addEventListener('change',()=>{if(!plan)return;invalidateComparison();const mode=$('time-display').value;plan.settings.displayTime=mode;result.plan.settings.displayTime=mode;renderTimeDisplay();renderResults();renderFeeding();simulationPanel?.refresh();unsavedWorkspace=true;persistRecovery();});
 
 // File-free project and task entry. Existing edits are included in each request.
 function openBlankProject(){
@@ -393,7 +395,8 @@ function openBlankProject(){
 }
 for(const id of ['show-new-project','add-blank-project','template-start-blank'])$(id).addEventListener('click',openBlankProject);
 $('workspace-name').addEventListener('change',()=>{
- invalidateComparison();const name=$('workspace-name').value.trim()||'Untitled workspace';
+ simulationPanel?.invalidate();
+ invalidateComparison();const name=$('workspace-name').value.trim()||'Untitled plan';
  $('workspace-name').value=name;plan.name=name;result.plan.name=name;document.title=`${name} · BufferLogic`;unsavedWorkspace=true;persistRecovery();
 });
 $('cancel-new-project').addEventListener('click',()=>$('new-project-panel').classList.add('hidden'));
@@ -433,7 +436,7 @@ $('create-task').addEventListener('click',async()=>{
 function invalidateComparison(){
  if(!comparison)return;
  comparison=null;$('compare-results').classList.add('hidden');
- $('compare-status').textContent='Workspace changed. Compare again to refresh the differences.';
+ $('compare-status').textContent='Plan changed. Compare again to refresh the differences.';
 }
 function compareNumber(value){return Math.abs(value)>1e-9&&Math.abs(value)<.01?'<0.01':Number(value.toFixed(2)).toLocaleString();}
 function comparisonCompletion(view,dates){
@@ -507,12 +510,12 @@ $('run-compare').addEventListener('click',async()=>{
  $('compare-error').classList.add('hidden');
  const file=$('compare-file').files[0];
  if(!file&&!capturedBaseline){$('compare-error').textContent='Set current as baseline or choose a saved baseline file.';$('compare-error').classList.remove('hidden');return;}
- if(dirty||result.needsAssignments||result.needsTasks){$('compare-error').textContent='Assign resources and recalculate the current workspace before comparing.';$('compare-error').classList.remove('hidden');return;}
+ if(dirty||result.needsAssignments||result.needsTasks){$('compare-error').textContent='Assign resources and recalculate the current plan before comparing.';$('compare-error').classList.remove('hidden');return;}
  setBusy(true);$('compare-status').textContent='Comparing versions…';
  try{
   const original=file?JSON.parse(await file.text()):capturedBaseline;
   comparison=await request('/api/compare',{baseline:original?.plan??original,scenario:result.plan});
-  renderComparison(comparison);$('compare-status').textContent='Comparison ready. Your workspace and baseline file are unchanged.';
+  renderComparison(comparison);$('compare-status').textContent='Comparison ready. Your plan and baseline file are unchanged.';
  }catch(error){comparison=null;$('compare-results').classList.add('hidden');$('compare-error').textContent=error.message;$('compare-error').classList.remove('hidden');$('compare-status').textContent='Comparison could not be completed.';}
  finally{setBusy(false);}
 });
@@ -521,7 +524,7 @@ function clearComparisonBaseline(){capturedBaseline=null;unsavedBaseline=false;p
 $('clear-compare').addEventListener('click',clearComparisonBaseline);
 $('capture-baseline').addEventListener('click',()=>{
  if(!plan||busy)return;
- if(dirty||result.needsAssignments||result.needsTasks){$('compare-error').textContent='Recalculate a fully assigned workspace before setting its baseline.';$('compare-error').classList.remove('hidden');return;}
+ if(dirty||result.needsAssignments||result.needsTasks){$('compare-error').textContent='Recalculate a fully assigned plan before setting its baseline.';$('compare-error').classList.remove('hidden');return;}
  if(capturedBaseline&&!confirm('Replace the captured baseline with the current calculation?'))return;
  invalidateComparison();capturedBaseline=structuredClone(result.plan);$('compare-file').value='';$('compare-error').classList.add('hidden');
  $('compare-status').textContent=`Baseline captured: ${capturedBaseline.name} (${capturedBaseline.versionId}). Make changes, recalculate, then Compare versions. Download baseline for a portable backup.`;unsavedBaseline=true;persistRecovery();
@@ -547,19 +550,19 @@ function recoveryState(){return {plan,calculatedPlan:result.plan,exceptions,star
 let pendingEditorInput=null;
 function recoveryProblem(error){
  const reason=String(error.message??error).trim().replace(/[.]+$/,'');
- const text=`Browser recovery unavailable: ${reason}. Download your workspace and baseline before leaving.`;
+ const text=`Browser recovery unavailable: ${reason}. Download your plan and baseline before leaving.`;
  $('recovery-status').textContent=text;$('recovery-warning-text').textContent=text;$('recovery-warning').classList.remove('hidden');
 }
 function persistRecovery(){
  if(!plan||!result||pendingRecovery||recoveryPaused||recoveryRestoring)return;
  clearTimeout(recoveryTimer);
  if(!recoveryStore)return;
- try{const savedAt=recoveryStore.save(recoveryState());$('recovery-warning').classList.add('hidden');$('recovery-status').textContent=`Recovery copy saved in this browser at ${new Date(savedAt).toLocaleTimeString()}. Download workspace and baseline files for portable backups.`;}
+ try{const savedAt=recoveryStore.save(recoveryState());$('recovery-warning').classList.add('hidden');$('recovery-status').textContent=`Recovery copy saved in this browser at ${new Date(savedAt).toLocaleTimeString()}. Download plan and baseline files for portable backups.`;}
  catch(error){recoveryProblem(error);}
 }
 function allowWorkspaceReplacement(){
  if(!requireRecoveryChoice())return false;
- return !(plan&&(unsavedWorkspace||unsavedBaseline||dirty))||confirm('Replace this workspace? Download the workspace and any captured baseline first if you want to keep them. The browser recovery copy will be replaced too.');
+ return !(plan&&(unsavedWorkspace||unsavedBaseline||dirty))||confirm('Replace this plan? Download the plan and any captured baseline first if you want to keep them. The browser recovery copy will be replaced too.');
 }
 // Keep the most recent text still being typed, before its change/blur event.
 document.addEventListener('input',event=>{
@@ -568,7 +571,7 @@ document.addEventListener('input',event=>{
  if(!plan||!(node instanceof HTMLInputElement||node instanceof HTMLTextAreaElement)||node.type==='file'||(!node.closest('#workspace')&&node.id!=='start-date'))return;
  const id=node.id,label=node.getAttribute('aria-label');
  if(!id&&!label)return;
- pendingEditorInput={id,label,value:node.value};unsavedWorkspace=true;
+ simulationPanel?.invalidate();pendingEditorInput={id,label,value:node.value};unsavedWorkspace=true;
  if(id!=='workspace-name'){invalidateComparison();renderFreshness();$('freshness').textContent='Changes pending · schedule out of date';}
  clearTimeout(recoveryTimer);recoveryTimer=setTimeout(persistRecovery,200);
 });
@@ -598,7 +601,7 @@ $('restore-recovery').addEventListener('click',async()=>{
   plan=structuredClone(state.plan);exceptions=structuredClone(state.exceptions);$('start-date').value=state.startDate;
   dirty=Boolean(state.dirty);capturedBaseline=state.capturedBaseline??null;
   unsavedWorkspace=Boolean(state.unsavedWorkspace);unsavedBaseline=Boolean(state.unsavedBaseline);
-  $('workspace-name').value=plan.name??'Untitled workspace';document.title=`${$('workspace-name').value} · BufferLogic`;
+  $('workspace-name').value=plan.name??'Untitled plan';document.title=`${$('workspace-name').value} · BufferLogic`;
   renderProjectOrder();renderTasks();renderProgress();renderChecklists();renderDeadlines();renderFeeding();renderCalendars();renderNotes();renderUtilization();renderFreshness();
   if(state.view){
    const choose=(id,value)=>{if([...$(id).options].some(option=>option.value===value))$(id).value=value;};
@@ -615,14 +618,14 @@ $('restore-recovery').addEventListener('click',async()=>{
    if(field){field.value=state.pendingInput.value;field.dispatchEvent(new Event('change',{bubbles:true}));}
   }
   pendingEditorInput=null;
-  if(dirty){$('freshness').textContent='Recovered edits · schedule out of date';message('Workspace recovered. Recalculate before using previous results.',true);}
+  if(dirty){$('freshness').textContent='Recovered edits · schedule out of date';message('Plan recovered. Recalculate before using previous results.',true);}
   endRecoveryPrompt();recoveryPaused=false;recoveryManuallyPaused=false;
  }catch(error){$('recovery-error').textContent=`Unable to restore: ${String(error.message).replace(/[.]+$/,'')}. The recovery copy has been kept. Download it before discarding.`;}
  finally{recoveryRestoring=false;setBusy(false);if(!pendingRecovery)persistRecovery();}
 });
 $('discard-recovery').addEventListener('click',()=>{
  if(!confirm('Discard this browser recovery copy? It may belong to work open in another tab. Downloaded files will not be deleted, and open editing tabs may save a new recovery copy.'))return;
- try{recoveryStore?.clear();endRecoveryPrompt();$('recovery-status').textContent='Recovery copy discarded. A new copy will be saved when you load or edit a workspace.';message('Recovery copy discarded. Your selected files were kept. Click Load files to continue.');}
+ try{recoveryStore?.clear();endRecoveryPrompt();$('recovery-status').textContent='Recovery copy discarded. A new copy will be saved when you load or edit a plan.';message('Recovery copy discarded. Your selected files were kept. Click Load files to continue.');}
  catch(error){recoveryProblem(error);}
 });
 $('download-recovery').addEventListener('click',()=>{
@@ -631,15 +634,15 @@ $('download-recovery').addEventListener('click',()=>{
  const link=document.createElement('a');link.href=url;link.download='bufferlogic-browser-recovery.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 $('clear-recovery').addEventListener('click',()=>{
- if(!confirm('Clear the recovery copy and pause browser recovery in this tab? Download workspace and baseline files first.'))return;
+ if(!confirm('Clear the recovery copy and pause browser recovery in this tab? Download plan and baseline files first.'))return;
  if(!recoveryStore){recoveryProblem(new Error('Browser storage is not accessible.'));return;}
  try{recoveryStore.clear();recoveryPaused=true;recoveryManuallyPaused=true;endRecoveryPrompt();recoveryProblem(new Error('Recovery cleared and paused in this tab. Use Resume browser recovery to enable it without reloading'));}
  catch(error){recoveryProblem(error);}
 });
 try{
  recoveryStore=createRecoveryStore(localStorage);pendingRecovery=recoveryStore.read();
- if(pendingRecovery){$('recovery-description').textContent=`${pendingRecovery.state.plan.name??'Untitled workspace'} · saved ${new Date(pendingRecovery.savedAt).toLocaleString()}${pendingRecovery.state.capturedBaseline?' · includes a captured baseline':''}`;$('recovery-prompt').classList.remove('hidden');}
- $('recovery-status').textContent=pendingRecovery?'A recovery copy is available. Restore or discard it before starting.':'Browser recovery enabled on this device. Download workspace files for portable backups.';
+ if(pendingRecovery){$('recovery-description').textContent=`${pendingRecovery.state.plan.name??'Untitled plan'} · saved ${new Date(pendingRecovery.savedAt).toLocaleString()}${pendingRecovery.state.capturedBaseline?' · includes a captured baseline':''}`;$('recovery-prompt').classList.remove('hidden');}
+ $('recovery-status').textContent=pendingRecovery?'A recovery copy is available. Restore or discard it before starting.':'Browser recovery enabled on this device. Download plan files for portable backups.';
 }catch(error){recoveryPaused=true;recoveryProblem(error);}
 
 
@@ -703,7 +706,7 @@ $('resume-recovery').addEventListener('click',()=>{
    recoveryStore=createRecoveryStore(localStorage);
   }
   recoveryStore.resume();recoveryPaused=false;recoveryManuallyPaused=false;persistRecovery();
-  if(!plan){$('recovery-warning').classList.add('hidden');$('recovery-status').textContent='Browser recovery enabled. Load or create a workspace to save a recovery copy.';}
+  if(!plan){$('recovery-warning').classList.add('hidden');$('recovery-status').textContent='Browser recovery enabled. Load or create a plan to save a recovery copy.';}
  }catch(error){recoveryProblem(error);}
 });
 function reviewNumber(label){
@@ -727,3 +730,5 @@ $('feedback-content').addEventListener('click',event=>{
  const target=$(`${button.dataset.recoveryChoice}-recovery`);
  if(target&&!target.disabled)target.click();
 });
+
+simulationPanel=createSimulationPanel(()=>({plan:result?.plan,result,dirty:dirty||Boolean(pendingEditorInput),busy}));

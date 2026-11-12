@@ -281,21 +281,21 @@ The UI deletes a resource only after confirmation, clears all its task assignmen
 
 ## Manual project and task creation
 
-The review API supports `POST /api/project` with `name`, optional existing `plan`, and `startDate`/`timeZone` for a new workspace. It appends a blank project with a unique ID, preserving an existing portfolio's calendar and start date. `POST /api/task` accepts `plan`, `projectId`, `name`, `resource` (empty for a draft assignment), numeric `goodCase`/`poorCase`, and `dependsOn` (existing task IDs). Task IDs and priorities are generated; tasks default to planned working effort at 100% allocation. Estimates require positive good days and poor days at least as large, or two zeros for a milestone.
+The review API supports `POST /api/project` with `name`, optional existing `plan`, and `startDate`/`timeZone` for a new plan. It appends a blank project with a unique ID, preserving an existing portfolio's calendar and start date. `POST /api/task` accepts `plan`, `projectId`, `name`, `resource` (empty for a draft assignment), numeric `goodCase`/`poorCase`, and `dependsOn` (existing task IDs). Task IDs and priorities are generated; tasks default to planned working effort at 100% allocation. Estimates require positive good days and poor days at least as large, or two zeros for a milestone.
 
-An entirely empty workspace returns `{plan, needsTasks: true}` with no calculated forecasts. Unassigned work still returns the `needsAssignments` draft response. These drafts can be saved and reopened. Once tasks and assignments exist, the response uses the normal calculated result shape.
+An entirely empty plan returns `{plan, needsTasks: true}` with no calculated forecasts. Unassigned work still returns the `needsAssignments` draft response. These drafts can be saved and reopened. Once tasks and assignments exist, the response uses the normal calculated result shape.
 
-### Workspace name
+### Plan name
 
-The optional top-level `name` is the workspace display name, separate from stable portfolio `id`, project names and schedule `versionId`. `parsePortfolio` preserves trimmed nonempty names and supplies a default for older plans: the first project name plus “workspace”, or “Untitled workspace”. New projects and recalculation preserve an existing name. The UI saves this field and uses a filename-safe name plus timestamp for downloaded workspaces.
+The optional top-level `name` is the plan display name, separate from stable portfolio `id`, project names and schedule `versionId`. `parsePortfolio` preserves trimmed nonempty names and supplies a default for older plans: the first project name plus “plan”, or “Untitled plan”. New projects and recalculation preserve an existing name. The UI saves this field and uses a filename-safe name plus timestamp for downloaded plans.
 
 ### Project deletion
 
-`POST /api/project/delete` accepts `plan` and `projectId`. The immutable `deleteProject` helper removes the selected project and its tasks, filters their IDs from `feedingTaskIds` and `taskOrderOverrides`, and preserves resource definitions, calendars, workspace name and remaining project order. It rejects unknown projects and any surviving task dependency on removed work. The review API recalculates the result, or returns its normal `needsTasks`/`needsAssignments` draft shape when appropriate. User confirmation is provided by the browser before sending the request.
+`POST /api/project/delete` accepts `plan` and `projectId`. The immutable `deleteProject` helper removes the selected project and its tasks, filters their IDs from `feedingTaskIds` and `taskOrderOverrides`, and preserves resource definitions, calendars, plan name and remaining project order. It rejects unknown projects and any surviving task dependency on removed work. The review API recalculates the result, or returns its normal `needsTasks`/`needsAssignments` draft shape when appropriate. User confirmation is provided by the browser before sending the request.
 
 ## Multiple resources per task
 
-Existing `resource` and `allocationPercent` remain the primary assignment. Optional `supportingResources` contains `{resource, allocationPercent}` entries; each percentage must be greater than zero and at most 100. Resource IDs must be distinct across primary and supporting assignments. JSON and saved workspaces preserve this field on both plan tasks and scheduled entries; CSV imports and template copies accept an optional `Supporting resources` column containing the same JSON array. Blank cells preserve primary-only behavior.
+Existing `resource` and `allocationPercent` remain the primary assignment. Optional `supportingResources` contains `{resource, allocationPercent}` entries; each percentage must be greater than zero and at most 100. Resource IDs must be distinct across primary and supporting assignments. JSON and saved plans preserve this field on both plan tasks and scheduled entries; CSV imports and template copies accept an optional `Supporting resources` column containing the same JSON array. Blank cells preserve primary-only behavior.
 
 ```json
 {
@@ -320,7 +320,7 @@ Use separate dependent tasks for resources needed during different phases. This 
 
 The result includes project before/after P95 forecasts, target assessments, order and hold state; signed P95 changes; changed task timing, estimates, dependencies, primary/supporting resources, priorities, progress, deadlines and scheduling settings; changed resource calendars/details; global scheduling setting changes; and baseline/current conflicts. Added, removed, suspended and resumed work are distinct. Withheld or empty project forecasts have `p95: null` and cannot produce a numeric improvement. A positive shift means later. Version labels alone do not count as changes.
 
-The UI supports both a session baseline captured from the current plan and a baseline chosen from a saved file. Capture does not automatically persist in workspace downloads; Download baseline saves the original plan separately. Session baselines survive recalculation and are cleared when another workspace opens. This API measures a supplied alternative; it does not optimize or claim a best schedule.
+The UI supports both a session baseline captured from the current plan and a baseline chosen from a saved file. Capture does not automatically persist in plan downloads; Download baseline saves the original plan separately. Session baselines survive recalculation and are cleared when another plan opens. This API measures a supplied alternative; it does not optimize or claim a best schedule.
 
 Comparison equality ignores object-key insertion order. Dependency lists and supporting assignments are compared as unordered sets; task order, task-order overrides and Monday–Sunday calendar hours retain their ordering. Project change status uses the scheduling fields shown in the report, not full raw project objects, so project/task comments, descriptions, ownership notes and checklist updates alone do not mark a project schedule changed.
 
@@ -328,7 +328,7 @@ Comparison equality ignores object-key insertion order. Dependency lists and sup
 ### Retired task and project identities
 
 Optional `retiredTaskIds` and `retiredProjectIds` arrays retain deleted IDs within a
-workspace. Entries are unique nonempty strings and cannot also identify live work.
+plan. Entries are unique nonempty strings and cannot also identify live work.
 Deletion records them; manual project/task creation and template copying skip them.
 Save/open preserves the arrays, preventing unrelated replacements from becoming
 “Changed” rows in scenario comparison. These fields do not reserve resources or

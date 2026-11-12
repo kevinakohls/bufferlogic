@@ -11,7 +11,7 @@ affects delivery across the portfolio. It combines shared-resource scheduling wi
 [**Open the live BufferLogic demo**](https://bufferlogic-859125571309.us-central1.run.app)
 
 Hosted on **Google Cloud Run**. No installation or Google account required. Use fictional data. Plans are sent to the server
-for calculation, but workspaces are not saved on the server. Visitors have separate
+for calculation, but plans are not saved on the server. Visitors have separate
 browser state; there are no accounts or automatic cloud saves.
 
 ### Quick walkthrough: change an estimate and compare
@@ -29,7 +29,7 @@ browser state; there are no accounts or automatic cloud saves.
    project's completion—dependencies, resource waits and available slack matter.
 6. For a separate priority experiment, set the current calculation as a new
    baseline, use **Move up** in Project order, recalculate and compare again.
-7. Choose **Save workspace** to download the scenario you want to keep.
+7. Choose **Save plan** to download the scenario you want to keep.
 
 The header's **Help** button explains the main workflows. You can also choose **New project** to
 start without a file, or create projects from housing and software templates.
@@ -42,8 +42,8 @@ start without a file, or create projects from housing and software templates.
   captured or saved baseline against a proposed scenario.
 - **Protect downstream work:** select eligible feeding tasks for later starts
   with estimated P99 − P50 protection, subject to scheduling safety checks.
-- **Review delivery risk:** inspect approximate completion percentiles and
-  deadline status based on the project's P95 planning target.
+- **Review delivery risk:** keep fast analytical P95 as the planning target,
+  and optionally simulate full-plan P98/P99 estimates with sampling intervals.
 - **Maintain the plan:** add or delete projects/tasks, record actual progress and
   remaining estimates, and keep task notes and checklists.
 - **Understand the result:** follow cross-project dependencies and resource waits
@@ -55,9 +55,9 @@ Adding or deleting tasks/projects recalculates other pending valid edits.
 
 ## Save your work
 
-**Save workspace** downloads a JSON file that can be reopened in BufferLogic.
+**Save plan** downloads a JSON file that can be reopened in BufferLogic.
 Browser recovery also keeps a local copy of edits and captured baselines when
-storage is available; choose **Restore workspace** on return. Recovery belongs to
+storage is available; choose **Restore previous plan** on return. Recovery belongs to
 that browser and site address, and can be lost in private browsing or when browser
 data is cleared. Download files as portable backups. Clear recovery on shared
 computers and close other editing tabs, which may save another copy.
@@ -92,8 +92,8 @@ Locked commitments are assumed to be met; infeasible forecasts require attention
 Deadlines indicate risk without forcing dispatch order or locking task dates.
 
 Calendars represent daily capacity and date-only commitments, not clock-time
-appointments or shift scheduling. Cloud workspace history, multiuser collaboration, historical calibration,
-Monte Carlo simulation and AI scenario selection remain future work. The CLI
+appointments or shift scheduling. Cloud plan history, multiuser collaboration, historical calibration,
+AI scenario selection and real-world probability calibration remain future work. The CLI
 provides limited Saturday-hours resource sensitivity rankings.
 
 ## Optional: run locally for development
@@ -105,6 +105,7 @@ installation, tests and startup commands. Local startup does not update Cloud Ru
 ## Documentation
 
 - [Development](DEVELOPMENT.md): local setup, CLI commands, GitLab review and updates.
+- [Monte Carlo guide](MONTE_CARLO.md): optional simulations, assumptions and independent validation.
 - [CSV import guide](CSV_IMPORT_GUIDE.md): task/template columns, aliases and calendar validation.
 - [UI review guide](UI_REVIEW_GUIDE.md): editing, recovery and manual checks.
 - [Reviewer guide](REVIEWER_GUIDE.md): command-line examples and expected behavior.

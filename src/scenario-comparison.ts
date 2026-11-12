@@ -18,7 +18,7 @@ const ids=<T extends {id:string}>(items:readonly T[])=>new Map(items.map(item=>[
 /** Recalculate both plans under the current engine; keep the live workspace untouched. */
 export function compareScenarios(baselineInput:unknown,scenarioInput:unknown){
   const baselinePlan=comparisonPlan(baselineInput),scenarioPlan=comparisonPlan(scenarioInput);
-  if(baselinePlan.id!==scenarioPlan.id)throw new Error('Compare versions of the same workspace, not unrelated portfolios.');
+  if(baselinePlan.id!==scenarioPlan.id)throw new Error('Compare versions of the same plan, not unrelated portfolios.');
   if(baselinePlan.asOf!==scenarioPlan.asOf)throw new Error('Use the same Progress as of value in both versions for a what-if comparison.');
   if(baselinePlan.calendar?.startDate!==scenarioPlan.calendar?.startDate)throw new Error('Use the same schedule start date and calendar mode in both versions.');
   const baseline=schedulePortfolio(baselinePlan),scenario=schedulePortfolio(scenarioPlan);
@@ -80,5 +80,5 @@ export function compareScenarios(baselineInput:unknown,scenarioInput:unknown){
     calendarDates:Boolean(scenario.plan.calendar)&&scenario.plan.settings.displayTime!=='days',asOf:scenario.plan.asOf,
     projects,tasks,resources,baselineConflicts:baseline.conflicts,scenarioConflicts:scenario.conflicts,
     settingsChanged:settingsChanges.length>0,settingsChanges,
-    interpretation:'Both plans are recalculated with the current engine. Positive P95 change means later; negative means earlier. Comparisons require the same workspace, progress date and calendar origin. Day shifts use elapsed calendar days when calendars are loaded, otherwise abstract days. P95 forecasts remain approximate.'};
+    interpretation:'Both plans are recalculated with the current engine. Positive P95 change means later; negative means earlier. Comparisons require the same plan, progress date and calendar origin. Day shifts use elapsed calendar days when calendars are loaded, otherwise abstract days. P95 forecasts remain approximate.'};
 }

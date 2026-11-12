@@ -2,8 +2,8 @@
 
 The public demo is https://bufferlogic-859125571309.us-central1.run.app
 (project `bufferlogic`, service `bufferlogic`, region `us-central1`).
-The configuration files alone do not create cloud resources. Workspaces are sent to the server for calculation, then returned to the
-browser; they are not saved on the server. Save workspace downloads a local file.
+The configuration files alone do not create cloud resources. Plans are sent to the server for calculation, then returned to the
+browser; they are not saved on the server. Save plan downloads a local file.
 Visitors have separate browser state. A local browser recovery copy can retain
 edits and captured baselines on that device; it is not server storage or account
 history. Download files for portable backups and clear recovery on shared devices.
@@ -31,23 +31,24 @@ Run with `docker run --rm -p 8080:8080 bufferlogic`; local HTTP requests still w
    Alerts do not cap charges. Confirm current regional pricing and free allowances.
 2. Build/deploy the Dockerfile to Cloud Run initially with authentication required.
    Use request-based billing, minimum instances 0, maximum instances 1, one CPU,
-   512 MiB memory, concurrency 1 and a 60-second request timeout initially.
-   Scheduling uses synchronous CPU work; one request per instance avoids competing
-   calculations. Large requests may time out and should be reduced for the demo.
+   512 MiB memory, concurrency 4 and a 60-second request timeout initially.
+   Concurrency above 1 lets ordinary requests reach the app while an optional
+   Monte Carlo worker is running. The app limits simulations to one per instance.
+   Large calculations may time out and should be reduced for the demo.
 3. Obtain the assigned HTTPS service URL and set `BUFFERLOGIC_PUBLIC_ORIGIN` to
    that exact origin. The initial revision rejects public-host requests until this
    setting is present; Cloud Run's TCP startup check can still succeed.
 4. Test the configured revision, then enable unauthenticated access when ready to
    publish the demo. Cloud Run terminates HTTPS; no certificate purchase is needed.
 5. In a private browser window, load the example, schedule, edit priorities, compare
-   against a captured baseline, download a workspace and reopen it. Check a second
+   against a captured baseline, download a plan and reopen it. Check a second
    browser has independent state. Check templates, task deletion and calendar dates.
 6. Share the assigned URL, monitor usage, and remove or restrict the demo when done.
 
 Maximum instances limits scaling, not total spending. Builds, image storage,
 network traffic and running requests can incur charges. No domain purchase,
 database or sign-in implementation is needed for this reviewer demo. The public
-service is a demo without persistent accounts or saved cloud workspaces.
+service is a demo without persistent accounts or saved cloud plans.
 
 ## Release an update
 
@@ -97,7 +98,7 @@ gcloud run deploy bufferlogic \
   --allow-unauthenticated \
   --min-instances 0 \
   --max-instances 1 \
-  --concurrency 1 \
+  --concurrency 4 \
   --cpu 1 \
   --memory 512Mi \
   --timeout 60 \
@@ -107,7 +108,7 @@ gcloud run deploy bufferlogic \
 
 This command builds and deploys a new revision and may incur charges. The URL
 stays the same. Test it in a private browser: example loading, recalculation,
-Compare, task deletion, workspace download/reopen and a separate visitor session.
+Compare, task deletion, plan download/reopen and a separate visitor session.
 Record the resulting revision alongside the source commit. Keep budget alerts
 and monitor usage. If validation fails, route traffic back to the last verified
 revision in Cloud Run's **Revisions** tab.

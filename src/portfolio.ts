@@ -151,7 +151,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
       || !Array.isArray(value.resources) || !value.resources.every(text) || !Array.isArray(value.projects)) {
     throw new Error('Portfolio requires id, versionId, asOf, settings.durationUnit=days, resources and projects');
   }
-  if(value.name!==undefined&&(typeof value.name!=='string'||!value.name.trim()))throw new Error('Workspace name must be nonempty text');
+  if(value.name!==undefined&&(typeof value.name!=='string'||!value.name.trim()))throw new Error('Plan name must be nonempty text');
   if(value.settings.displayTime!==undefined&&value.settings.displayTime!=='days'&&value.settings.displayTime!=='dates')throw new Error('displayTime must be days or dates');
   if (value.approvalStatus !== undefined && value.approvalStatus !== 'draft' && value.approvalStatus !== 'approved') throw new Error('Invalid approvalStatus');
   const projects = value.projects.map((p: unknown): Project => {
@@ -230,7 +230,7 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
     if(retired!==undefined&&(!Array.isArray(retired)||!retired.every(text)||new Set(retired).size!==retired.length))throw new Error(`${field} must contain unique nonempty IDs`);
     if(Array.isArray(retired)&&retired.some(id=>field==='retiredTaskIds'?knownTaskIds.has(id):knownProjectIds.has(id)))throw new Error(`${field} cannot include an active ID`);
   }
-  return { id: value.id, name: typeof value.name==='string'?value.name.trim():projects[0]?`${projects[0].name} workspace`:'Untitled workspace', versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days',...(value.settings.displayTime===undefined?{}:{displayTime:value.settings.displayTime}) },
+  return { id: value.id, name: typeof value.name==='string'?value.name.trim():projects[0]?`${projects[0].name} plan`:'Untitled plan', versionId: value.versionId, asOf: value.asOf, settings: { durationUnit: 'days',...(value.settings.displayTime===undefined?{}:{displayTime:value.settings.displayTime}) },
     resources, projects,
     ...(value.retiredTaskIds===undefined?{}:{retiredTaskIds:[...(value.retiredTaskIds as string[])]}),
     ...(value.retiredProjectIds===undefined?{}:{retiredProjectIds:[...(value.retiredProjectIds as string[])]}),
@@ -243,9 +243,11 @@ export function parsePortfolio(value: unknown): PortfolioPlan {
 
 /** Internal constraints used by the opt-in feeding scheduler; these do not create user locks. */
 export interface PlacementConstraints {
+  /** Internal Monte Carlo draw: durations are realized, not a new forecast fit. */
+  readonly realizedSample?: boolean;
   readonly earliestStarts: ReadonlyMap<string, number>;
   readonly protectedPlacements: ReadonlyMap<string, {start:number;finish:number}>;
-  readonly bufferReservations: readonly {resource:string;start:number;finish:number;allocationPercent:number}[];
+  readonly bufferReservations: readonly {resource:string;start:number;finish:number;allocationPercent:number;taskId?:string}[];
 }
 
 /** Non-preemptive capacity scheduling with fixed reservations and immutable schedule history. */
@@ -330,7 +332,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
   function overlaps(e: Pick<PortfolioEntry,'start'|'finish'>, start: number, finish: number) { return e.start < finish && e.finish > start && e.finish > e.start; }
   function fits(t: PortfolioTask, start: number, finish: number): boolean {
     if (start === finish || t.durationMode === 'elapsed') return true; // milestone requires no resource capacity
-    const reservations = [...[...entries.values()].flatMap(e=>taskAssignments(e).map(a=>({...e,...a}))),...(placement?.bufferReservations??[])];
+    const reservations = [...[...entries.values()].flatMap(e=>taskAssignments(e).map(a=>({...e,...a}))),...(placement?.bufferReservations.filter(slot=>slot.taskId!==t.id)??[])];
     return taskAssignments(t).every(assignment=>{
       const existing = reservations.filter(e => e.resource === assignment.resource && overlaps(e, start, finish));
       const events = [start, ...existing.flatMap(e => [Math.max(start, e.start), Math.min(finish, e.finish)])].filter(v => v < finish);
@@ -428,6 +430,13 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
         staleTaskIds: p.tasks.filter(task => task.status === 'active' && task.remaining?.estimateStatus === 'stale').map(task => task.id),
       },
     };
+    if(placement?.realizedSample){
+      const completionPercentiles={p50:completion,p80:completion,p95:completion,p98:completion,p99:completion};
+      const value=calendar?forecastDate!(completion):undefined;
+      return {...p,forecast:{scheduleVersionId:plan.versionId,feasible:!p.tasks.some(task=>affected.has(task.id)),deterministicCompletion:completion,criticalChain,completionPercentiles,
+        ...(value===undefined?{}:{completionDates:{deterministic:value,p50:value,p80:value,p95:value,p98:value,p99:value}}),
+        staleTaskIds:p.tasks.filter(task=>task.status==='active'&&task.remaining?.estimateStatus==='stale').map(task=>task.id)}};
+    }
     // Fixed appointments reset the completion anchor. Prior uncertainty is a deadline risk,
     // not permission to move the appointment. Only subsequent uncertain work shifts completion.
     let anchor = plan.asOf, mean = 0, variance = 0;

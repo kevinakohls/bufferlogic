@@ -24,7 +24,7 @@ test('comparison distinguishes suspended, resumed, removed and added work withou
 });
 test('saved result comparison recalculates rather than trusting stale forecast fields; calendars and unrelated progress are handled explicitly',()=>{
  const saved=schedulePortfolio(base);const corrupted={...saved,projects:[]};assert.equal(compareScenarios(corrupted,base).projects[0]!.p95Change,0);
- assert.throws(()=>compareScenarios(base,{...base,id:'unrelated'}),/same workspace/);
+ assert.throws(()=>compareScenarios(base,{...base,id:'unrelated'}),/same plan/);
  assert.throws(()=>compareScenarios(base,{...base,asOf:1}),/Progress as of/);
  const dated={...base,calendar:{startDate:'2026-10-19',hoursPerWorkday:8,resources:base.resources.map(resource=>({resource,weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}))}};
  assert.throws(()=>compareScenarios(base,dated),/same schedule start/);
