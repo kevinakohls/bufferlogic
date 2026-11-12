@@ -103,3 +103,25 @@ test("percentile CLI accepts JSON/CSV, produces labeled tables/exports, and prot
     }
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+
+
+test('deterministic prefix is an additive shift, not part of the lognormal fit',()=>{
+ const base=estimateProjectPercentiles([task('A',3,7),task('B',2,7,['A'])]);
+ const shifted=estimateProjectPercentiles([task('Fixed',100,100),task('A',3,7,['Fixed']),task('B',2,7,['A'])]);
+ for(const key of ['p50','p80','p95','p98','p99'] as const)close(shifted.projectPercentiles[key],base.projectPercentiles[key]+100);
+ close(shifted.chainDistribution.deterministicShift,100);
+ close(shifted.chainDistribution.mean,base.chainDistribution.mean+100);
+});
+
+
+test('two-task uncertain sum agrees with independent numerical convolution benchmark',()=>{
+ const result=estimateProjectPercentiles([task('Fixed',100,100),task('A',3,7,['Fixed']),task('B',2,7,['A'])]);
+ // Independent integration of E[F_B(q-A)] using normal-density quadrature;
+ // constants are reproduced by scripts/validate-shifted-forecast.py.
+ const benchmark={p95:119.463255751144,p98:123.98119227255648,p99:127.75600015867639};
+ for(const key of ['p95','p98','p99'] as const){
+  assert.ok(Math.abs(result.projectPercentiles[key]-benchmark[key])/(benchmark[key]-100)<.03);
+ }
+ const single=estimateProjectPercentiles([task('Fixed',103,103),task('B',2,7,['Fixed'])]);
+ assert.ok(result.projectPercentiles.p95>single.projectPercentiles.p95,'restoring Punch uncertainty must not reduce P95 in this fixture');
+});
