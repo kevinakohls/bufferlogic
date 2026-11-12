@@ -242,7 +242,7 @@ $('show-template').addEventListener('click',()=>{$('new-project-panel').classLis
 $('housing-template').addEventListener('click',async()=>{setBusy(true);try{const response=await fetch('/api/housing-template');if(!response.ok)throw new Error('Unable to load housing template');const source=await response.json();await inspectTemplate(source.csvText,'Housing project');$('template-file').value='';}catch(error){failure(error);}finally{setBusy(false);}});
 $('software-template').addEventListener('click',async()=>{setBusy(true);try{const response=await fetch('/api/software-template');if(!response.ok)throw new Error('Unable to load software template');const source=await response.json();await inspectTemplate(source.csvText,'Software project');$('template-file').value='';}catch(error){failure(error);}finally{setBusy(false);}});
 $('template-file').addEventListener('change',async()=>{const file=$('template-file').files[0];if(!file)return;setBusy(true);try{await inspectTemplate(await file.text(),file.name);}catch(error){failure(error);}finally{setBusy(false);}});
-$('create-template').addEventListener('click',async()=>{if(pendingRecovery){$('recovery-prompt').scrollIntoView({block:'start'});return;}setBusy(true);try{if(!templateText)throw new Error('Choose a template CSV first');const data={csvText:templateText,name:$('template-name').value,sourceProjectId:$('template-source').value,startDate:$('start-date').value,timeZone:zone};if(plan)data.plan=editablePlan();loadResult(await request('/api/template',data));$('template-panel').classList.add('hidden');message('Project created with new IDs and supplied or default priorities. Review the task and calendar defaults.');}catch(error){failure(error);}finally{setBusy(false);}});
+$('create-template').addEventListener('click',async()=>{if(!requireRecoveryChoice())return;setBusy(true);try{if(!templateText)throw new Error('Choose a template CSV first');const data={csvText:templateText,name:$('template-name').value,sourceProjectId:$('template-source').value,startDate:$('start-date').value,timeZone:zone};if(plan)data.plan=editablePlan();loadResult(await request('/api/template',data));$('template-panel').classList.add('hidden');message('Project created with new IDs and supplied or default priorities. Review the task and calendar defaults.');}catch(error){failure(error);}finally{setBusy(false);}});
 function noteTarget(create=false){const kind=$('notes-kind').value,id=$('notes-item').value;if(kind==='project')return plan.projects.find(p=>p.id===id);if(kind==='task')return allTasks().find(t=>t.id===id);let resource=plan.resourceDetails?.find(r=>r.id===id);if(!resource){resource={id};if(create){plan.resourceDetails??=[];plan.resourceDetails.push(resource);}}return resource;}
 function renderNotes(){if(!plan)return;const kind=$('notes-kind').value,old=$('notes-item').value;const items=kind==='project'?plan.projects.map(p=>[p.id,p.name]):kind==='task'?allTasks().map(t=>[t.id,`${t.id} · ${t.name}`]):plan.resources.map(id=>[id,plan.resourceDetails?.find(r=>r.id===id)?.name||id]);$('notes-item').replaceChildren();for(const [id,name]of items){const option=element('option',name);option.value=id;$('notes-item').append(option);}if(items.some(([id])=>id===old))$('notes-item').value=old;renderNoteFields();}
 function renderNoteFields(){const editor=$('notes-editor');editor.replaceChildren();if(!$('notes-item').value)return;const target=noteTarget(),kind=$('notes-kind').value;const fields=kind==='project'?[['name','Project name',false],['owner','Project owner',false],['description','Description',true],['comments','Comments',true]]:kind==='task'?[['description','Description',true],['completionCriteria','Completion criteria',true],['lockReason','Reason for locked commitment',true],['comments','Comments',true]]:[['name','Display name',false],['role','Role or skill',false],['description','Description',true],['comments','Comments',true]];
@@ -387,7 +387,7 @@ $('time-display').addEventListener('change',()=>{if(!plan)return;invalidateCompa
 
 // File-free project and task entry. Existing edits are included in each request.
 function openBlankProject(){
- if(pendingRecovery){$('recovery-prompt').scrollIntoView({block:'start'});return;}
+ if(!requireRecoveryChoice())return;
  $('template-panel').classList.add('hidden');$('new-project-panel').classList.remove('hidden');
  $('new-project-panel').scrollIntoView({block:'start'});$('new-project-name').focus();
 }
@@ -558,7 +558,7 @@ function persistRecovery(){
  catch(error){recoveryProblem(error);}
 }
 function allowWorkspaceReplacement(){
- if(pendingRecovery){$('recovery-prompt').scrollIntoView({block:'start'});return false;}
+ if(!requireRecoveryChoice())return false;
  return !(plan&&(unsavedWorkspace||unsavedBaseline||dirty))||confirm('Replace this workspace? Download the workspace and any captured baseline first if you want to keep them. The browser recovery copy will be replaced too.');
 }
 // Keep the most recent text still being typed, before its change/blur event.
@@ -588,7 +588,7 @@ window.addEventListener('storage',event=>{
   try{recoveryStore.resume();recoveryPaused=false;persistRecovery();}catch(error){recoveryPaused=true;recoveryProblem(error);}
  }else{recoveryPaused=true;recoveryProblem(new Error('Another tab changed recovery. This tab will not overwrite it.'));}
 });
-function endRecoveryPrompt(){pendingRecovery=null;$('recovery-prompt').classList.add('hidden');}
+function endRecoveryPrompt(){pendingRecovery=null;$('recovery-prompt').classList.add('hidden');if($('feedback-content').querySelector('[data-recovery-choice]'))$('action-feedback').classList.add('hidden');}
 $('restore-recovery').addEventListener('click',async()=>{
  if(!pendingRecovery?.state||busy)return;
  const state=pendingRecovery.state;revision=Math.max(revision,Number.isSafeInteger(state.revision)?state.revision:1,reviewNumber(state.plan?.versionId),reviewNumber(state.capturedBaseline?.versionId));setBusy(true);recoveryRestoring=true;
@@ -622,7 +622,7 @@ $('restore-recovery').addEventListener('click',async()=>{
 });
 $('discard-recovery').addEventListener('click',()=>{
  if(!confirm('Discard this browser recovery copy? It may belong to work open in another tab. Downloaded files will not be deleted, and open editing tabs may save a new recovery copy.'))return;
- try{recoveryStore?.clear();endRecoveryPrompt();$('recovery-status').textContent='Recovery copy discarded. A new copy will be saved when you load or edit a workspace.';}
+ try{recoveryStore?.clear();endRecoveryPrompt();$('recovery-status').textContent='Recovery copy discarded. A new copy will be saved when you load or edit a workspace.';message('Recovery copy discarded. Your selected files were kept. Click Load files to continue.');}
  catch(error){recoveryProblem(error);}
 });
 $('download-recovery').addEventListener('click',()=>{
@@ -710,3 +710,20 @@ function reviewNumber(label){
  const match=/^review-(\d+)(?:-|$)/.exec(label??'');const value=match?Number(match[1]):0;
  return Number.isSafeInteger(value)?value:0;
 }
+
+
+function requireRecoveryChoice(){
+ if(!pendingRecovery)return true;
+ const panel=element('div');
+ panel.append(element('p','A plan from your previous visit is available in this browser. Restore that plan or discard its recovery copy before loading another plan. Your selected files will be kept.'));
+ for(const [action,label] of [['restore','Restore previous plan'],['discard','Discard recovery copy'],['download','Download recovery data']]){
+  const button=element('button',label,'secondary');button.type='button';button.dataset.recoveryChoice=action;panel.append(button);
+ }
+ showActionFeedback(panel);message('Choose Restore previous plan or Discard recovery copy to continue. Your selected files have not been loaded.',true);
+ return false;
+}
+$('feedback-content').addEventListener('click',event=>{
+ const button=event.target.closest('[data-recovery-choice]');if(!button||busy)return;
+ const target=$(`${button.dataset.recoveryChoice}-recovery`);
+ if(target&&!target.disabled)target.click();
+});

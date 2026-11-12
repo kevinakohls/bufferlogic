@@ -553,3 +553,14 @@ File loads and templates use the [same task schema](CSV_IMPORT_GUIDE.md). Test
 Priority, aliases and dependencies. Explicit Priority values are now honored in
 templates too. Test combined invalid project/calendar files and multiple row errors.
 A failed import must retain the existing workspace, calendars and captured baseline.
+
+
+### Loading files while recovery is pending
+
+With a recovery copy waiting, Load files, opening another workspace, loading an
+example or creating a project must show a visible explanation with Restore,
+Discard and Download recovery actions. It must not silently return, discard the
+copy, or send a load request. Selected project/calendar files remain selected.
+Cancel Discard to retain recovery. After confirmed Discard, click Load files again
+to import the selected files. Restore recovers the old workspace without loading
+the selected CSV; replacing it still follows the normal confirmation rules.
