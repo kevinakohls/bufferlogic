@@ -173,3 +173,23 @@ test('projects with scheduled tasks retain critical chains after reorder, hold, 
   }
  }
 });
+
+
+test('fixed prefix plus uncertain final task preserves exact shifted task quantiles',()=>{
+ const z80=.8416212335729143;
+ for(const weeklyHours of [undefined,[8,8,8,8,8,8,8],[8,8,8,8,8,0,0]]){
+  for(const allocationPercent of [100,50]){
+   const p=plan([task('Fixed','P1',{goodCase:100,poorCase:100}),task('Inspection','P1',{dependsOn:['Fixed'],goodCase:2,poorCase:7,allocationPercent})]);
+   if(weeklyHours)Object.assign(p,{calendar:{startDate:'2026-11-16',hoursPerWorkday:8,resources:p.resources.map(resource=>({resource,weeklyHours,exceptions:{}}))}});
+   const forecast=schedulePortfolio(p).projects[0]!.forecast;
+   const mu=(Math.log(2)+Math.log(7))/2,sigma=(Math.log(7)-Math.log(2))/(2*z80);
+   for(const [key,z] of [['p50',0],['p80',z80],['p95',1.6448536269514722],['p98',2.0537489106318225],['p99',2.3263478740408408]] as const){
+    const realized=Math.exp(mu+sigma*z);
+    if(!weeklyHours)assert.ok(Math.abs(forecast.completionPercentiles![key]-(100+realized/(allocationPercent/100)))<1e-8);
+    const exact={...p,projects:p.projects.map(project=>({...project,tasks:project.tasks.map(t=>t.id==='Inspection'?{...t,goodCase:realized,poorCase:realized}:t)}))};
+    const expected=schedulePortfolio(exact).projects[0]!.forecast.deterministicCompletion!;
+    assert.ok(Math.abs(forecast.completionPercentiles![key]-expected)<1e-8,`${key}, calendar=${Boolean(weeklyHours)}, allocation=${allocationPercent}`);
+   }
+  }
+ }
+});

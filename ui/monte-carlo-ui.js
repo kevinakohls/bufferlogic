@@ -12,10 +12,11 @@ export function createSimulationPanel(getState){
   for(const project of report.projects){
    const analytical=state.result.projects.find(p=>p.id===project.projectId)?.forecast,row=document.createElement('tr');row.append(text('td',project.name));
    const values=[];
-   if(!project.completionPercentiles){values.push('—',`Withheld: ${project.withheldReason}`,'—','—',`Withheld: ${project.withheldReason}`,'—');}
-   else for(const key of ['p98','p99']){
+   for(const key of ['p95','p98','p99']){
+    const analyticalValue=analytical?.completionPercentiles?format(analytical.completionPercentiles[key],analytical.completionDates?.[key]):'—';
+    if(!project.completionPercentiles){values.push(analyticalValue,`Withheld: ${project.withheldReason}`,'—');continue;}
     const q=project.completionPercentiles[key],interval=q.samplingInterval;
-    values.push(analytical?.completionPercentiles?format(analytical.completionPercentiles[key],analytical.completionDates?.[key]):'—',format(q.value,q.date),`${format(interval.lower,interval.lowerDate)} → ${format(interval.upper,interval.upperDate)}`);
+    values.push(analyticalValue,format(q.value,q.date),`${format(interval.lower,interval.lowerDate)} → ${format(interval.upper,interval.upperDate)}`);
    }
    values.push(`${project.infeasibleSamples} / ${report.samples}`);for(const value of values)row.append(text('td',value));$('mc-body').append(row);
   }
