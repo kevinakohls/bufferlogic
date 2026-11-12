@@ -453,7 +453,21 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     const suffixDuration = suffix.reduce((sum,id)=>sum+entries.get(id)!.finish-entries.get(id)!.start,0);
     const offset = Math.max(anchor, completion-suffixDuration);
     const sigmaSquared = mean === 0 ? 0 : Math.log1p((variance/mean)/mean);
+    // A deterministic prefix plus one uncertain final task is a shifted task
+    // distribution, not a lognormal fit to the whole chain. Keep its fixed start
+    // and apply that task's exact quantile through its own allocation/calendar.
+    const uncertainSuffix = suffix.filter(id=>{
+      const t=byId.get(id)!, estimates=t.status==='active'?t.remaining!:t;
+      return estimates.goodCase!==estimates.poorCase;
+    });
+    const exactFinalId=uncertainSuffix.length===1&&uncertainSuffix[0]===suffix.at(-1)?uncertainSuffix[0]:undefined;
     const quantile = (z:number) => {
+      if(exactFinalId){
+        const t=byId.get(exactFinalId)!, e=entries.get(exactFinalId)!;
+        const estimates=t.status==='active'?t.remaining!:t, moments=fitTaskLognormal(estimates.goodCase,estimates.poorCase);
+        const fraction=t.durationMode==='elapsed'?1:e.allocationPercent/100;
+        return taskFinish(t,e.start,Math.exp(moments.mu+moments.sigma*z)/fraction);
+      }
       const effort = mean===0 ? 0 : variance===0 ? mean : Math.exp(Math.log(mean)-sigmaSquared/2+Math.sqrt(sigmaSquared)*z);
       if (!calendar) return offset+effort;
       // Distribute the aggregate chain quantile by task expected effort, then traverse

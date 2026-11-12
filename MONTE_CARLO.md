@@ -117,3 +117,15 @@ load/schedule requests remain available. A disconnected client terminates its jo
 The panel includes analytical and Monte Carlo P95 side by side, with a P95
 sampling interval. P95 uses the same draws as P98/P99, so displaying it adds no
 simulation work. Deadline status continues to use analytical P95.
+
+## Analytical check: one uncertain final task
+
+When the fixed chain after its last commitment contains exactly one uncertain
+task and it is the final task, analytical percentiles now preserve its exact
+shifted lognormal distribution: the fixed task start plus its percentile duration,
+scaled by allocation and passed through its resource calendar. Fixed preceding
+work is not folded into a new lognormal fit or stretched across calendars.
+Other multi-task fixed-chain forecasts still use moment matching and approximate
+calendar mapping; this correction does not establish accuracy for all plans.
+Regression checks cover no calendar, five-day and seven-day calendars, and 50%
+and 100% allocation, against explicit fixed-duration reschedules at each percentile.
