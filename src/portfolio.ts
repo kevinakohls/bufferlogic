@@ -439,14 +439,15 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     }
     // Fixed appointments reset the completion anchor. Prior uncertainty is a deadline risk,
     // not permission to move the appointment. Only subsequent uncertain work shifts completion.
-    let anchor = plan.asOf, mean = 0, variance = 0;
+    let anchor = plan.asOf, mean = 0, variance = 0, fixedEffort = 0;
     for (const id of criticalChain) {
       const e = entries.get(id)!, t = byId.get(id)!;
-      if (e.locked || e.status === 'completed') { anchor = e.finish; mean = 0; variance = 0; continue; }
+      if (e.locked || e.status === 'completed') { anchor = e.finish; mean = 0; variance = 0; fixedEffort = 0; continue; }
       const estimates = t.status === 'active' ? t.remaining! : t;
       if (estimates.goodCase === 0) continue;
       const moments = fitTaskLognormal(estimates.goodCase, estimates.poorCase), fraction = t.durationMode === 'elapsed' ? 1 : e.allocationPercent / 100;
-      mean += moments.mean/fraction; variance += moments.variance/(fraction*fraction);
+      if(estimates.goodCase===estimates.poorCase)fixedEffort+=moments.mean/fraction;
+      else {mean += moments.mean/fraction; variance += moments.variance/(fraction*fraction);}
     }
     // Preserve idle gaps after the last fixed anchor, including resource availability gaps.
     const suffix = criticalChain.slice(Math.max(-1, ...criticalChain.map((id,i)=> {const e=entries.get(id)!;return e.locked||e.status==='completed'?i:-1;}))+1);
@@ -469,8 +470,9 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
         return taskFinish(t,e.start,Math.exp(moments.mu+moments.sigma*z)/fraction);
       }
       const effort = mean===0 ? 0 : variance===0 ? mean : Math.exp(Math.log(mean)-sigmaSquared/2+Math.sqrt(sigmaSquared)*z);
-      if (!calendar) return offset+effort;
-      // Distribute the aggregate chain quantile by task expected effort, then traverse
+      if (!calendar) return offset+fixedEffort+effort;
+      // Keep fixed tasks fixed; distribute only the uncertain aggregate by expected
+      // uncertain effort, then traverse
       // each resource calendar. This stays deterministic; alternate chains are not sampled.
       let finish=anchor, priorBaseline=anchor;
       for (const id of suffix) {
@@ -482,7 +484,8 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
         if (estimates.goodCase>0) {
           const moments=fitTaskLognormal(estimates.goodCase,estimates.poorCase);
           const fraction=t.durationMode==='elapsed'?1:e.allocationPercent/100;
-          finish=taskFinish(t,finish,mean===0?0:effort*(moments.mean/fraction)/mean);
+          const taskEffort=estimates.goodCase===estimates.poorCase ? moments.mean/fraction : mean===0?0:effort*(moments.mean/fraction)/mean;
+          finish=taskFinish(t,finish,taskEffort);
         }
         priorBaseline=e.finish;
       }

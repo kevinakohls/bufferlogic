@@ -193,3 +193,16 @@ test('fixed prefix plus uncertain final task preserves exact shifted task quanti
   }
  }
 });
+
+
+test('fixed prefix shifts a two-uncertain-task forecast without changing its shape',()=>{
+ for(const weeklyHours of [undefined,[8,8,8,8,8,8,8]]){
+  const forecast=(fixed:number)=>{
+   const p=plan([task('Fixed','P1',{goodCase:fixed,poorCase:fixed}),task('Punch','P1',{dependsOn:['Fixed'],goodCase:3,poorCase:7}),task('Inspection','P1',{dependsOn:['Punch'],goodCase:2,poorCase:7})]);
+   if(weeklyHours)Object.assign(p,{calendar:{startDate:'2026-11-16',hoursPerWorkday:8,resources:p.resources.map(resource=>({resource,weeklyHours,exceptions:{}}))}});
+   return schedulePortfolio(p).projects[0]!.forecast.completionPercentiles!;
+  };
+  const small=forecast(1),large=forecast(101);
+  for(const key of ['p50','p80','p95','p98','p99'] as const)assert.ok(Math.abs(large[key]-small[key]-100)<1e-8);
+ }
+});

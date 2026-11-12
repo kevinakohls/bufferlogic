@@ -129,3 +129,29 @@ Other multi-task fixed-chain forecasts still use moment matching and approximate
 calendar mapping; this correction does not establish accuracy for all plans.
 Regression checks cover no calendar, five-day and seven-day calendars, and 50%
 and 100% allocation, against explicit fixed-duration reschedules at each percentile.
+
+## Fixed effort and multiple uncertain tasks
+
+Both analytical forecast entry points now separate deterministic effort (P20 equals
+P80) from uncertain effort. The deterministic total is an additive shift. Moment
+matching fits only the sum of uncertain task durations. During calendar mapping,
+fixed task effort stays fixed; only uncertain effort is apportioned across the
+uncertain tasks. Allocations and fixed-commitment resets still apply.
+
+This fixes the distortion caused by adding long fixed prefixes to uncertain work.
+It does not make the sum of several lognormals exactly lognormal, guarantee
+monotonic forecasts for every edit, or remove fixed-chain/calendar approximations.
+Forecast dates and deadline status can change because they use the corrected
+analytical quantiles; deterministic schedules and Monte Carlo draws are unchanged.
+
+Run `npm run build` followed by
+`python3 scripts/validate-shifted-forecast.py` for an independent deterministic
+convolution benchmark of two uncertain tasks (P20/P80 of 3/7 and 2/7) after 100
+fixed days. The script checks numerical convergence and compares P95/P98/P99
+against a 3% tolerance measured on the uncertain portion, excluding the fixed
+prefix. This is a synthetic model check, not real-world calibration.
+
+CLI JSON `chainDistribution.mean` remains the total mean. The new
+`deterministicShift` is the fixed contribution; `mu` and `sigma` describe only
+the uncertain remainder, so reconstruct a quantile as
+`deterministicShift + exp(mu + sigma*z)` (or just the shift when `mu` is null).

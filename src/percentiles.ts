@@ -28,10 +28,12 @@ export function estimateProjectPercentiles(tasks: readonly Task[]) {
   const byId = new Map(tasks.map(task => [task.id, task]));
   let mean = 0;
   let variance = 0;
+  let deterministicShift = 0;
   for (const id of baseline.criticalChain) {
     const task = byId.get(id)!;
     const moments = fitTaskLognormal(task.goodCase, task.poorCase);
-    mean += moments.mean;
+    if(task.goodCase===task.poorCase)deterministicShift+=moments.mean;
+    else mean += moments.mean;
     variance += moments.variance;
   }
   if (!Number.isFinite(mean) || !Number.isFinite(variance)) {
@@ -41,17 +43,17 @@ export function estimateProjectPercentiles(tasks: readonly Task[]) {
   const mu = mean === 0 ? null : Math.log(mean) - sigmaSquared / 2;
   const sigma = Math.sqrt(sigmaSquared);
   const quantile = (z: number) => {
-    const value = mu === null ? 0 : variance === 0 ? mean : Math.exp(mu + sigma * z);
+    const value = deterministicShift + (mu === null ? 0 : variance === 0 ? mean : Math.exp(mu + sigma * z));
     if (!Number.isFinite(value)) throw new Error("Project percentile exceeds numeric range");
     return value;
   };
   return {
     method: "fixed-critical-chain-lognormal-moment-matching" as const,
-    assumptions: ["Independent task durations", "Fixed Critical Chain from the deterministic P50 schedule"],
+    assumptions: ["Independent task durations", "Fixed Critical Chain from the deterministic P50 schedule", "Deterministic effort stays fixed; lognormal moment matching applies only to uncertain effort"],
     interpretation: "Approximate whole-project completion percentiles conditional on the baseline Critical Chain remaining controlling; alternate chains, correlations, and calendars are not modeled.",
     deterministicBaselineDuration: baseline.projectP50,
     criticalChain: baseline.criticalChain,
-    chainDistribution: { mean, variance, mu, sigma },
+    chainDistribution: { mean:mean+deterministicShift, variance, deterministicShift, mu, sigma },
     projectPercentiles: {
       p50: quantile(normalQuantiles.p50), p80: quantile(normalQuantiles.p80),
       p95: quantile(normalQuantiles.p95), p98: quantile(normalQuantiles.p98),
