@@ -9,9 +9,9 @@ individual-project CSV export.
 ## Use it
 
 1. Load or edit a plan, assign resources and Recalculate schedule.
-2. Expand **Optional Monte Carlo · P98 / P99** below the forecast cards.
+2. Expand **Optional Monte Carlo · P95 / P98 / P99** below the forecast cards.
 3. Choose the run count and a whole-number seed, then Run Monte Carlo.
-4. Compare the analytical and simulated P98/P99 estimates and sampling intervals.
+4. Compare the analytical and simulated P95/P98/P99 estimates and sampling intervals.
    Analytical P95, deadline status and the normal schedule remain unchanged.
 5. Download simulation report to retain the result and its exact source plan,
    run count, seed, assumptions and observed critical-chain frequencies.
@@ -113,3 +113,7 @@ npm run simulate -- examples/feeding-protection.json --samples 10000 --seed 42
 source plan, empirical quantiles, sampling intervals, conflict counts, criticality
 fractions and assumptions. Busy instances reject a second simulation while normal
 load/schedule requests remain available. A disconnected client terminates its job.
+
+The panel includes analytical and Monte Carlo P95 side by side, with a P95
+sampling interval. P95 uses the same draws as P98/P99, so displaying it adds no
+simulation work. Deadline status continues to use analytical P95.
