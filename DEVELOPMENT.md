@@ -360,21 +360,18 @@ workspace files on the server. `tests/ui-server.test.ts` exercises the API.
 
 `src/templates.ts` instantiates CSV projects with generated IDs and remapped predecessors. Portfolio parsing retains optional notes and resource details. `src/utilization.ts` reports calendar availability and allocated effort by week/project. UI template endpoints and schedule responses expose these to the browser. No dependencies were added. See [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md).
 
-## GitLab delivery and checks
+## GitHub delivery and checks
 
-GitLab is the primary review destination:
-https://gitlab.com/darkvole1/BufferLogic. Start feature branches from its latest
-`main`, push them to the GitLab remote, and create a merge request targeting
-`main`. Cloud checkouts without GitLab write authentication can prepare commits;
-authenticate and push from your local Git client. Do not put credentials in files
-or chat.
+GitHub is the current development repository:
+https://github.com/kevinakohls/bufferlogic. Start feature branches from its latest
+`main`, push to `origin`, and open a pull request targeting `main`. Review changes
+and passing checks before merging. GitLab is retained as hackathon history;
+ongoing development does not require Duo credits or a GitLab push.
 
-The GitLab pipeline runs `npm ci` and `npm test` (including the TypeScript build)
-on Node.js 22 and 24 for branch and merge-request pipelines. Existing SAST and
-secret detection configuration remains enabled. Dependency caches contain npm
-package downloads, not installed dependencies. Check the application test jobs
-as well as security jobs before merging. Account verification and runner access
-must be configured in GitLab.
+`.github/workflows/tests.yml` runs `npm ci` and `npm test`, including the TypeScript
+build, on Node.js 22 and 24 for pull requests and pushes to `main`. The retained
+GitLab SAST/secret-detection templates do not run as GitHub Actions jobs. No Cloud
+Run deployment workflow is configured.
 
 ## Portfolio command-line example
 
@@ -393,12 +390,27 @@ at a time.
 ## Review, merge and release
 
 
-GitLab `main` is the reviewed release source. Work on a branch, open a merge
-request, address Duo feedback, check the pipeline and merge after human review.
-A merge updates the repository; it does **not** deploy Cloud Run or update local
-installations. Cloud deployment is currently manual, with no deployment CI job.
-If Duo review is unavailable because credits are exhausted, record that limitation
-and the manual review performed; do not describe it as automated approval.
+GitHub `main` is the reviewed release source after the catch-up pull request is
+merged. Work on a branch, open a pull request, check GitHub Actions and merge after
+human review. Merging does **not** update local installations or Cloud Run; cloud
+deployment remains manual.
+
+If migrating an existing GitLab checkout, preserve it and its workspace files.
+GitLab-only merge commits can prevent a fast-forward update to GitHub history.
+Use a fresh GitHub clone in a new folder rather than force-resetting or deleting
+the old checkout:
+
+```powershell
+git clone https://github.com/kevinakohls/bufferlogic.git bufferlogic-github
+cd bufferlogic-github
+npm.cmd ci
+npm.cmd run ui
+```
+
+Run the clone command from the parent folder where you want the new checkout.
+If you use a custom `bufferlogic` shell function, update its folder separately;
+`npm.cmd run ui` above directly starts the new checkout. Downloaded workspace
+JSON files can be opened in either copy.
 
 To update a local PowerShell checkout after merging, stop the app with Ctrl+C.
 Replace `C:\path\to\bufferlogic` with your checkout folder:
@@ -406,27 +418,24 @@ Replace `C:\path\to\bufferlogic` with your checkout folder:
 ```powershell
 cd "C:\path\to\bufferlogic"
 git switch main
-git pull --ff-only duo main
+git pull --ff-only origin main
 npm.cmd ci
 npm.cmd run ui
 ```
 
-These commands assume `duo` points to the GitLab repository. To configure that
-name in an existing checkout if needed, run
-`git remote add duo https://gitlab.com/darkvole1/BufferLogic.git`.
-If `duo` already exists, check it with `git remote get-url duo` instead. Refresh the browser
-with Ctrl+F5 after restarting. If Git reports local changes or untracked files
-blocking the update, preserve them before retrying.
+These commands assume `origin` is the GitHub repository. Check with
+`git remote get-url origin`. Refresh the browser with Ctrl+F5 after restarting.
+If local changes or untracked files block an update, preserve them before retrying.
 
-For a hosted release, use a clean checkout of the intended GitLab `main` commit,
-run the checks and explicitly deploy it. Record the deployed commit and test the
-public URL. See [Cloud Run releases](CLOUD_RUN.md#release-an-update).
-The initial demo was deployed from GitHub's `cloud-run-preparation` branch because
-GitLab authentication was unavailable in Cloud Shell. That branch is an initial
-snapshot, not an automatically synchronized release source.
+For a hosted release, use the intended GitHub `main` commit, run checks and deploy
+explicitly. Record the source commit and resulting revision. See
+[Cloud Run releases](CLOUD_RUN.md#release-an-update). Old feature branches and the
+original `cloud-run-preparation` snapshot are not the ongoing release source.
 
+## Historical GitLab supervised-review demonstration
 
-## Reproduce the supervised review workflow
+This section preserves the hackathon demonstration. It is optional historical
+material, not a requirement for current GitHub development.
 
 
 1. Run `npm test` on the latest `main` and confirm the baseline passes.

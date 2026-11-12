@@ -62,11 +62,15 @@ that browser and site address, and can be lost in private browsing or when brows
 data is cleared. Download files as portable backups. Clear recovery on shared
 computers and close other editing tabs, which may save another copy.
 
-## GitLab Duo, testing and Google Cloud
+## Development, testing and Google Cloud
 
-Development uses [GitLab merge requests](https://gitlab.com/darkvole1/BufferLogic),
-Duo Code Review, human review and CI validation. CI builds TypeScript and runs tests on Node.js 22 and 24, with SAST and secret-detection
-configuration. Inspect each pipeline's results.
+Current development uses [GitHub pull requests](https://github.com/kevinakohls/bufferlogic)
+and human review. GitHub Actions builds TypeScript and runs the test suite on
+Node.js 22 and 24 for pull requests and changes merged to main.
+
+During the hackathon, development used GitLab Duo Code Review and GitLab CI,
+including SAST and secret-detection configuration. The GitLab configuration and
+links below are retained as historical evidence, not the current delivery process.
 
 Our controlled review demonstration deliberately changed a deadline comparison
 so finishing on the deadline was incorrectly marked late. Tests failed, Duo
@@ -76,7 +80,7 @@ code passed before merging. Historical evidence:
 - [Failed regression pipeline](https://gitlab.com/darkvole1/BufferLogic/-/pipelines/2933613176)
 - [Passing corrective pipeline](https://gitlab.com/darkvole1/BufferLogic/-/pipelines/2933618810)
 
-Duo supports development; it is not called by the scheduling engine. The hosted
+Duo supported development; it is not called by the scheduling engine. The hosted
 app runs as a container on Cloud Run. Merging code, updating a local installation
 and deploying the public demo are separate steps; deployment is currently manual.
 

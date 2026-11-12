@@ -51,19 +51,26 @@ service is a demo without persistent accounts or saved cloud workspaces.
 
 ## Release an update
 
-GitLab merge requests and CI remain the review process. Merging, updating a local
-PowerShell checkout and deploying the hosted service are three separate actions.
-There is no automatic Cloud Run deployment in the current GitLab pipeline.
+Use GitHub pull requests and GitHub Actions for current review and testing.
+Merging, updating a local PowerShell checkout and deploying the hosted service are
+three separate actions. Deployment remains manual.
 
-The first deployment used the GitHub `cloud-run-preparation` snapshot. Do not keep
-redeploying that branch and assume it contains later GitLab merges. For each new
-release, obtain the intended GitLab `main` revision through an authenticated Git
-checkout or an archive exported from that revision. GitLab authentication must be
-configured separately in Cloud Shell; never put access tokens in URLs or files
-committed to the repository. A GitLab login prompt means the checkout has not
-completed; do not proceed using a different or stale source directory.
+After the catch-up pull request is merged, use
+https://github.com/kevinakohls/bufferlogic and its reviewed `main` revision for
+releases. The initial deployment used a GitHub feature-branch snapshot; later
+releases were uploaded from locally merged GitLab code. Those steps do not keep
+either site's `main` synchronized automatically. Do not deploy the older feature
+branches as if they were the latest release.
 
-In a clean GitLab checkout in Cloud Shell, fetch and inspect the release:
+For a fresh Cloud Shell checkout, clone the public repository into a new folder:
+
+```bash
+git clone https://github.com/kevinakohls/bufferlogic.git bufferlogic-release
+cd bufferlogic-release
+```
+
+If that folder already exists, inspect it or choose a new folder instead of
+overwriting it. From a clean GitHub checkout, fetch and inspect the release:
 
 ```bash
 git fetch origin
@@ -74,11 +81,11 @@ npm ci
 npm test
 ```
 
-Here `origin` must be the GitLab repository, not the GitHub snapshot. Check with
+Here `origin` must be `https://github.com/kevinakohls/bufferlogic.git`. Check with
 `git remote get-url origin` first. Resolve unexpected local changes and stop if
-any check fails. Record the full commit hash in the release notes. If using an
-archive instead, record the source commit when exporting it and run the same
-npm checks after extraction.
+any check fails. Record the full source commit in the release notes. An archive
+exported from that verified commit is also suitable; record its source commit
+and run the same npm checks after extraction.
 
 From that verified source directory, deploy the existing public demo:
 
