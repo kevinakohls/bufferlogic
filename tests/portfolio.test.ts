@@ -206,3 +206,26 @@ test('fixed prefix shifts a two-uncertain-task forecast without changing its sha
   for(const key of ['p50','p80','p95','p98','p99'] as const)assert.ok(Math.abs(large[key]-small[key]-100)<1e-8);
  }
 });
+
+test('two uncertain tasks follow their separate calendars and independent convolution',()=>{
+ const reference={p95:176.67011335951963,p98:179.72354606625947,p99:184.25509774528916};
+ for(const allocationPercent of [100,50]){
+  const factor=allocationPercent/100;
+  const p=plan([task('Fixed','P1',{goodCase:157,poorCase:157}),task('Punch','P1',{dependsOn:['Fixed'],goodCase:3*factor,poorCase:6*factor,allocationPercent}),task('Inspection','P1',{resource:'Bob',dependsOn:['Punch'],goodCase:2*factor,poorCase:6*factor,allocationPercent})]);
+  Object.assign(p,{calendar:{startDate:'2026-10-19',hoursPerWorkday:8,resources:[{resource:'Alice',weeklyHours:[8,8,8,8,8,8,8],exceptions:{}},{resource:'Bob',weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}]}});
+  const before=structuredClone(p),forecast=schedulePortfolio(p).projects[0]!.forecast;
+  assert.equal(forecast.completionMethod,'fixed-chain-two-task-convolution');
+  for(const key of ['p95','p98','p99'] as const)assert.ok(Math.abs(forecast.completionPercentiles![key]-reference[key])<.0001,`${key} calendar convolution`);
+  assert.deepEqual(p,before);
+  const sevenDay={...p,calendar:{...p.calendar!,resources:p.calendar!.resources.map(r=>({...r,weeklyHours:[8,8,8,8,8,8,8]}))}};
+  const seven=schedulePortfolio(sevenDay).projects[0]!.forecast.completionPercentiles!;
+  for(const [key,value] of [['p95',172.718632871644],['p98',175.80153517259953],['p99',178.31664286033163]] as const)assert.ok(Math.abs(seven[key]-value)<.0001);
+ }
+});
+
+test('two-task convolution uses supporting-resource availability for final task',()=>{
+ const p=plan([task('Fixed','P1',{goodCase:157,poorCase:157}),task('Punch','P1',{dependsOn:['Fixed'],goodCase:3,poorCase:6}),task('Inspection','P1',{resource:'Bob',dependsOn:['Punch'],goodCase:2,poorCase:6,supportingResources:[{resource:'Room',allocationPercent:100}]})]);
+ const calendar={startDate:'2026-10-19',hoursPerWorkday:8,resources:[{resource:'Alice',weeklyHours:[8,8,8,8,8,8,8],exceptions:{}},{resource:'Bob',weeklyHours:[8,8,8,8,8,8,8],exceptions:{}},{resource:'Room',weeklyHours:[8,8,8,8,8,0,0],exceptions:{}}]};
+ const result=schedulePortfolio({...p,resources:[...p.resources,'Room'],calendar});
+ assert.ok(Math.abs(result.projects[0]!.forecast.completionPercentiles!.p99-184.25509774528916)<.0001);
+});

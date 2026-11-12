@@ -1,3 +1,4 @@
+import {twoTaskConvolution} from './two-task-convolution.js';
 import {taskAssignments,createTaskCalendar,type ResourceAssignment} from './task-resources.js';
 import {scheduleFeedingPortfolio,type FeedingReport} from './feeding-scheduling.js';
 import {assessDeadlines,validateDeadline,type Deadline} from './deadlines.js';
@@ -84,6 +85,7 @@ export interface ScheduledProjectForecast {
   readonly feasible: boolean;
   readonly deterministicCompletion: number;
   readonly criticalChain: readonly string[];
+  readonly completionMethod?: 'fixed-chain-moment-matching' | 'fixed-chain-two-task-convolution';
   readonly completionPercentiles: { readonly p50: number; readonly p80: number; readonly p95: number; readonly p98: number; readonly p99: number };
   readonly staleTaskIds: readonly string[];
   readonly completionDates?: { readonly deterministic: string; readonly p50: string; readonly p80: string; readonly p95: string; readonly p98: string; readonly p99: string };
@@ -491,17 +493,47 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
       }
       return finish;
     };
-    const completionPercentiles = { p50:quantile(0), p80:quantile(.8416212335729143), p95:quantile(1.6448536269514722), p98:quantile(2.0537489106318225), p99:quantile(2.3263478740408408) };
+    let completionPercentiles = { p50:quantile(0), p80:quantile(.8416212335729143), p95:quantile(1.6448536269514722), p98:quantile(2.0537489106318225), p99:quantile(2.3263478740408408) };
+    let completionMethod:NonNullable<ScheduledProjectForecast['completionMethod']>='fixed-chain-moment-matching';
+    // Integrate the two uncertain tasks separately instead of distributing an
+    // aggregate quantile across unlike calendars. B must end the fixed chain;
+    // more complex chains retain the documented analytical approximation.
+    if(uncertainSuffix.length===2&&uncertainSuffix[1]===suffix.at(-1)){
+      const first=byId.get(uncertainSuffix[0]!)!,second=byId.get(uncertainSuffix[1]!)!;
+      const firstEntry=entries.get(first.id)!;
+      const firstEstimate=first.status==='active'?first.remaining!:first;
+      const secondEstimate=second.status==='active'?second.remaining!:second;
+      const fraction=(t:PortfolioTask)=>t.durationMode==='elapsed'?1:entries.get(t.id)!.allocationPercent/100;
+      const between=suffix.slice(suffix.indexOf(first.id)+1,-1);
+      const secondCalendar=second.durationMode==='elapsed'?undefined:taskCalendars.get(second.id);
+      const secondWork=(time:number)=>secondCalendar
+        ?secondCalendar.effortBetween(second.resource,firstEntry.start,time)*fraction(second)
+        :(time-firstEntry.start)*fraction(second);
+      const inverse=twoTaskConvolution({first:firstEstimate,second:secondEstimate,lower:firstEntry.start,initialUpper:completionPercentiles.p99,
+        secondWork,secondReady:(effort:number)=>{
+          let finish=taskFinish(first,firstEntry.start,effort/fraction(first)),prior=firstEntry.finish;
+          for(const id of [...between,second.id]){
+            const t=byId.get(id)!,e=entries.get(id)!,estimate=t.status==='active'?t.remaining!:t;
+            const ready=t.durationMode==='elapsed'||estimate.goodCase===0?prior:taskCalendars.get(id)?.nextWorking(t.resource,prior)??prior;
+            finish+=Math.max(0,e.start-ready);
+            if(id!==second.id&&estimate.goodCase>0)finish=taskFinish(t,finish,estimate.goodCase/fraction(t));
+            prior=e.finish;
+          }
+          return finish;
+        }});
+      completionPercentiles={p50:inverse(.5),p80:inverse(.8),p95:inverse(.95),p98:inverse(.98),p99:inverse(.99)};
+      completionMethod='fixed-chain-two-task-convolution';
+    }
     if (!Object.values(completionPercentiles).every(Number.isFinite)) throw new Error('Portfolio forecast exceeds numeric range');
     return { ...p, forecast: { scheduleVersionId: plan.versionId, feasible: !p.tasks.some(t=>affected.has(t.id)), deterministicCompletion: completion, criticalChain,
-      completionPercentiles,
+      completionPercentiles,completionMethod,
       ...(calendar ? { completionDates: { deterministic:forecastDate!(completion),p50:forecastDate!(completionPercentiles.p50),p80:forecastDate!(completionPercentiles.p80),p95:forecastDate!(completionPercentiles.p95),p98:forecastDate!(completionPercentiles.p98),p99:forecastDate!(completionPercentiles.p99) } } : {}),
       staleTaskIds: p.tasks.filter(t=>t.status==='active'&&t.remaining?.estimateStatus==='stale').map(t=>t.id) } };
   });
   const previousVersions = previous ? structuredClone([...previous.previousVersions, { plan:previous.plan,tasks:previous.tasks,conflicts:previous.conflicts,projects:previous.projects }]) : [];
   return { plan, tasks:[...entries.values()],conflicts,projects,previousVersions,deadlineReport:assessDeadlines({plan,tasks:[...entries.values()],conflicts,projects}),
     forecastMethod:'fixed-critical-chain-lognormal-moment-matching',
-    assumptions:['Independent task durations; fixed baseline cross-project critical chain', 'Allocation scales duration inversely; tasks run without preemption', 'Locked start/finish are fixed anchors; percentiles are conditional on meeting commitments', 'Infeasible forecasts are diagnostic, not achievable commitments; alternate chains are not simulated', ...(calendar ? ['Daily resource capacity calendars; dates are date-only, not clock-time shifts', 'Calendar percentile dates are approximate: aggregate fixed-chain quantiles distributed by task expected effort'] : ['No resource calendars applied'])] };
+    assumptions:['Independent task durations; fixed baseline cross-project critical chain', 'Allocation scales duration inversely; tasks run without preemption', 'Locked start/finish are fixed anchors; percentiles are conditional on meeting commitments', 'Infeasible forecasts are diagnostic, not achievable commitments; alternate chains are not simulated', ...(calendar ? ['Daily resource capacity calendars; dates are date-only, not clock-time shifts', 'Calendar percentiles use task-level convolution for eligible two-uncertain-task chains; other chains approximate calendar mapping with uncertain aggregate effort'] : ['No resource calendars applied'])] };
 }
 
 /** Compare saved runs without recalculating or changing either version. */

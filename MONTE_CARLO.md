@@ -155,3 +155,37 @@ CLI JSON `chainDistribution.mean` remains the total mean. The new
 `deterministicShift` is the fixed contribution; `mu` and `sigma` describe only
 the uncertain remainder, so reconstruct a quantile as
 `deterministicShift + exp(mu + sigma*z)` (or just the shift when `mu` is null).
+
+## Separate calendars for two uncertain tasks
+
+For a fixed chain with two uncertain tasks after its last commitment, where the
+second uncertain task ends the chain, portfolio analytical forecasts now use
+**deterministic numerical convolution**. They integrate the first task's possible
+durations and calculate how much effort the second task can finish by each
+candidate completion time. Each task retains its own primary/supporting-resource
+calendar, allocation, elapsed mode, and fixed work/gaps between the pair.
+No random draws are used, and the result does not depend on a seed.
+
+The numerical integration uses 2,048 Simpson subdivisions over a normal variate
+from -6 to +6, and bisection for completion quantiles. It is a numerical
+approximation, conditional on the baseline chain and its fixed release/gap rules;
+it does not reschedule alternate paths or model new resource contention.
+Longer uncertain chains and chains with fixed work after the second uncertain
+task retain the existing moment-matching/calendar approximation. This is a
+correction for the demonstrated two-task case, not a claim that all analytical
+calendar forecasts are now exact. Monte Carlo remains the full-plan comparison.
+
+Per-project `forecast.completionMethod` identifies `fixed-chain-two-task-convolution`
+or `fixed-chain-moment-matching` for regular analytical results. The legacy
+portfolio `forecastMethod` field remains unchanged for compatibility. The
+standalone percentile CLI continues using shifted moment matching.
+
+Run `npm run build` then `python3 scripts/validate-calendar-convolution.py`.
+The independent Python benchmark uses 20,000/40,000 integration subdivisions to
+check convergence. With a fixed start of 157, first-task estimates 3/6 on seven-day
+availability and second-task estimates 2/6 on Monday-Friday availability, reference
+P95/P98/P99 are 176.67011336, 179.72354607, and 184.25509775 calendar days.
+The app agrees within 0.0001 days for this fixture. Regression tests also cover
+seven-day calendars, equivalent fractional allocations, and supporting resources.
+A local measurement of the uploaded 72-task plan took about 0.25 seconds; actual
+performance depends on plan size, calendars, and hardware.
