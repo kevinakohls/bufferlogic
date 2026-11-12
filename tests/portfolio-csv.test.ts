@@ -44,7 +44,7 @@ test('realistic houses stay feasible with shared-resource delay and cross-projec
     const alone=schedulePortfolio({...plan,projects:[project]});
     const forecast=combined.projects.find(p=>p.id===project.id)!.forecast;
     assert.ok(forecast.feasible);
-    assert.ok(forecast.deterministicCompletion>alone.projects[0]!.forecast.deterministicCompletion);
+    assert.ok(forecast.deterministicCompletion>alone.projects[0]!.forecast.deterministicCompletion!);
     assert.ok(forecast.criticalChain.some(id=>plan.projects.find(p=>p.tasks.some(t=>t.id===id))!.id!==project.id));
   }
   for(const resource of plan.resources){

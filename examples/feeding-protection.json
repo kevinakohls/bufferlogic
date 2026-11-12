@@ -1,0 +1,69 @@
+{
+  "id": "feeding-protection-demo",
+  "versionId": "v1",
+  "asOf": 0,
+  "settings": {
+    "durationUnit": "days"
+  },
+  "resources": [
+    "Platform Engineer",
+    "Developer"
+  ],
+  "projects": [
+    {
+      "id": "P1",
+      "name": "Release One",
+      "tasks": [
+        {
+          "id": "C",
+          "projectId": "P1",
+          "name": "Core development",
+          "resource": "Developer",
+          "dependsOn": [],
+          "priority": 1,
+          "goodCase": 20,
+          "poorCase": 20
+        },
+        {
+          "id": "F",
+          "projectId": "P1",
+          "name": "Prepare deployment package",
+          "resource": "Platform Engineer",
+          "dependsOn": [],
+          "priority": 2,
+          "goodCase": 3,
+          "poorCase": 5.333333333333333
+        },
+        {
+          "id": "D",
+          "projectId": "P1",
+          "name": "Release validation",
+          "resource": "Developer",
+          "dependsOn": [
+            "C",
+            "F"
+          ],
+          "priority": 3,
+          "goodCase": 2,
+          "poorCase": 2
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "Release Two",
+      "tasks": [
+        {
+          "id": "L",
+          "projectId": "P2",
+          "name": "Prepare environment",
+          "resource": "Platform Engineer",
+          "dependsOn": [],
+          "priority": 1,
+          "goodCase": 6,
+          "poorCase": 6
+        }
+      ]
+    }
+  ]
+}

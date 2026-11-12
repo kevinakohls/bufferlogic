@@ -144,3 +144,16 @@ project forecasts remain unchanged. Accept a recommendation manually by editing 
 weekly Saturday hours, then rerun to find the next best change. No optimal-plan or
 cost-benefit claim is made, and gains from separate candidates must not be added
 together. Dates and gains remain subject to the fixed-chain forecast approximation.
+
+### Recommendations with held projects
+
+Resource improvement scores include only projects with full completion forecasts.
+The output lists held/hold-blocked forecasts in `excludedProjects`; it makes no
+claim about improving their unavailable completion dates. Their active tasks and
+locked appointments still reserve capacity in every scenario. If no project has a
+full forecast, recommendations report a clear error rather than producing an empty
+or misleading ranking.
+
+## Tasks requiring several resources
+
+Tasks with `supportingResources` use common daily availability: the minimum hours across the primary and all supporting calendars, after dated exceptions. A loader closure can therefore postpone an operator's task even when the operator is available. Primary allocation scales working effort; supporting allocation reserves its stated share without scaling effort. All assignments stay reserved for the same nonpreemptive task interval. Utilization charges common task working hours times the allocation of each resource, rather than counting extra primary hours while a required resource is unavailable. These daily calendars do not model different clock-time shifts within a date.

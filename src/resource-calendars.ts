@@ -1,4 +1,4 @@
-import { csvRecords } from './csv-input.js';
+import {csvTable,CsvValidationError} from './csv-schema.js';
 
 export interface ResourceCalendar {
   readonly resource: string;
@@ -53,31 +53,38 @@ export function validateCalendarSettings(value: unknown): CalendarSettings {
 function hours(v:unknown):v is number {return typeof v==='number' && Number.isFinite(v) && v>=0 && v<=24;}
 
 export function parseResourceCalendarsCsv(text:string):ResourceCalendar[] {
-  const rows=csvRecords(text), header=rows.shift()?.map(c=>c.trim());
   const required=['Resource','Row type','Date',...weekdays.map(d=>d+' hours'),'Exception hours'];
-  if(!header || new Set(header).size!==header.length || required.some(c=>!header.includes(c)))throw new Error('Calendar CSV is missing required columns or has duplicate columns');
-  const weekly=new Map<string,number[]>(), exceptions=new Map<string,Record<string,number>>();
-  function number(raw:string):number {if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)||!hours(Number(raw)))throw new Error('Available hours must be numeric, between 0 and 24');return Number(raw);}
-  for(const row of rows){
-    if(row.every(c=>!c.trim()))continue;
-    if(row.length!==header.length)throw new Error('Calendar CSV row has wrong number of fields');
-    const cell=(name:string)=>row[header.indexOf(name)]!.trim();
-    const resource=cell('Resource'),type=cell('Row type');
-    if(!resource)throw new Error('Calendar row requires a resource');
+  const {records,problems}=csvTable(text,required,'Calendar CSV');
+  const weekly=new Map<string,number[]>(),exceptions=new Map<string,Record<string,number>>();
+  const seenWeekly=new Set<string>(),seenExceptions=new Set<string>();
+  const number=(raw:string,label:string)=>{
+    if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)||!hours(Number(raw))){problems.push(`${label}: available hours must be numeric, between 0 and 24`);return NaN;}
+    return Number(raw);
+  };
+  for(const {cell,record} of records){
+    const resource=cell('Resource'),type=cell('Row type').toLowerCase(),label=`Calendar CSV record ${record}${resource?' ('+resource+')':''}`;
+    if(!resource)problems.push(`${label}: resource is required`);
     if(type==='weekly'){
-      if(weekly.has(resource))throw new Error(`Duplicate weekly calendar: ${resource}`);
-      if(cell('Date')||cell('Exception hours'))throw new Error('Weekly rows cannot specify dates or exception hours');
-      weekly.set(resource,weekdays.map(d=>number(cell(d+' hours'))));
+      if(seenWeekly.has(resource))problems.push(`${label}: Duplicate weekly calendar: ${resource}`);
+      seenWeekly.add(resource);
+      if(cell('Date'))problems.push(`${label}: Weekly rows cannot specify dates`);
+      if(cell('Exception hours'))problems.push(`${label}: Weekly rows cannot specify exception hours`);
+      const values=weekdays.map(day=>number(cell(day+' hours'),`${label}: ${day} hours`));
+      if(resource&&values.every(Number.isFinite)&&!weekly.has(resource))weekly.set(resource,values);
     }else if(type==='exception'){
-      const date=cell('Date');parseDate(date);
-      if(weekdays.some(d=>cell(d+' hours')))throw new Error('Exception rows must leave weekday hours empty');
-      const values=exceptions.get(resource)??{};
-      if(Object.hasOwn(values,date))throw new Error(`Duplicate exception: ${resource} ${date}`);
-      values[date]=number(cell('Exception hours'));exceptions.set(resource,values);
-    }else throw new Error('Row type must be weekly or exception');
+      const date=cell('Date');let validDate=true;
+      try{parseDate(date);}catch(error){validDate=false;problems.push(`${label}: ${(error as Error).message}`);}
+      for(const day of weekdays)if(cell(day+' hours'))problems.push(`${label}: Exception rows must leave ${day} hours empty`);
+      const value=number(cell('Exception hours'),`${label}: Exception hours`);
+      const key=JSON.stringify([resource,date]);
+      if(seenExceptions.has(key))problems.push(`${label}: Duplicate exception: ${resource} ${date}`);
+      seenExceptions.add(key);
+      if(resource&&validDate){const values=exceptions.get(resource)??{};if(Number.isFinite(value))values[date]=value;exceptions.set(resource,values);}
+    }else problems.push(`${label}: Row type must be weekly or exception`);
   }
-  for(const resource of exceptions.keys())if(!weekly.has(resource))throw new Error(`Exception requires weekly calendar: ${resource}`);
-  if(!weekly.size)throw new Error('Calendar CSV has no weekly calendars');
+  for(const resource of exceptions.keys())if(!seenWeekly.has(resource))problems.push(`Exception requires weekly calendar: ${resource}`);
+  if(!seenWeekly.size)problems.push('Calendar CSV has no weekly calendars');
+  if(problems.length)throw new CsvValidationError(problems);
   return [...weekly].map(([resource,weeklyHours])=>({resource,weeklyHours,exceptions:exceptions.get(resource)??{}}));
 }
 

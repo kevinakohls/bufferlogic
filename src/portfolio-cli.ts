@@ -2,7 +2,7 @@ import { recommendSaturdayHours } from './resource-recommendations.js';
 import { readFile, writeFile } from 'node:fs/promises';
 import { parseResourceCalendarsCsv, parseDate, todayDate } from './resource-calendars.js';
 import { basename, extname } from 'node:path';
-import { parsePortfolioCsv } from './portfolio-csv.js';
+import { parsePlanCsv } from './portfolio-csv.js';
 import { parseOptions } from './cli-options.js';
 import { parsePortfolio, schedulePortfolio, comparePortfolioVersions, type PortfolioResult } from './portfolio.js';
 
@@ -42,7 +42,7 @@ try {
     const inputFile = options.files[0]!;
     const source = await readFile(inputFile, 'utf8');
     const plan = extname(inputFile).toLowerCase() === '.csv'
-      ? parsePortfolioCsv(source, basename(inputFile, extname(inputFile)), previous ? `${previous.plan.versionId}-revision` : 'csv-v1')
+      ? parsePlanCsv(source, basename(inputFile, extname(inputFile)), previous ? `${previous.plan.versionId}-revision` : 'csv-v1')
       : parsePortfolio(JSON.parse(source));
     const configuredPlan=calendarFile ? { ...plan, calendar:{ startDate:startDate!, timeZone, hoursPerWorkday:hoursPerDay===undefined?8:Number(hoursPerDay), resources:parseResourceCalendarsCsv(await readFile(calendarFile,'utf8')) } } : plan;
     const result = schedulePortfolio(configuredPlan, previous);
@@ -56,19 +56,21 @@ try {
     if (options.format === 'json') console.log(json.trimEnd());
     else {
       console.log(`Portfolio: ${result.plan.id} | Version: ${result.plan.versionId} | Days | As of: ${result.plan.asOf}`);
-      console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, [result.plan.calendar ? 'Elapsed calendar days' : 'Completion']:p.forecast.deterministicCompletion, ...p.forecast.completionPercentiles, 'Critical chain':p.forecast.criticalChain.join(' -> ') })));
+      console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, Status:p.forecast.withheldReason??'scheduled', [result.plan.calendar ? 'Elapsed calendar days' : 'Completion']:p.forecast.withheldReason?'withheld':p.forecast.deterministicCompletion, ...(p.forecast.withheldReason?{}:p.forecast.completionPercentiles), 'Critical chain':p.forecast.criticalChain.join(' -> ') })));
       if (result.plan.calendar) {
         console.log(`Calendar start: ${result.plan.calendar.startDate}; ${result.plan.calendar.hoursPerWorkday} hours per estimated workday`);
-        console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, ...p.forecast.completionDates })));
+        console.table(result.projects.map(p=>({ Project:p.name, Feasible:p.forecast.feasible, ...(p.forecast.withheldReason?{Status:p.forecast.withheldReason}:p.forecast.completionDates) })));
       }
-      console.table(result.tasks.map(t=>({ Project:t.projectId, Task:t.id, Resource:t.resource, 'Allocation %':t.allocationPercent, Start:t.start, Finish:t.finish, Locked:t.locked, 'Resource waits for':t.resourcePredecessors.join(' -> '), ...(result.plan.calendar ? { 'Start date':t.startDate, 'Finish date':t.finishDate } : {}) })));
-      if (comparison) console.table(comparison.projects.map(p => ({ Project:p.projectId, 'Completion change': p.current ? p.whatIf.deterministicCompletion-p.current.deterministicCompletion : 'new', ...p.percentileDifferences })));
+      console.table(result.tasks.map(t=>({ Project:t.projectId, Task:t.id, Resource:t.resource, 'Supporting resources':(t.supportingResources??[]).map(a=>`${a.resource} (${a.allocationPercent}%)`).join(', '), 'Allocation %':t.allocationPercent, Start:t.start, Finish:t.finish, Locked:t.locked, 'Resource waits for':t.resourcePredecessors.join(' -> '), ...(result.plan.calendar ? { 'Start date':t.startDate, 'Finish date':t.finishDate } : {}) })));
+      if(result.feedingReport){console.table(result.feedingReport.changes);console.table(result.feedingReport.resourceWindows);console.log(result.feedingReport.interpretation);}
+      if (comparison) console.table(comparison.projects.map(p => ({ Project:p.projectId, 'Completion change': p.whatIf.withheldReason||p.current?.withheldReason?'withheld':p.current ? p.whatIf.deterministicCompletion-p.current.deterministicCompletion : 'new', ...p.percentileDifferences })));
       for (const conflict of result.conflicts) console.log(`CONFLICT: ${conflict.message} [${conflict.taskIds.join(', ')}]`);
       if(resourceRecommendations){
         console.log(`Resource recommendations: ${resourceRecommendations.recommendedResource ?? 'No qualifying improvement'}`);
         console.log(resourceRecommendations.ranking);
         console.table(resourceRecommendations.candidates.flatMap((c,index)=>c.projects.map(p=>({ Rank:index+1,Resource:c.resource,Eligible:c.eligible,'Saturday hours':`${c.originalSaturdayHours} -> ${c.proposedSaturdayHours}`,Project:p.projectName,'Current P95':p.currentP95Date,'Proposed P95':p.proposedP95Date,'P95 days earlier':Number(p.p95DaysEarlier.toFixed(2)),'Date days earlier':p.p95DateDaysEarlier,Reason:c.reason }))));
         console.log(resourceRecommendations.interpretation);
+        if(resourceRecommendations.excludedProjects.length)console.table(resourceRecommendations.excludedProjects);
       }
       console.log(result.assumptions.join('\n'));
     }

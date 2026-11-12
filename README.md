@@ -2,161 +2,118 @@
 
 **Protect the Buffer. Finish Faster.**
 
-> **AI makes code faster. BufferLogic makes projects finish faster.**
+BufferLogic helps teams plan competing projects that share people and equipment.
+Change a priority, resource assignment or estimate, then compare how that decision
+affects delivery across the portfolio. It combines shared-resource scheduling with approximate completion forecasts.
 
-BufferLogic applies **Critical Chain Project Management (CCPM)** and the **Theory of Constraints (TOC)** to AI-powered software development.
+## Try it online — no installation required
 
-**Review the working deterministic P50 milestone:** follow the
-[Reviewer Guide](REVIEWER_GUIDE.md) for Windows commands and expected results.
-The current engine supports JSON/CSV scheduling, scenario comparison,
-approximate whole-project percentiles from the baseline Critical Chain, and
-Excel-compatible exports. The progress engine also forecasts remaining work
-from JSON snapshots with active estimates and completed actuals.
-The buffer management and GitLab/Duo integration
-described below remain future goals. See [Development](DEVELOPMENT.md) for
-the input format and scheduling contract.
+[**Open the live BufferLogic demo**](https://bufferlogic-859125571309.us-central1.run.app)
 
-As AI agents become capable of coding, reviewing, testing, securing, and deploying software, the next challenge is no longer simply doing more work faster.
+Hosted on **Google Cloud Run**. No installation or Google account required. Use fictional data. Plans are sent to the server
+for calculation, but workspaces are not saved on the server. Visitors have separate
+browser state; there are no accounts or automatic cloud saves.
 
-The challenge is determining:
+### Quick walkthrough: change an estimate and compare
 
-**What work should we do next to make the entire project finish sooner?**
+1. Choose **Load two-house example** to see projects sharing crews and equipment.
+2. Open **Timeline**, choose a project in **Highlight project**, and note an amber
+   critical-chain task to change. Choose **All dependencies and waits** to see links.
+3. Open **Compare → Set current as baseline**. Choose **Download baseline** if you
+   want to keep this original plan.
+4. In **Tasks**, increase that task's **Poor days · P80** estimate, leaving its
+   good estimate unchanged. Click **Recalculate schedule**.
+5. Open **Compare → Compare versions**. Inspect the before/after task timings and
+   each project's P95 delivery shift. The timeline shows the revised task schedule;
+   forecasts show the estimated delivery impact. Not every task delay moves a
+   project's completion—dependencies, resource waits and available slack matter.
+6. For a separate priority experiment, set the current calculation as a new
+   baseline, use **Move up** in Project order, recalculate and compare again.
+7. Choose **Save workspace** to download the scenario you want to keep.
 
-BufferLogic identifies the work currently controlling project completion, monitors protective buffers, and helps focus AI agents on the work that matters most.
+The header's **Help** button explains the main workflows. You can also choose **New project** to
+start without a file, or create projects from housing and software templates.
 
-## The Problem
+## What you can do
 
-Generative AI dramatically increases the speed at which individual software-development tasks can be completed.
+- **Coordinate shared resources:** assign a primary person or crew plus supporting
+  people or equipment, with allocations, availability calendars and exceptions.
+- **Explore priorities:** reorder projects, put projects on hold, and compare a
+  captured or saved baseline against a proposed scenario.
+- **Protect downstream work:** select eligible feeding tasks for later starts
+  with estimated P99 − P50 protection, subject to scheduling safety checks.
+- **Review delivery risk:** inspect approximate completion percentiles and
+  deadline status based on the project's P95 planning target.
+- **Maintain the plan:** add or delete projects/tasks, record actual progress and
+  remaining estimates, and keep task notes and checklists.
+- **Understand the result:** follow cross-project dependencies and resource waits
+  on the timeline, inspect weekly utilization, and export reports for Excel.
 
-But optimizing individual tasks does not necessarily optimize the project.
+Pending edits produce a prominent **Schedule out of date** warning and muted
+previous results. Estimate errors identify the task and offer **Go to** navigation.
+Adding or deleting tasks/projects recalculates other pending valid edits.
 
-A project can generate code faster while remaining constrained by:
+## Save your work
 
-- Testing
-- Code review
-- Security analysis
-- Integration
-- Deployment
-- Specialized resources
-- Decisions and approvals
+**Save workspace** downloads a JSON file that can be reopened in BufferLogic.
+Browser recovery also keeps a local copy of edits and captured baselines when
+storage is available; choose **Restore workspace** on return. Recovery belongs to
+that browser and site address, and can be lost in private browsing or when browser
+data is cleared. Download files as portable backups. Clear recovery on shared
+computers and close other editing tabs, which may save another copy.
 
-**Generative AI does not eliminate constraints. It moves them.**
+## Development, testing and Google Cloud
 
-BufferLogic treats software development as a system rather than a collection of independent tasks.
+Current development uses [GitHub pull requests](https://github.com/kevinakohls/bufferlogic)
+and human review. GitHub Actions builds TypeScript and runs the test suite on
+Node.js 22 and 24 for pull requests and changes merged to main.
 
-## How BufferLogic Works
+During the hackathon, development used GitLab Duo Code Review and GitLab CI,
+including SAST and secret-detection configuration. The GitLab configuration and
+links below are retained as historical evidence, not the current delivery process.
 
-BufferLogic analyzes:
+Our controlled review demonstration deliberately changed a deadline comparison
+so finishing on the deadline was incorrectly marked late. Tests failed, Duo
+identified the boundary error and suggested the correction, and the corrected
+code passed before merging. Historical evidence:
 
-- Task dependencies
-- Resource requirements
-- Task status and progress
-- Resource contention
-- Critical Chain position
-- Feeding buffers
-- Project buffer consumption
+- [Failed regression pipeline](https://gitlab.com/darkvole1/BufferLogic/-/pipelines/2933613176)
+- [Passing corrective pipeline](https://gitlab.com/darkvole1/BufferLogic/-/pipelines/2933618810)
 
-From this information, BufferLogic determines the **Critical Chain** — the sequence of work currently controlling when the project can finish.
+Duo supported development; it is not called by the scheduling engine. The hosted
+app runs as a container on Cloud Run. Merging code, updating a local installation
+and deploying the public demo are separate steps; deployment is currently manual.
 
-It then asks a different question from conventional project-management systems.
+## Planning assumptions and limits
 
-Instead of:
+Forecasts use independent lognormal task durations and a fixed critical chain.
+They are approximate planning estimates, not delivery guarantees. Timeline bars show the calculated task schedule, not P95-duration bars.
+Locked commitments are assumed to be met; infeasible forecasts require attention.
+Deadlines indicate risk without forcing dispatch order or locking task dates.
 
-**What task is late?**
+Calendars represent daily capacity and date-only commitments, not clock-time
+appointments or shift scheduling. Cloud workspace history, multiuser collaboration, historical calibration,
+Monte Carlo simulation and AI scenario selection remain future work. The CLI
+provides limited Saturday-hours resource sensitivity rankings.
 
-BufferLogic asks:
+## Optional: run locally for development
 
-**What should we work on now to protect the project completion date?**
+The online demo above requires no setup. To run a separate copy on your computer,
+see [DEVELOPMENT.md](DEVELOPMENT.md#local-review-ui) for Node.js requirements,
+installation, tests and startup commands. Local startup does not update Cloud Run.
 
-## Buffer Management
+## Documentation
 
-Critical Chain protects the project using buffers rather than embedding safety into every individual task.
+- [Development](DEVELOPMENT.md): local setup, CLI commands, GitLab review and updates.
+- [CSV import guide](CSV_IMPORT_GUIDE.md): task/template columns, aliases and calendar validation.
+- [UI review guide](UI_REVIEW_GUIDE.md): editing, recovery and manual checks.
+- [Reviewer guide](REVIEWER_GUIDE.md): command-line examples and expected behavior.
+- [Portfolio guide](PORTFOLIO_GUIDE.md): shared resources, forecasts and commitments.
+- [House build review](HOUSE_BUILD_REVIEW.md): the two-house example.
+- [Resource calendars](RESOURCE_CALENDARS.md): availability and exceptions.
+- [Templates and utilization](TEMPLATES_AND_UTILIZATION.md): templates and reports.
+- [Cloud Run](CLOUD_RUN.md): hosting configuration and release instructions.
 
-BufferLogic monitors those buffers to determine whether changing project conditions actually threaten completion.
+## License
 
-A delayed task outside the Critical Chain may require little or no intervention.
-
-A seemingly small delay consuming a feeding buffer or project buffer may require immediate attention.
-
-This provides AI agents with a system-level priority signal.
-
-**AI agents do the work. BufferLogic determines which work matters most.**
-
-## Example
-
-Imagine a development project in which several events occur simultaneously:
-
-- A test fails.
-- A security finding appears.
-- A merge request is waiting for review.
-- Another developer finishes early.
-
-A conventional system may flag all three problems as urgent.
-
-BufferLogic evaluates their effect on the Critical Chain and project buffer.
-
-If the delayed review is consuming the buffer protecting project completion while the failed test is on a non-critical path with available feeding-buffer protection, BufferLogic prioritizes the review.
-
-The objective isn't to eliminate every delay.
-
-The objective is to **protect project completion**.
-
-## Architecture
-
-The initial BufferLogic architecture is:
-
-**GitLab → BufferLogic TypeScript Engine → Critical Chain & Buffer Analysis → GitLab Duo Agent Platform → Recommendation / Action**
-
-The BufferLogic engine will:
-
-1. Build the project dependency network.
-2. Account for resource contention.
-3. Identify the Critical Chain.
-4. Establish project and feeding buffers.
-5. Monitor buffer consumption.
-6. Identify the work creating the greatest threat to project completion.
-7. Provide that priority to an AI agent for recommendation or action.
-
-## Hackathon
-
-BufferLogic is being developed for **GitLab Transcend: Life After Code**.
-
-The project explores what happens after AI makes code generation dramatically faster.
-
-Our answer:
-
-**The next opportunity is coordinating AI work around the constraint of the entire development system.**
-
-## Development Status
-
-🚧 **Hackathon prototype under active development**
-
-The first milestone is an end-to-end demonstration in which BufferLogic:
-
-**GitLab project → Critical Chain calculation → buffer status → AI-agent recommendation/action**
-
-The initial implementation will use TypeScript and the GitLab Duo Agent Platform.
-
-Future development may incorporate historical task-duration distributions and Monte Carlo simulation to estimate the probability of
-
-## Multi-project scheduling
-
-The portfolio engine schedules projects against shared resources, with project order, task overrides, percentage allocations, locked commitments and milestones. Projects own their versioned completion forecasts. See [PORTFOLIO_GUIDE.md](PORTFOLIO_GUIDE.md) for the worked example and conflict rules.
-
-```sh
-npm run portfolio -- examples/portfolio.json --format table
-```
-
-The portfolio command also imports Excel CSV files with a `Project` column. See [HOUSE_BUILD_REVIEW.md](HOUSE_BUILD_REVIEW.md) for the two-house example.
-
-Resource-calendar CSVs now drive dated portfolio schedules. Add `--calendar examples/house-resource-calendars.csv` to the two-house command; start defaults to today. See [RESOURCE_CALENDARS.md](RESOURCE_CALENDARS.md).
-
-Use `--recommend-resources` on a calendar portfolio run to rank additional Saturday hours one resource at a time, without changing the input plan.
-
-## Review UI
-
-Run `npm run ui` and open the printed local address in your browser. Load the two-house example or your CSV/JSON files, edit task estimates and calendars, then recalculate forecasts. See [UI_REVIEW_GUIDE.md](UI_REVIEW_GUIDE.md) for Windows instructions and saving reviews.
-
-The UI **Timeline** tab groups tasks by project and highlights the selected project’s critical chain across project boundaries. Select a task for dependency/resource-wait details; locked tasks and milestones are marked.
-
-The UI also creates project copies from CSV templates, retains project/task/resource descriptions and comments, and reports weekly resource utilization. See [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md).
+MIT. See [LICENSE](LICENSE).

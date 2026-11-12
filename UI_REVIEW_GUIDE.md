@@ -42,7 +42,7 @@ computer, not the network. Node.js 22 or newer remains required.
 4. Click **Recalculate schedule**. Edited forecasts replace the previous calculation only
    after successful validation. Changes pending and errors explicitly mark previous
    results as out of date. Invalid edits remain available to correct.
-5. In **Resource calendars**, edit weekly availability. For example, give the Framing Crew
+5. In **Resources & calendars**, edit weekly availability. For example, give the Framing Crew
    eight Saturday hours and recalculate. **Add exception** supports dated holidays,
    absences and extra hours; an exception replaces normal hours for that date. Remove
    an exception to restore the weekly rule.
@@ -74,13 +74,13 @@ the UI rejects changes that would silently reposition those recorded dates.
 
 After recalculating, click **Save workspace**. Your browser downloads the current plan,
 calendars, calculated tasks, conflicts and project forecasts as a JSON file. Select it
-as the project file and click **Load files** to reopen and recalculate it. Unsaved changes
-live only in the current browser session. This first screen does not automatically save
-history or compare revisions; preserve separate downloaded files if needed.
+as the project file and click **Load files** to reopen and recalculate it. Browser recovery keeps a local copy of edits and captured baselines when storage
+is available. Restore it on return; it is not saved version history or cloud storage. Use Compare with a captured or saved baseline,
+and preserve downloaded copies of scenarios you want to keep.
 
 ## Verified in this milestone
 
-The automated suite has **133 passing tests**. New API tests verify static/example
+Run `npm test` for the current automated suite. API tests verify static/example
 loading, parity with the existing engine, calendar edits, saved-result reload, invalid
 input handling, request-origin restrictions and locked-plan origin protection.
 
@@ -89,8 +89,8 @@ stale-result labeling, invalid dependency recovery, Saturday changes, dated exce
 JSON download/reload, the schedule table and a narrow mobile viewport. No browser page
 errors occurred. The browser is a development validation tool, not a project dependency.
 
-Current State/What-If comparison, project reordering, drag-to-reorder, and
-resource-recommendation controls are subsequent UI milestones.
+Compare and project reordering are available in the UI. Drag-to-reorder and
+resource-recommendation controls remain subsequent UI milestones.
 
 ## Interactive timeline
 
@@ -100,7 +100,8 @@ Open the **Timeline** tab after loading or calculating a plan.
   stay visible, and amber task bars include controlling work belonging to the other
   project. The summary reports how many chain tasks belong to another project.
 - Solid blue links represent technical dependencies; dashed purple links represent
-  resource waits. By default, only links along the selected critical chain are shown.
+  resource waits. The default view includes the selected critical chain and its
+  feeding dependencies; applied feeding dependencies use teal arrows.
   **Show links** can instead show connections for the selected task, all links, or none.
 - Click a task bar or its label to open its resource, timing, allocation, estimates,
   predecessors and commitment details. Predecessor buttons navigate to those tasks.
@@ -112,6 +113,21 @@ Open the **Timeline** tab after loading or calculating a plan.
   schedules produce day offsets.
 - Diamonds represent zero-duration milestones. **L** and a stronger outline mark locked
   commitments. Infeasible project summaries and selected-task conflicts stay visible.
+
+If a project appears entirely green or has no visible connections, first check the
+controls above the chart. Only the project chosen in **Highlight project** has its
+critical chain highlighted; scrolling to another project or selecting one of its
+tasks does not change that choice. Green bars in that other project do not mean it
+has no critical chain. Choose that project explicitly to inspect its chain.
+
+To inspect every recorded dependency, choose **Show links → All dependencies and
+waits**. The default **Critical chain & feeders** view filters other connections,
+and **No links** hides them. Cross-project links can extend above or below the
+visible rows, so scroll to see both endpoints. For example, if P2-T002 depends on
+P1-T001 after the redundant P2-T001 is deleted, highlight Project Two and show all
+dependencies and waits to inspect P1-T001 → P2-T002. Changing these display controls
+does not change dependencies or require recalculation. After editing dependencies
+or deleting a task, use the successfully recalculated schedule before inspecting.
 
 For a review demonstration, load the houses, highlight P2 and find task 38
 (architectural design). It depends on task 37 in P2 but waits for task 2 in P1 to
@@ -130,7 +146,7 @@ milestones, keyboard focus and the narrow-screen layout.
 
 ## Templates, notes and utilization
 
-Use **Create from template** to make named project copies with unique IDs and row-order priorities. **Descriptions & comments** edits project/task/resource notes. **Resource utilization** reports weekly capacity and project allocations, with CSV download. Follow [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md) for the software example and counting rules.
+Use **Create from template** to make named project copies with unique IDs and supplied priorities (or row-order defaults when omitted). **Descriptions & comments** edits project/task/resource notes. **Resource utilization** reports weekly capacity and project allocations, with CSV download. Follow [TEMPLATES_AND_UTILIZATION.md](TEMPLATES_AND_UTILIZATION.md) for the software example and counting rules.
 
 ## Update progress
 
@@ -186,3 +202,354 @@ item per line in a quoted cell (Excel: Alt+Enter). New project copies inherit th
 text with all items unchecked. Editing a project's checklist changes that copy
 only. Existing saved workspaces keep their existing items; new draft items are
 not injected into previously saved tasks.
+
+## Project and task deadlines
+
+Open **Deadlines**. Enter each desired project or task finish date, then
+**Recalculate schedule**. With calendars, the whole chosen date is allowed;
+without calendars, deadlines are elapsed day numbers from schedule start.
+Project rows assess deterministic completion and P50/P80/P95/P98/P99 separately.
+Project cards summarize P50 and P95. Task rows assess their deterministic finish,
+or recorded finish for completed tasks. Late values are highlighted. These are
+calendar days when dated and elapsed days when numeric, not resource workdays.
+
+Clear a field and recalculate to remove its deadline. **Save workspace** and
+**Open saved workspace** preserve the targets. Deadlines do not change dispatch,
+priorities, forecasts or feasibility; fixed start/finish commitments remain
+separate. A forecast marked infeasible is diagnostic even when it meets a target.
+Date targets without a calendar show **Calendar required**. Older workspaces
+without deadlines continue to load.
+
+## Put a project on hold
+
+Use **Put on hold** beside **Move up / Move down**, then **Recalculate schedule**.
+New unstarted, unlocked tasks are excluded from dispatch and resource utilization.
+Their IDs, estimates, notes, checklists and dependencies stay in the workspace.
+Work already in progress continues nonpreemptively; completed actuals and locked
+appointments are retained. A hold does not release fixed reservations.
+
+Full project completion forecasts are withheld while unfinished work is on hold.
+New tasks in other projects depending on suspended work are also left unscheduled;
+those projects show **Blocked by held work**. Locked commitments depending on
+suspended work retain their dates and generate a conflict. Deadlines for
+unscheduled work show an unavailable forecast rather than a promise.
+
+Use **Resume project** and recalculate to put the work back into dispatch at its
+existing project position and task priorities. Save/open retains hold status.
+The JSON forecast `withheldReason` and `unscheduledTaskIds` identify incomplete
+schedules. For withheld projects, `deterministicCompletion`,
+`completionPercentiles` and `feasible` are `null`, and `completionDates` is omitted.
+Consumers must check `withheldReason` before using completion values. A held project
+with only active/locked work can still have a complete schedule and forecast;
+only suspended tasks cause withholding. CLI tables suppress unavailable promises.
+Comparisons distinguish suspended, resumed and removed tasks; percentile changes
+are unavailable while either forecast is withheld. Resource improvement ranking
+uses fully scheduled projects and explicitly lists excluded held or hold-blocked
+projects. Active work and locked commitments still constrain resources. If none
+has a full forecast, recommendations are unavailable. A date deadline without a calendar continues to
+show **Calendar required**; a suspended task or project shows **Forecast unavailable**.
+
+## Latest-safe-start feeding protection
+
+Load `examples/feeding-protection.json` through **Project plan → Choose File**.
+Initially task F starts at day 0 and uses the Platform Engineer until day 4, so
+Release Two's environment task L starts at day 4. Open **Feeding tasks**, select
+**F latest safe start**, and recalculate. The feeder moves later, while L starts
+at day 0 and the downstream release-validation start remains day 20.
+
+The report shows original/new starts, task P50 and P99 effort, their difference
+as the feeding buffer, the downstream protected start and actual earlier capacity
+freed. The feeder's allocation is reserved through its P99 window, so other tasks
+cannot start in a gap if they would cross that reservation. The actual task still
+has its P50 planned finish. Buffer reservations are protection, not additional
+work counted in utilization. They are described in the feeding report.
+
+Select unstarted, unlocked working tasks. A task on its owning project’s critical
+chain is eligible when it directly feeds a higher-priority project. The report
+shows its owning project’s before/after deterministic completion. The first version uses individual task P99 values, not aggregate
+feeding-chain percentiles. Select independent feeders; immediate feeder-to-feeder
+links are rejected. Ordinary feeding protects the owner's critical chain and all
+direct downstream starts. For a cross-project feeder supplying higher-priority
+work, higher-priority project timings and higher-priority direct downstream starts
+stay protected; the owner's critical chain and lower-priority successors may move
+later. Active work and user locks remain protected in both cases. If P99 slack or
+resource constraints prevent safe placement, the original forward schedule is
+retained with a reason. Multiple conflicting selections can cause the complete
+attempt to be retained as the forward plan; try one feeder at a time.
+
+Calendars and allocation scale the protected working effort. With calendars,
+backward traversal respects weekends and dated exceptions. Clear the checkbox and
+recalculate to return to forward scheduling. Save/open retains selections and
+recomputes the same deterministic result. P99 is a lognormal model estimate,
+not a guarantee or proof of a 99% project completion chance.
+
+Feeder selections are evaluated deterministically by project order, task priority
+and original task order, regardless of checkbox click order. A later feeder does
+not overwrite an already moved feeder with a baseline placement. Unknown, duplicate
+or malformed feeding IDs are rejected by `parsePortfolio`, including saved-file
+loads. The helper receives the forward scheduler as a callback, with no runtime
+import cycle.
+
+Resource recommendations intentionally preserve `feedingTaskIds` and recompute
+latest-safe placements for each proposed calendar. The result's
+`feedingProtection: recomputed-per-scenario` makes this policy explicit. This costs
+additional scheduling passes; scores describe the changed calendar plus the same
+feeding policy, not a frozen feeder placement. The existing all-or-nothing safety
+fallback remains: incompatible combined placements retain the forward schedule.
+
+### See feeding protection on the timeline
+
+After selecting F and recalculating, open **Timeline**. The default **Critical
+chain & feeders** view includes technical dependencies feeding the critical
+chain, so F → D is visible even though F is not a critical-chain task. Applied
+feeding dependencies use teal arrows. The hatched **P99 buffer** band begins at
+F's P50 finish and ends at the end of its P99 resource window. This can precede
+the protected downstream start when other reserved work requires an earlier slot. It is a reservation,
+not additional productive task work.
+
+Click the band, select F, or select D to see the buffer's working effort, dates,
+original/new feeder starts and protected dependency links in the details panel.
+The band is keyboard-accessible. **No links** hides arrows while retaining buffer
+bands. Pending edits do not change the drawing until recalculation; unchecking
+F and recalculating removes the band. Forward-only or rejected placements have
+no protection band.
+
+## Days or calendar dates
+
+Use **Time display** beside **Save workspace** to switch between **Days from
+start** and **Calendar dates**. This changes completion cards, calculated task
+schedule, feeding report and timeline immediately, without recalculation. It does
+not change estimates, deadlines, locks, actuals or forecasts. Save/open retains
+the preference. With calendars, day numbers are elapsed calendar days from the
+schedule origin, including weekends and holidays. Without a resource calendar,
+date view is unavailable; load a calendar to enable it. Progress input, deadline
+editing, resource-calendar editing and weekly utilization retain their calendar
+semantics.
+
+### Cross-project feeding example
+
+In `feeding-protection.json`, add L to D's dependencies, then select F and L under
+**Feeding tasks**. L is allowed to feed higher-priority Release One even though it
+controls Release Two's finish. The scheduler searches backward for a resource-safe
+P99 window before other reservations; it does not overwrite F's protection.
+Release Two may finish later, shown explicitly in the report. L's 6 / 6 estimates
+produce zero uncertainty buffer; a **0d** marker explains this rather than drawing
+a fictitious band. Different P20/P80 estimates produce a positive buffer if they
+fit. A feeder's P99 window can end earlier than D's start because of shared-resource
+reservations. Extra waiting between that window and D is not additional reserved
+feeding buffer.
+
+## Manage resources and unassigned tasks
+
+Open **Resources & calendars** to add or delete resources, including when the list is empty. Loading and recalculating reconcile the list with task assignments and existing calendars. Unused resources remain until explicitly deleted. Resources missing a calendar receive eight-hour weekdays (40 hours per week); custom weekly hours and dated exceptions are preserved. Without a calendar, the resource list shows the assumed 40-hour week and scheduling remains in abstract days.
+
+**Delete** asks “Are you sure?” and explains that affected tasks become unassigned. Confirming removes the resource, its calendar, dated exceptions and descriptive details; all affected task resource fields become blank. Cancelling leaves everything intact. Assign replacements in **Tasks**. The engine refuses to schedule any unassigned task, including active, held or completed work; it never invents a replacement resource.
+
+You may **Save workspace** with unassigned tasks before recalculating. That file is a draft containing the edited plan and no calculated forecasts. Reopening it keeps tasks unassigned and displays a request to assign resources. Normal workspaces still require recalculation before saving edited results.
+
+Manual check: load a plan with task resources missing from its resource array; verify they appear. Add an idle resource, reassign tasks, and recalculate; verify it remains. Cancel a deletion, then confirm it; verify the task dropdowns say Unassigned. Save and reopen the draft, add a replacement, reassign the tasks and recalculate. Delete all resources and verify Add resource still works. In calendar mode verify new resources have eight-hour weekdays, custom hours survive, and deleted-resource exceptions are removed.
+
+## Create a project without importing files
+
+Click **New project**, enter a name, and click **Create project**. In a fresh workspace, **Schedule starts** sets the calendar origin; the calendar uses eight hours per estimated workday. An empty project displays “No tasks yet” instead of a zero-day completion forecast. Adding another project appends it to the existing portfolio without changing its start date, resources, tasks or custom calendars.
+
+Open **Resources & calendars** and add the people or resource types you need (40-hour weekdays by default). In **Tasks**, click **Add task**. Choose its project, enter a name, good/P20 and poor/P80 days, resource, and optional comma-separated predecessor IDs from the task table. IDs are generated uniquely across the portfolio and tasks get increasing priorities within the project. New tasks start as planned working effort at 100% allocation; edit those fields afterward as needed. Two zero estimates create a milestone. Predecessors may belong to another project but must already exist.
+
+You can add tasks before assigning resources. Save/reopen preserves the draft; scheduling waits until every task has a resource. Empty workspaces are also saveable. Adding a task or project submits current edits and refreshes the calculation when assignments are complete. Use **Recalculate schedule** after later table edits.
+
+Manual check: create a blank project, save/reopen it, add an unassigned task, and save/reopen again. Add a resource, assign it, and add a dependent task. Check the resulting timeline and forecasts. Add a second blank project, confirm the first remains unchanged, and add another task sharing the resource. Check Cancel and invalid names, estimates and dependency IDs.
+
+## Workspace names and manual project entry
+
+Use **Add blank project** beside **Project order** (or **Add project** at the top) to create Release Two manually. The manual form hides the template form and has a distinct **Create blank project** button. **Create from template** remains the CSV-template workflow, with a **Start a blank project instead** shortcut. Adding a blank project keeps existing tasks, resources, calendar and workspace name.
+
+The editable **Workspace name** defaults to the first project name followed by “workspace”, or “Untitled workspace” when there are no projects. Renaming updates the browser-tab title and saved plan metadata without recalculating. Downloads include the workspace name and a timestamp, with filename-unsafe characters replaced. Reopening restores the name. The browser tab also uses the BufferLogic link-symbol icon.
+
+## P95 target status and remaining-estimate review
+
+Project cards and the **P95 target status** column in Deadlines use the P95 completion forecast. A P95 completion of November 11 is late against November 2, and on time against November 11 or any later date. Calendar deadlines include the whole named date. The other percentile columns remain available for comparison; an earlier P50 does not make a late P95 target on time. Schedule conflicts are separate and still show Needs attention. Task deadline checks continue to use each task's calculated finish.
+
+In Progress, **Estimate review** is blank and disabled for not-started and completed tasks. It applies only to in-progress tasks. Advancing progress still marks active remaining estimates Needs review; completing a task clears its displayed review field.
+
+The timeline explains when no critical chain is calculated because a project is empty, a workspace has unassigned tasks, or work is held/blocked. If a populated, scheduled project unexpectedly loses its critical chain, save that workspace before further edits so the state can be reproduced.
+
+## Delete a project
+
+In **Project order**, click **Delete project**. Confirmation names the project and task count and explains that resources are retained. Save a separate workspace copy first if you may need to restore it. Cancelling changes nothing. Confirming removes the project and all its tasks and recalculates the remaining portfolio, preserving current edits, resource calendars, idle resources and the workspace name. Save workspace afterward to keep the deletion.
+
+Deletion is blocked when another project's tasks depend on work in the selected project, including held or completed dependent tasks. The error identifies the dependent project and tasks. Edit or remove those dependency references first; deletion does not silently break them. Feeding-task selections and task-order overrides for removed tasks are cleared.
+
+You can delete the last project. Resources remain available, the empty workspace is saveable, and **New project/Add project** lets you start again. Add task is disabled until a project exists.
+
+Manual check: cancel deletion and verify pending edits remain. Confirm deletion of an independent project and verify all its tasks disappear while shared resources remain. Try deleting a project with cross-project dependents and verify it is blocked. Delete the last project, save/reopen, and create a new project using retained resources.
+
+## Primary and multiple supporting resources
+
+The **Tasks** table labels the original resource and allocation as **Primary resource** and **Primary allocation %**. Add the task normally, then click **Add supporting resource** in its row as many times as needed. Select each supporting resource and its allocation percentage. Recalculate to apply the changes. The same resource cannot be primary and supporting, or appear twice on one task. Remove a supporting assignment with its **Remove** button.
+
+For foundation excavation, choose the operator as primary, a front-end loader at 100% as supporting, and a spotter at 50% as another supporting resource. The operator's P20/P80 estimates and allocation determine working effort. Supporting allocations reserve capacity for the full task and do not scale its effort. A resource needed for only one phase should be modeled in a separate dependent task. Elapsed waiting cannot reserve supporting resources; milestones have no capacity demand.
+
+The scheduler checks every required resource together. Shared equipment and people create resource waits and critical-chain links across projects. Calendar mode uses common daily working availability (the minimum hours across assigned resource calendars, including dated exceptions); closures or shorter supporting calendars can extend calendar duration. Reservations remain nonpreemptive across the entire interval, including gaps, as with existing single-resource tasks. Calendar hours are daily capacity, not actual shift times.
+
+Supporting resources appear in the calculated schedule, timeline details, and utilization report. Feeding protection reserves every assigned resource through its buffer. Save/open preserves the assignments. Deleting a resource clears matching primary or supporting fields; an empty supporting field remains a required assignment, so assign a replacement or explicitly remove that requirement before scheduling. Resource counts include both roles.
+
+Load `examples/multiple-resources.json` for two projects sharing a loader. Confirm foundation work reserves the operator, loader and spotter together, landscaping waits for the loader, and the timeline shows the resource-wait link. Add/remove support, change its allocation, save/reopen, and test a loader holiday. Verify changing supporting allocation does not change the task's working-effort estimate; changing primary allocation does.
+
+### Supporting-resource editing checks
+
+Tab from a supporting-resource selector to its percentage input and then to Remove; focus should follow the existing controls without jumping out of the table. Primary-resource and duration-type edits also keep their controls mounted. Add focuses the new resource selector; Remove focuses an adjacent selector or Add when none remain.
+
+Blank, zero, negative or above-100 supporting percentages are rejected locally with a clear allocation message, restoring the previous value. Positive fractional percentages are allowed. Rejected edits do not mark a clean calculation stale or discard earlier pending edits. The Feeding tab lists primary and supporting resources separately.
+
+### Housing template equipment
+
+Choose **Create from template → Use housing template**, name the project House One, and click **Create from template**. Repeat for House Two to demonstrate shared equipment. The housing template adds Backhoe 1 and Equipment spotter to excavation, Loader 1 to clearing/backfill/final grading, Concrete pump 1 to slab pouring, and Telehandler 1 to floor framing. Matching resource names are shared between houses; custom calendars are retained. Read the task comments for the full-task reservation assumptions. Existing saved houses can receive supporting assignments manually in Tasks.
+
+## Compare a baseline with a what-if scenario
+
+1. Open a workspace, resolve unassigned tasks and recalculate.
+2. Open **Compare** and click **Set current as baseline**. This captures a detached copy of the calculated plan. **Download baseline** saves that original plan for later use. A captured baseline stays through edits and recalculation and is included in browser recovery. After reloading, choose Restore workspace to recover it. Opening another workspace clears the current baseline; download it separately to keep a portable copy.
+3. Change priorities, estimates, allocations, supporting resources, calendars, holds or other scheduling inputs. Recalculate as usual. Existing comparison results are hidden when the workspace changes.
+4. Return to **Compare** and click **Compare versions**. The current workspace is the scenario; the captured plan is the baseline. Earlier P95 forecasts are shaded green, later ones red. Other projects may be delayed by a change that helps the highest-priority project, so inspect all rows.
+5. Alternatively, choose a saved original workspace JSON in the baseline file picker. This replaces the session baseline. The file is read for comparison without replacing the current workspace.
+6. Save the current workspace to keep a useful scenario. To restore the original, open the downloaded baseline or your original saved workspace. **Clear comparison** removes the baseline selection and report without changing the schedule.
+
+The report includes project order, P95 completion and shift, deadline status, changed task timing and primary/supporting assignments, additions/removals, suspension/resumption, and resource/calendar changes. Task rows compare scheduling fields rather than checklist and comment text. Missing/withheld forecasts are labeled unavailable, never zero. Schedule conflicts are reported separately and indicate that an apparently earlier forecast may be infeasible.
+
+Both plans are recalculated using the current engine, rather than trusting stored forecast fields. Compare versions of the same workspace (matching portfolio ID), with the same **Progress as of**, schedule origin and calendar mode. This is a what-if comparison, not a historical progress comparison. Day shifts are elapsed calendar days with calendars and abstract days otherwise. Display preference comes from the current workspace. A newly assigned version label alone is not a schedule change.
+
+Manual check: capture a two-project baseline, download it, move the second project up, recalculate and compare. Verify one project's improvement and the other project's delay. Change a supporting assignment and confirm its task row reports Resources. Hold/resume a project and confirm withheld/resumed work is distinguished from removal. Test a saved-file baseline and an incompatible progress date. Confirm neither the original file nor current workspace is modified by comparison. This comparison provides measured outcomes for future scenario evaluation; it does not automatically search or rank solutions.
+
+### Delete a task and compare the result
+
+Save a workspace copy or capture a Compare baseline first. In Tasks, each row has a **Delete task** button. Cancel the “Are you sure?” prompt to keep the task. Confirm to remove the task, including its checklist, comments and progress. Deletion is blocked if any other task depends on it, including work in another project or on hold; the error names the dependents. Remove or reassign those dependencies explicitly before retrying. Resources and calendars remain available, and an empty project is retained for new tasks. Feeding selections and task order overrides for the deleted task are removed. Successful deletion recalculates the workspace (or leaves a saveable draft when empty or unassigned). Compare retains the captured baseline and reports the task as **Removed**. Save workspace to keep the deletion.
+
+## In-app Help
+
+The header's **Help** button is available before loading a workspace and while
+calculations run. Its six topics cover Getting started, Forecasts & deadlines,
+Timeline, Compare, Save & reopen, and Common problems. Opening it or changing
+topics does not edit a plan, recalculate it, clear a baseline or replace files.
+Use Close or Escape to return to the workspace. Keyboard focus stays in the modal
+while it is open and returns to Help when it closes.
+
+Manual checks: open Help on the initial screen, visit all six topics and close it
+using both Close and Escape. Repeat with a loaded workspace, unsaved edits and a
+captured baseline; verify those are unchanged. Check narrow screens, keyboard
+navigation and scrolling through the longer topics. In particular, Timeline
+explains project highlighting and link filters; Save & reopen explains that the
+hosted demo has no automatic cloud storage.
+
+
+## Browser recovery and stale results
+
+After loading a workspace, edits and captured baselines are saved to local browser
+storage automatically. The status above the workspace reports success or storage
+errors. Reopening the same site offers **Restore workspace**, **Discard recovery
+copy**, or **Download recovery copy**. Recovery data downloads are troubleshooting
+snapshots, not normal workspace files; use **Save workspace** and **Download
+baseline** for portable plans. Selected baseline files must be selected again after
+reload; captured baselines are recovered automatically with the workspace.
+
+Restore recalculates the last calculated plan with the current engine, then
+reapplies pending edits, including unfinished calendar exceptions. Those edits
+remain stale until recalculated. A restore failure retains the browser copy.
+Discard requires confirmation. **Clear browser recovery** removes the copy and
+pauses automatic recovery for that tab until **Resume browser recovery** is selected. Other open editing tabs may save a new copy. Clearing browser data, private
+browsing, storage quotas, switching site address, or another device can make
+recovery unavailable. The app keeps working and shows a warning if storage fails.
+A second tab cannot silently overwrite a copy changed by another tab. If the slot
+is cleared, open editing tabs can safely resume writing without reloading; the
+first successful writer owns the copy. Download each tab's work separately. There is one recovery slot per
+browser/site, not a workspace history. Do not rely on it as the only backup.
+
+The browser may warn before leaving when a workspace or captured baseline has
+not been downloaded. Browser policies can suppress unload prompts, so recovery
+writes occur on edits and when the page becomes hidden too. Opening a different
+workspace or example asks before replacing undownloaded work or a baseline.
+
+Edits show a sticky **Schedule out of date** banner with a **Recalculate schedule**
+button. Previous forecast cards, timeline, calculated schedule, feeding reports,
+utilization and deadline results are muted. Editors remain usable; Compare and
+exports still require current results. Only a successful recalculation clears the
+warning; errors leave edits and recovery intact. Empty or unassigned drafts show
+that no schedule is available rather than a fabricated forecast.
+
+Manual checks: capture a baseline, edit a task and reload. Restore and verify the
+edit, baseline, and stale warning; recalculate and confirm the warning clears.
+Repeat with an unfinished calendar exception, an invalid dependency, an unassigned
+draft, a renamed workspace, notes and checklist edits. Check warning behavior when
+replacing a workspace, Discard confirmation, Clear recovery, blocked/full storage,
+two tabs, and narrow screens. Browser recovery must not change scheduling logic.
+
+## Estimate errors identify the task
+
+Good estimates must be no greater than poor estimates. Task inputs use P20/P80;
+both original estimates may be zero for a milestone, while remaining estimates
+for active work must be positive. Blank and nonnumeric values are also flagged.
+For example, entering good 8 and poor 5 on task A shows:
+
+> Task A — Build: Good estimate (8 days) must be no greater than poor estimate
+> (5 days). Adjust either estimate, then recalculate.
+
+The task row and both estimate fields are highlighted, with an inline explanation
+and accessibility descriptions. Recalculate shows a **Go to A** action in the
+error panel. It opens Tasks, changes a filter only when it hides the row, scrolls to
+it and focuses an invalid estimate without hiding it behind the retained task identity. Remaining-estimate errors also highlight the
+Progress row; their Go to action opens Progress. Correcting the estimates clears
+the highlighting, but the schedule stays out of date until recalculation succeeds.
+Edits and browser recovery are retained. Imported invalid files receive readable
+task errors; they do not replace the current workspace or highlight unrelated rows.
+
+Manual check: make a good estimate larger than its poor estimate, switch the
+project filter or tab, then recalculate. Use Go to to find the task, correct either
+value and recalculate successfully. Repeat with active remaining work, a blank
+estimate, multiple invalid tasks and a narrow screen. Verify a zero/zero original
+milestone is accepted and the task row returns to normal after correction.
+
+
+## Review correctness fixes
+
+- **Original estimates on active work:** Tasks has an expandable Original estimates
+  editor for active tasks. Invalid original estimates open it automatically. Go to
+  focuses those original fields, while remaining errors navigate to Progress.
+  Correcting originals does not reset status, actuals or remaining estimates.
+- **Retired identities:** deleting tasks/projects records their IDs in the workspace.
+  Manual additions and template copies skip those IDs after save/open, so Compare
+  reports an unrelated replacement as Removed plus Added. Already-reused IDs in
+  older files cannot be repaired automatically; keep original baselines as evidence.
+- **Visible feedback:** task deletion checks known dependents before asking for
+  confirmation (the server still enforces the dependency rule). Failed recalculation, blocked deletion, rejected edits and
+  refused saves appear in a viewport notification with relevant Go to actions.
+  Close dismisses that notification; the main error panel remains available.
+- **Narrow tables:** task identity stays visible during horizontal scrolling.
+  Estimate navigation scrolls the input into the remaining visible area. Original
+  controls live in that identity cell; Progress retains its identifying first cell.
+- **Recovery:** a cleared slot can be reclaimed without overwriting a newer copy.
+  Resume browser recovery retries explicitly without reloading or losing edits.
+  Storage failures also show a visible warning; success reports a local save time.
+  Discard warns that another tab may own the copy and may save again.
+- **Version labels:** the recalculation counter resumes from saved/recovered labels,
+  including a captured baseline, rather than restarting after a page reload.
+- **Presentation:** Compare shows old → new names for renamed tasks. Adding/deleting
+  projects or tasks recalculates all pending valid edits; ordinary field edits still
+  require Recalculate. The timeline distinguishes calculated bars from project P95
+  forecasts, and uses “locked commitments” consistently.
+
+Regression walkthrough: make original good/poor estimates 50/40, mark the task
+active, change remaining good to 30, then recalculate. Go to must expose the original
+50/40 fields; correct to 35/40 and verify active status, actual start and remaining
+30/40 survive. Capture a baseline, delete a leaf task, add unrelated work, save/open
+and compare to the original baseline file: require separate Removed and Added rows.
+In two tabs, discard recovery in the second and verify the first continues saving.
+Also verify explicit Clear/Resume, competing-tab protection, forward version labels,
+visible errors from deep in the page, old/new comparison names and mobile scrolling.
+
+
+## Consistent CSV imports
+
+File loads and templates use the [same task schema](CSV_IMPORT_GUIDE.md). Test
+`examples/manufacturing-template.csv` in both modes, including a BOM, missing
+Priority, aliases and dependencies. Explicit Priority values are now honored in
+templates too. Test combined invalid project/calendar files and multiple row errors.
+A failed import must retain the existing workspace, calendars and captured baseline.

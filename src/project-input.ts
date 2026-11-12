@@ -6,7 +6,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 /** Validate the JSON boundary before handing tasks to the typed scheduler. */
-export function parseProject(value: unknown): Task[] {
+export function parseProject(value: unknown, options: {allowUnassignedResource?: boolean} = {}): Task[] {
   if (!isObject(value) || !Array.isArray(value.tasks)) {
     throw new Error('Project must be an object with a "tasks" array');
   }
@@ -14,6 +14,7 @@ export function parseProject(value: unknown): Task[] {
     const label = `tasks[${index}]`;
     if (!isObject(item)) throw new Error(`${label} must be an object`);
     for (const field of ["id", "name", "resource"] as const) {
+      if (field === "resource" && options.allowUnassignedResource && item[field] === "") continue;
       if (typeof item[field] !== "string" || !item[field].trim()) {
         throw new Error(`${label}.${field} must be a nonempty string`);
       }

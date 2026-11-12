@@ -5,16 +5,21 @@ import { schedulePortfolio, type PortfolioPlan } from './portfolio.js';
 export function recommendSaturdayHours(plan: PortfolioPlan) {
   if (!plan.calendar) throw new Error('Resource recommendations require calendars');
   const baseline = schedulePortfolio(plan);
-  const candidates = plan.resources.map(resource => {
+  const included = baseline.projects.filter(project => !project.forecast.withheldReason);
+  const includedIds = new Set(included.map(project => project.id));
+  const excludedProjects = baseline.projects.filter(project => project.forecast.withheldReason).map(project => ({projectId:project.id,projectName:project.name,reason:project.forecast.withheldReason}));
+  if (!included.length) throw new Error('No fully scheduled projects available for resource recommendations. Resume held work and recalculate.');
+  const candidates = baseline.plan.resources.map(resource => {
     const calendar = baseline.plan.calendar!.resources.find(c => c.resource === resource)!;
     const originalHours = calendar.weeklyHours[5]!;
     const proposedHours = Math.min(24, originalHours + 8);
     const calendars = baseline.plan.calendar!.resources.map(c => c.resource === resource
       ? { ...c, weeklyHours:c.weeklyHours.map((hours,index)=>index===5?proposedHours:hours) } : c);
     const scenario = schedulePortfolio({ ...baseline.plan, calendar:{ ...baseline.plan.calendar!, resources:calendars } });
-    const projects = scenario.projects.map(p => {
+    const projects = scenario.projects.filter(project => includedIds.has(project.id)).map(p => {
       const before = baseline.projects.find(b=>b.id===p.id)!.forecast;
       const after = p.forecast;
+      if(before.withheldReason||after.withheldReason)throw new Error('Resource recommendations require full project forecasts');
       const daysEarlier = before.completionPercentiles.p95-after.completionPercentiles.p95;
       const dateDaysEarlier = (parseDate(before.completionDates!.p95)-parseDate(after.completionDates!.p95))/86400000;
       return { projectId:p.id, projectName:p.name, baselineFeasible:before.feasible, scenarioFeasible:after.feasible,
@@ -36,8 +41,10 @@ export function recommendSaturdayHours(plan: PortfolioPlan) {
   candidates.sort((a,b)=>Number(b.eligible)-Number(a.eligible) || b.totalP95DaysEarlier-a.totalP95DaysEarlier);
   return { method:'one-resource-at-a-time-saturday-sensitivity' as const,
     change:'Add up to eight hours to recurring Saturday availability, capped at 24 hours; dated exceptions remain authoritative',
-    ranking:'Eligible changes first, descending sum of separate project P95 elapsed-calendar-day improvements; ties preserve resource input order',
-    interpretation:'The score sums individual customer forecast improvements. It is not a joint portfolio percentile or an optimal plan. Accept a change manually and rerun before choosing another.',
+    ranking:'Eligible changes first, descending sum of fully scheduled project P95 elapsed-calendar-day improvements; ties preserve resource input order',
+    interpretation:'The score sums forecast improvements for fully scheduled projects only. Held or hold-blocked forecasts are excluded and listed separately; their active work and locked reservations still constrain the schedule. This is not a joint portfolio percentile or an optimal plan. Accept a change manually and rerun before choosing another.',
+    excludedProjects,
+    feedingProtection:plan.feedingTaskIds?.length?'recomputed-per-scenario' as const:'not-enabled' as const,
     baselineVersionId:baseline.plan.versionId, startDate:baseline.plan.calendar!.startDate,
     recommendedResource:candidates.find(c=>c.eligible)?.resource ?? null, candidates };
 }

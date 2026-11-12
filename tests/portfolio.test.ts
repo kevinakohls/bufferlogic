@@ -18,7 +18,7 @@ test('project order creates cross-project critical chain and owned percentiles',
   const p=plan([task('A','P1')],[task('B','P2')]);const snapshot=structuredClone(p);const r=schedulePortfolio(p);
   assert.equal(get(r,'A').start,0);assert.equal(get(r,'B').start,2);
   assert.deepEqual(r.projects[1]!.forecast.criticalChain,['A','B']);
-  assert.equal(r.projects[1]!.forecast.completionPercentiles.p99,4);
+  assert.equal(r.projects[1]!.forecast.completionPercentiles!.p99,4);
   assert.equal(r.projects[1]!.forecast.scheduleVersionId,'v1');assert.deepEqual(p,snapshot);
 });
 test('reordering projects and task overrides changes resource preference without new dependencies',()=>{
@@ -59,7 +59,7 @@ test('overlapping locked tasks return capacity conflict; 50% locks can overlap',
 });
 test('completed actuals and active remaining estimates survive portfolio scheduling',()=>{
   const p=plan([task('A','P1',{status:'completed',actuals:{start:0,finish:2}}),task('B','P1',{status:'active',dependsOn:['A'],remaining:{goodCase:2,poorCase:8,estimateStatus:'current'}})]);
-  const r=schedulePortfolio({...p,asOf:3});assert.equal(get(r,'A').finish,2);assert.equal(get(r,'B').finish,7);assert.ok(r.projects[0]!.forecast.completionPercentiles.p95>7);
+  const r=schedulePortfolio({...p,asOf:3});assert.equal(get(r,'A').finish,2);assert.equal(get(r,'B').finish,7);assert.ok(r.projects[0]!.forecast.completionPercentiles!.p95>7);
   assert.throws(()=>schedulePortfolio({...p,asOf:3,projects:[{...p.projects[0]!,tasks:[p.projects[0]!.tasks[0]!,task('B','P1',{status:'active'})]}]}),/remaining/);
 });
 test('fixed anchors do not acquire duration uncertainty; zero milestones and empty projects supported',()=>{
@@ -69,14 +69,14 @@ test('fixed anchors do not acquire duration uncertainty; zero milestones and emp
 test('moment-matched portfolio forecasts include upstream project uncertainty',()=>{
   const r=schedulePortfolio(plan([task('A','P1',{goodCase:2,poorCase:8})],[task('B','P2',{goodCase:2,poorCase:8})]));
   assert.deepEqual(r.projects[1]!.forecast.criticalChain,['A','B']);
-  assert.ok(r.projects[1]!.forecast.completionPercentiles.p95>r.projects[0]!.forecast.completionPercentiles.p95);
-  const half=schedulePortfolio(plan([task('A','P1',{goodCase:2,poorCase:8,allocationPercent:50})]));assert.ok(Math.abs(half.projects[0]!.forecast.completionPercentiles.p95-2*r.projects[0]!.forecast.completionPercentiles.p95)<1e-10);
+  assert.ok(r.projects[1]!.forecast.completionPercentiles!.p95>r.projects[0]!.forecast.completionPercentiles!.p95);
+  const half=schedulePortfolio(plan([task('A','P1',{goodCase:2,poorCase:8,allocationPercent:50})]));assert.ok(Math.abs(half.projects[0]!.forecast.completionPercentiles!.p95-2*r.projects[0]!.forecast.completionPercentiles!.p95)<1e-10);
 });
 test('approved snapshots and their forecasts are retained across revisions and compared',()=>{
   const p={...plan([task('A','P1')],[task('B','P2')]),approvalStatus:'approved' as const};
   const current=schedulePortfolio(p);const before=structuredClone(current);
   const next=schedulePortfolio({...p,versionId:'v2',approvalStatus:'draft',taskOrderOverrides:['B']},current);
-  assert.deepEqual(current,before);assert.equal(next.previousVersions[0]!.plan.approvalStatus,'approved');assert.equal(next.previousVersions[0]!.projects[0]!.forecast.completionPercentiles.p50,2);
+  assert.deepEqual(current,before);assert.equal(next.previousVersions[0]!.plan.approvalStatus,'approved');assert.equal(next.previousVersions[0]!.projects[0]!.forecast.completionPercentiles!.p50,2);
   const comparison=comparePortfolioVersions(current,next);assert.equal(comparison.taskChanges.length,2);assert.equal(comparison.projects[0]!.percentileDifferences!.p50,2);
   const third=schedulePortfolio({...p,versionId:'v3'},next);assert.equal(third.previousVersions.length,2);
   assert.throws(()=>schedulePortfolio(p,next),/new versionId/);
@@ -124,7 +124,7 @@ test('worked contention example extends Project Two completion through Project O
   assert.deepEqual(after.criticalChain, ['P1-build', 'P2-build', 'P2-test']);
   assert.ok(after.feasible);
   assert.equal(shared.conflicts.length, 0);
-  assert.equal(after.completionPercentiles.p95 - before.completionPercentiles.p95, 4);
+  assert.equal(after.completionPercentiles!.p95 - before.completionPercentiles!.p95, 4);
   const consoleResult = execFileSync(process.execPath, ['dist/src/portfolio-cli.js', 'examples/portfolio-contention.json', '--format', 'table'], { encoding: 'utf8' });
   assert.match(consoleResult, /Resource waits for/);
   assert.match(consoleResult, /P1-build -> P2-build -> P2-test/);
@@ -139,3 +139,37 @@ test('worked contention example extends Project Two completion through Project O
  assert.throws(()=>schedulePortfolio({...snapshot,projects:[{...input.projects[0]!,tasks:[input.projects[0]!.tasks[0]!,{...input.projects[0]!.tasks[1]!,actualStart:1}]}]}),/precedes dependency/);
  assert.throws(()=>schedulePortfolio({...snapshot,projects:[{...input.projects[0]!,tasks:[input.projects[0]!.tasks[0]!,{...input.projects[0]!.tasks[1]!,actualStart:6}]}]}),/through asOf/);
  });
+
+test('resource reconciliation preserves idle resources and custom calendars, adds task resources with 40-hour defaults',()=>{
+ const input={...plan([task('A','P1',{resource:'New'})]),resources:['Idle'],calendar:{startDate:'2026-10-12',hoursPerWorkday:8,resources:[{resource:'CalendarOnly',weeklyHours:[4,4,4,4,4,0,0],exceptions:{'2026-10-13':0}}]}};
+ const copy=structuredClone(input),parsed=parsePortfolio(input);
+ assert.deepEqual(parsed.resources,['Idle','New','CalendarOnly']);
+ assert.deepEqual(parsed.calendar!.resources.find(r=>r.resource==='CalendarOnly'),input.calendar.resources[0]);
+ assert.deepEqual(parsed.calendar!.resources.find(r=>r.resource==='New')!.weeklyHours,[8,8,8,8,8,0,0]);
+ const result=schedulePortfolio(input);assert.equal(result.tasks[0]!.resource,'New');
+ assert.deepEqual(parsePortfolio(result.plan),result.plan);assert.deepEqual(input,copy);
+});
+
+test('blank task assignments survive draft parsing but cannot be scheduled or silently recreated',()=>{
+ const input={...plan([task('A','P1',{resource:''})]),resources:[]};
+ const parsed=parsePortfolio(input);assert.deepEqual(parsed.resources,[]);assert.equal(parsed.projects[0]!.tasks[0]!.resource,'');
+ assert.throws(()=>schedulePortfolio(parsed),/Assign a resource before scheduling: A/);
+ const fixed={...parsed,resources:['Replacement'],projects:parsed.projects.map(p=>({...p,tasks:p.tasks.map(t=>({...t,resource:'Replacement'}))}))};
+ assert.equal(schedulePortfolio(fixed).tasks[0]!.resource,'Replacement');
+});
+
+test('projects with scheduled tasks retain critical chains after reorder, hold, resume and completion',()=>{
+ const base=plan([task('A','P1'),task('B','P1',{dependsOn:['A']})],[task('C','P2')]);
+ const reversed={...base,projects:[base.projects[1]!,base.projects[0]!]};
+ const held={...base,projects:[{...base.projects[0]!,onHold:true},base.projects[1]!]};
+ const resumed={...held,projects:held.projects.map(p=>({...p,onHold:false}))};
+ const completed={...base,asOf:6,projects:base.projects.map(p=>({...p,tasks:p.tasks.map(t=>({...t,status:'completed' as const,actuals:{start:t.id==='C'?4:t.id==='B'?2:0,finish:t.id==='C'?6:t.id==='B'?4:2}}))}))};
+ for(const input of [base,reversed,held,resumed,completed]){
+  const result=schedulePortfolio(input);
+  for(const project of result.projects){
+   const owned=result.tasks.filter(t=>t.projectId===project.id);
+   assert.equal(project.forecast.criticalChain.length>0,owned.length>0);
+   assert.ok(project.forecast.criticalChain.every(id=>result.tasks.some(t=>t.id===id)));
+  }
+ }
+});
