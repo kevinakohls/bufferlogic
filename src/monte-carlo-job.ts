@@ -8,7 +8,7 @@ export async function runSimulationJob(plan:PortfolioPlan,options:SimulationOpti
  let timer:ReturnType<typeof setTimeout>|undefined,abort:()=>void=()=>{};
  try{return await new Promise<ReturnType<typeof import('./monte-carlo.js')['simulatePortfolio']>>((resolve,reject)=>{
   abort=()=>reject(new Error('Simulation cancelled'));signal.addEventListener('abort',abort,{once:true});
-  timer=setTimeout(()=>reject(new Error('Simulation time limit reached (45 seconds). Try fewer samples or a smaller plan.')),45000);
+  timer=setTimeout(()=>reject(new Error('Simulation time limit reached (5 minutes). Try fewer samples or a smaller plan.')),300000);
   worker.once('message',(message)=>message.error?reject(new Error(message.error)):resolve(message.result));
   worker.once('error',reject);worker.once('exit',code=>{if(code!==0)reject(new Error(`Simulation worker stopped (${code})`));});
  });}finally{if(timer)clearTimeout(timer);signal.removeEventListener('abort',abort);await worker.terminate();}

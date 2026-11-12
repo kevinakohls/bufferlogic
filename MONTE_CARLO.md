@@ -68,10 +68,11 @@ permits. P98/P99 estimates may differ between seeds.
 
 The server runs simulation in a worker thread rather than blocking ordinary API
 requests. It permits one active simulation per server instance, 1,000–50,000 runs,
-up to 300 tasks, and at most 2,000,000 task draws. A 45-second limit and a worker
+up to 300 tasks, and at most 2,000,000 task draws. A five-minute limit and a worker
 memory limit bound work; reduce samples or plan size when a job hits a limit.
-Cloud Run's existing 60-second request timeout does not need changing. On the next
-deployment, set request concurrency to 4 (see [CLOUD_RUN.md](CLOUD_RUN.md)); the
+On the next Cloud Run deployment, increase the previous 60-second request timeout
+to 360 seconds so the five-minute worker limit can finish and return its response.
+Set request concurrency to 4 (see [CLOUD_RUN.md](CLOUD_RUN.md)); the
 previous setting of 1 queues other requests behind an active simulation even
 though the Node worker itself does not block the server.
 

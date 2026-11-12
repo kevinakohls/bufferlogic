@@ -31,7 +31,7 @@ Run with `docker run --rm -p 8080:8080 bufferlogic`; local HTTP requests still w
    Alerts do not cap charges. Confirm current regional pricing and free allowances.
 2. Build/deploy the Dockerfile to Cloud Run initially with authentication required.
    Use request-based billing, minimum instances 0, maximum instances 1, one CPU,
-   512 MiB memory, concurrency 4 and a 60-second request timeout initially.
+   512 MiB memory, concurrency 4 and a 360-second request timeout.
    Concurrency above 1 lets ordinary requests reach the app while an optional
    Monte Carlo worker is running. The app limits simulations to one per instance.
    Large calculations may time out and should be reduced for the demo.
@@ -101,7 +101,7 @@ gcloud run deploy bufferlogic \
   --concurrency 4 \
   --cpu 1 \
   --memory 512Mi \
-  --timeout 60 \
+  --timeout 360 \
   --port 8080 \
   --update-env-vars BUFFERLOGIC_PUBLIC_ORIGIN=https://bufferlogic-859125571309.us-central1.run.app
 ```
