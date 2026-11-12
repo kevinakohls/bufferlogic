@@ -12,7 +12,7 @@ export function createRecoveryStore(storage){
    return record;
   },
   save(state){
-   if(storage.getItem(recoveryKey)!==expected)throw new Error('Another tab changed the recovery copy. This tab will not overwrite it. Download your workspace before leaving.');
+   if(storage.getItem(recoveryKey)!==expected)throw new Error('Another tab changed the recovery copy. This tab will not overwrite it. Download your plan before leaving.');
    const savedAt=new Date().toISOString();
    const next=JSON.stringify({version:1,savedAt,state});
    storage.setItem(recoveryKey,next);expected=next;return savedAt;

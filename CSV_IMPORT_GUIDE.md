@@ -1,6 +1,6 @@
 # CSV project loads and templates
 
-Choose **Load files** to open a CSV as a workspace, replacing the current workspace
+Choose **Load files** to open a CSV as a plan, replacing the current plan
 after confirmation when there is undownloaded work. Choose **Create from template**
 to add a named project alongside existing projects. Both actions use the same task
 columns, aliases, numeric rules and priority defaults.
@@ -77,6 +77,6 @@ duplicate IDs, cycles, invalid estimates/priorities, and supporting assignments 
 validated before applying any data. A cycle report can include work blocked by it.
 
 When both project and calendar files are submitted, errors from both are collected.
-Failed file loads and template imports preserve the existing workspace and captured
+Failed file loads and template imports preserve the existing plan and captured
 baseline; no partial project or calendar is installed. The app displays the errors
-and confirms that the existing workspace was kept. Correct the files and retry.
+and confirms that the existing plan was kept. Correct the files and retry.

@@ -209,3 +209,28 @@ test('CSV load and template APIs share aliases/default Priority, and combine pro
  assert.equal(bad.status,400);const errors=await bad.json();assert.ok(errors.validationErrors.length>5);assert.match(errors.error,/CSV record 2/);assert.match(errors.error,/CSV record 3/);assert.match(errors.error,/Calendar CSV/);assert.match(errors.error,/Monday hours/);
  assert.deepEqual(loaded.plan.projects[0].tasks[1].dependsOn,['1']);
 }));
+
+test('optional Monte Carlo runs separately and leaves ordinary analytical scheduling unchanged',async()=>withServer(async base=>{
+ const plan=JSON.parse(await readFile('examples/feeding-protection.json','utf8'));
+ const before=await (await post(base,'/api/schedule',{plan})).json();
+ const pending=post(base,'/api/simulate',{plan,samples:1000,seed:17});
+ assert.equal((await fetch(base+'/api/example')).status,200);
+ const response=await pending;assert.equal(response.status,200);const report=await response.json();assert.equal(report.samples,1000);assert.equal(report.seed,17);assert.equal(report.resourceViolationSamples,0);assert.ok(report.projects[0].completionPercentiles.p99);
+ const after=await (await post(base,'/api/schedule',{plan})).json();assert.deepEqual(after,before);assert.ok(!('monteCarlo' in after));
+ assert.equal((await post(base,'/api/simulate',{plan,samples:10})).status,400);
+ assert.equal((await fetch(base+'/monte-carlo-ui.js')).status,200);
+}));
+
+test('simulation cancellation releases the worker slot while normal requests remain available',async()=>withServer(async base=>{
+ const plan=JSON.parse(await readFile('examples/feeding-protection.json','utf8')),controller=new AbortController();
+ const running=fetch(base+'/api/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan,samples:50000,seed:1}),signal:controller.signal}).catch(error=>error);
+ await new Promise(resolve=>setTimeout(resolve,40));
+ assert.equal((await fetch(base+'/api/example')).status,200);
+ assert.equal((await post(base,'/api/simulate',{plan,samples:1000})).status,409);
+ controller.abort();const aborted=await running;assert.equal(aborted.name,'AbortError');
+ let response:Response|undefined;
+ for(let retry=0;retry<30;retry++){
+  await new Promise(resolve=>setTimeout(resolve,20));response=await post(base,'/api/simulate',{plan,samples:1000,seed:2});if(response.status!==409)break;
+ }
+ assert.equal(response!.status,200);assert.equal((await response!.json()).samples,1000);
+}));

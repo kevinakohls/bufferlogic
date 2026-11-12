@@ -7,7 +7,7 @@ comments, and a weekly resource-capacity report. Ordinary CSV import ordering is
 
 Start `npm run ui`, then click **Create from template**. Choose your template CSV or
 **Use housing template** or **Use software template**, enter a new project name, and click **Create from template**.
-A project is appended to the current workspace. In an empty workspace it starts a
+A project is appended to the current plan. In an empty plan it starts a
 new portfolio. Repeat with another name to demonstrate two software projects sharing
 one resource pool.
 
@@ -49,7 +49,7 @@ See [CSV import rules](CSV_IMPORT_GUIDE.md) for the shared schema and validation
 Resource labels are shared across copies; `Frontend Developer` means the same planned
 capacity in both projects. This is not a new developer per project. New resource labels
 receive eight-hour Monday–Friday calendars (40 hours per week), independently of the
-workspace’s hours-per-estimated-workday conversion. Existing calendars, notes and projects
+plan’s hours-per-estimated-workday conversion. Existing calendars, notes and projects
 are preserved. Review those defaults before making customer promises. Naming an actual
 person does not add capacity; multiple developers must be modeled as distinct resources
 and assigned appropriately.

@@ -13,7 +13,7 @@ npm run demo
 ```
 
 If the default npm cache is unwritable in the cloud environment, use
-`npm ci --cache /workspace/.npm-cache`. `npm test` compiles with strict
+`npm ci --cache /plan/.npm-cache`. `npm test` compiles with strict
 TypeScript settings before running the tests. Generated files go into ignored
 `dist/`; the runnable demo is `examples/scenario1.ts`.
 
@@ -345,13 +345,13 @@ npm run ui
 
 On Windows PowerShell, use `npm.cmd` in place of `npm`. Leave the server running
 and open `http://localhost:3000`. Stop it with Ctrl+C. This runs a separate copy
-on your computer; its calculations do not run on Google Cloud. Download workspaces
+on your computer; its calculations do not run on Google Cloud. Download plans
 to move them between the local and hosted copies. Browser recovery is specific to
 the browser and site address, so recovery from one copy does not appear in the other.
 
 `npm run ui` builds and starts `src/ui-server.ts`. `ui/` contains the dependency-free
 browser view. API load/schedule routes call the parsers and engine without saving
-workspace files on the server. `tests/ui-server.test.ts` exercises the API.
+plan files on the server. `tests/ui-server.test.ts` exercises the API.
 `BUFFERLOGIC_PORT` selects another local port; Cloud Run supplies `PORT` and uses
 `BUFFERLOGIC_PUBLIC_ORIGIN`. See [Cloud Run setup and releases](CLOUD_RUN.md) and
 [UI review instructions](UI_REVIEW_GUIDE.md).
@@ -395,7 +395,7 @@ merged. Work on a branch, open a pull request, check GitHub Actions and merge af
 human review. Merging does **not** update local installations or Cloud Run; cloud
 deployment remains manual.
 
-If migrating an existing GitLab checkout, preserve it and its workspace files.
+If migrating an existing GitLab checkout, preserve it and its plan files.
 GitLab-only merge commits can prevent a fast-forward update to GitHub history.
 Use a fresh GitHub clone in a new folder rather than force-resetting or deleting
 the old checkout:
@@ -409,7 +409,7 @@ npm.cmd run ui
 
 Run the clone command from the parent folder where you want the new checkout.
 If you use a custom `bufferlogic` shell function, update its folder separately;
-`npm.cmd run ui` above directly starts the new checkout. Downloaded workspace
+`npm.cmd run ui` above directly starts the new checkout. Downloaded plan
 JSON files can be opened in either copy.
 
 To update a local PowerShell checkout after merging, stop the app with Ctrl+C.

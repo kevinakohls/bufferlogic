@@ -1,3 +1,4 @@
+import {runSimulationJob} from './monte-carlo-job.js';
 import {CsvValidationError} from './csv-schema.js';
 import {taskEstimateIssues,TaskEstimateValidationError} from './task-estimate-validation.js';
 import {compareScenarios} from './scenario-comparison.js';
@@ -41,11 +42,12 @@ export function createReviewServer(options: ReviewServerOptions = {}) {
     if(url.protocol!=='https:'||url.username||url.password||url.pathname!=='/'||url.search||url.hash)throw new Error('Public origin must be an HTTPS origin without a path or credentials');
     publicOrigin=url.origin;
   }
+  let simulationBusy=false;
   return createServer(async(request,response)=>{
     response.setHeader('Cache-Control','no-store');
     response.setHeader('X-Content-Type-Options','nosniff');
     response.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'");
-    const json=(value:unknown,status=200)=>{response.statusCode=status;response.setHeader('Content-Type','application/json; charset=utf-8');response.end(JSON.stringify(value));};
+    const json=(value:unknown,status=200)=>{if(response.destroyed||response.writableEnded)return;response.statusCode=status;response.setHeader('Content-Type','application/json; charset=utf-8');response.end(JSON.stringify(value));};
     try {
       const host=request.headers.host??'';
       const local=/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
@@ -57,6 +59,14 @@ export function createReviewServer(options: ReviewServerOptions = {}) {
       if(request.method==='GET'&&path==='/api/software-template'){json({csvText:await readFile(new URL('examples/software-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/example'){
         json({projectText:await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8'),calendarText:await readFile(new URL('examples/house-resource-calendars.csv',root),'utf8')});return;
+      }
+      if(request.method==='POST'&&path==='/api/simulate'){
+        if(simulationBusy){json({error:'A simulation is already running. Try again after it finishes or cancel it.'},409);return;}
+        const data=await body(request),plan=parseReviewPlan(data.plan);
+        if(simulationBusy){json({error:'A simulation is already running. Try again shortly.'},409);return;}
+        simulationBusy=true;const controller=new AbortController(),cancel=()=>{if(!response.writableEnded)controller.abort();};response.once('close',cancel);
+        try{json(await runSimulationJob(plan,{...(data.samples===undefined?{}:{samples:data.samples as number}),...(data.seed===undefined?{}:{seed:data.seed as number})},controller.signal));}
+        finally{response.removeListener('close',cancel);simulationBusy=false;}return;
       }
       if(request.method==='POST'&&path==='/api/compare'){
         const data=await body(request);const issues=[...taskEstimateIssues(data.baseline),...taskEstimateIssues(data.scenario)];if(issues.length)throw new TaskEstimateValidationError(issues);json(compareScenarios(data.baseline,data.scenario));return;
@@ -122,7 +132,7 @@ export function createReviewServer(options: ReviewServerOptions = {}) {
         const data=await body(request);json(reviewResult(data.plan));return;
       }
       if(request.method==='GET'&&path==='/task-estimate-validation.js'){response.setHeader('Content-Type','text/javascript; charset=utf-8');response.end(await readFile(new URL('dist/src/task-estimate-validation.js',root)));return;}
-      const files:Record<string,{file:string;type:string}>={'/':{file:'index.html',type:'text/html'},'/favicon.svg':{file:'favicon.svg',type:'image/svg+xml'},'/workspace-name.js':{file:'workspace-name.js',type:'text/javascript'},'/app.js':{file:'app.js',type:'text/javascript'},'/help.js':{file:'help.js',type:'text/javascript'},'/browser-recovery.js':{file:'browser-recovery.js',type:'text/javascript'},'/timeline.js':{file:'timeline.js',type:'text/javascript'},'/forecast-state.js':{file:'forecast-state.js',type:'text/javascript'},'/feeding-visuals.js':{file:'feeding-visuals.js',type:'text/javascript'},'/styles.css':{file:'styles.css',type:'text/css'},'/bufferlogic-logo.png':{file:'bufferlogic-logo.png',type:'image/png'}};
+      const files:Record<string,{file:string;type:string}>={'/':{file:'index.html',type:'text/html'},'/favicon.svg':{file:'favicon.svg',type:'image/svg+xml'},'/workspace-name.js':{file:'workspace-name.js',type:'text/javascript'},'/app.js':{file:'app.js',type:'text/javascript'},'/help.js':{file:'help.js',type:'text/javascript'},'/monte-carlo-ui.js':{file:'monte-carlo-ui.js',type:'text/javascript'},'/browser-recovery.js':{file:'browser-recovery.js',type:'text/javascript'},'/timeline.js':{file:'timeline.js',type:'text/javascript'},'/forecast-state.js':{file:'forecast-state.js',type:'text/javascript'},'/feeding-visuals.js':{file:'feeding-visuals.js',type:'text/javascript'},'/styles.css':{file:'styles.css',type:'text/css'},'/bufferlogic-logo.png':{file:'bufferlogic-logo.png',type:'image/png'}};
       if(request.method==='GET'&&files[path]){const asset=files[path]!;response.setHeader('Content-Type',asset.type.startsWith('image/')?asset.type:asset.type+'; charset=utf-8');response.end(await readFile(new URL('ui/'+asset.file,root)));return;}
       json({error:'Not found'},404);
     } catch(error){json({error:error instanceof Error?error.message:'Unable to calculate the schedule',...(error instanceof TaskEstimateValidationError?{issues:error.issues}:{}),...(error instanceof CsvValidationError?{validationErrors:error.problems}:{})},400);}

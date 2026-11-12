@@ -72,7 +72,7 @@ the UI rejects changes that would silently reposition those recorded dates.
 
 ## Save and reopen a review
 
-After recalculating, click **Save workspace**. Your browser downloads the current plan,
+After recalculating, click **Save plan**. Your browser downloads the current plan,
 calendars, calculated tasks, conflicts and project forecasts as a JSON file. Select it
 as the project file and click **Load files** to reopen and recalculate it. Browser recovery keeps a local copy of edits and captured baselines when storage
 is available. Restore it on return; it is not saved version history or cloud storage. Use Compare with a captured or saved baseline,
@@ -174,7 +174,7 @@ values; the tables and CSV export retain the full detail. First and last weeks
 are clipped to the reporting period. Graphs use the last calculated schedule until
 you recalculate pending edits.
 
-## Order projects and save the workspace
+## Order projects and save the plan
 
 Use **Move up** or **Move down** under **Project order**, then **Recalculate
 schedule**. Higher projects get first choice among eligible tasks on shared
@@ -182,17 +182,17 @@ resources; dependencies, active tasks, fixed commitments and explicit task-order
 exceptions still apply. The displayed forecasts remain from the previous
 calculation until you recalculate.
 
-Click **Save workspace** after recalculating. To restore the downloaded file, click
-**Open saved workspace** and select it. This restores all projects, their order,
+Click **Save plan** after recalculating. To restore the downloaded file, click
+**Open saved plan** and select it. This restores all projects, their order,
 notes, progress and calendars, including the recorded schedule start date. The
-file keeps its existing format and older saved workspaces still load. Opening a
-workspace asks before discarding pending edits.
+file keeps its existing format and older saved plans still load. Opening a
+plan asks before discarding pending edits.
 
 ## Task checklists
 
 Open **Task checklists** and select a task. Add, edit, remove or check items and
-review the completed count. Recalculate before **Save workspace**; **Open saved
-workspace** restores the items and their checked state. Checklist completion never
+review the completed count. Recalculate before **Save plan**; **Open saved
+plan** restores the items and their checked state. Checklist completion never
 automatically changes task status or forecasts. Work with its own duration,
 resource or dependency belongs in a separate task.
 
@@ -200,7 +200,7 @@ Housing and software templates contain three draft items per task; revise these
 for the actual project. CSV templates can include a **Checklist** column with one
 item per line in a quoted cell (Excel: Alt+Enter). New project copies inherit the
 text with all items unchecked. Editing a project's checklist changes that copy
-only. Existing saved workspaces keep their existing items; new draft items are
+only. Existing saved plans keep their existing items; new draft items are
 not injected into previously saved tasks.
 
 ## Project and task deadlines
@@ -213,18 +213,18 @@ Project cards summarize P50 and P95. Task rows assess their deterministic finish
 or recorded finish for completed tasks. Late values are highlighted. These are
 calendar days when dated and elapsed days when numeric, not resource workdays.
 
-Clear a field and recalculate to remove its deadline. **Save workspace** and
-**Open saved workspace** preserve the targets. Deadlines do not change dispatch,
+Clear a field and recalculate to remove its deadline. **Save plan** and
+**Open saved plan** preserve the targets. Deadlines do not change dispatch,
 priorities, forecasts or feasibility; fixed start/finish commitments remain
 separate. A forecast marked infeasible is diagnostic even when it meets a target.
-Date targets without a calendar show **Calendar required**. Older workspaces
+Date targets without a calendar show **Calendar required**. Older plans
 without deadlines continue to load.
 
 ## Put a project on hold
 
 Use **Put on hold** beside **Move up / Move down**, then **Recalculate schedule**.
 New unstarted, unlocked tasks are excluded from dispatch and resource utilization.
-Their IDs, estimates, notes, checklists and dependencies stay in the workspace.
+Their IDs, estimates, notes, checklists and dependencies stay in the plan.
 Work already in progress continues nonpreemptively; completed actuals and locked
 appointments are retained. A hold does not release fixed reservations.
 
@@ -316,7 +316,7 @@ no protection band.
 
 ## Days or calendar dates
 
-Use **Time display** beside **Save workspace** to switch between **Days from
+Use **Time display** beside **Save plan** to switch between **Days from
 start** and **Calendar dates**. This changes completion cards, calculated task
 schedule, feeding report and timeline immediately, without recalculation. It does
 not change estimates, deadlines, locks, actuals or forecasts. Save/open retains
@@ -345,25 +345,25 @@ Open **Resources & calendars** to add or delete resources, including when the li
 
 **Delete** asks “Are you sure?” and explains that affected tasks become unassigned. Confirming removes the resource, its calendar, dated exceptions and descriptive details; all affected task resource fields become blank. Cancelling leaves everything intact. Assign replacements in **Tasks**. The engine refuses to schedule any unassigned task, including active, held or completed work; it never invents a replacement resource.
 
-You may **Save workspace** with unassigned tasks before recalculating. That file is a draft containing the edited plan and no calculated forecasts. Reopening it keeps tasks unassigned and displays a request to assign resources. Normal workspaces still require recalculation before saving edited results.
+You may **Save plan** with unassigned tasks before recalculating. That file is a draft containing the edited plan and no calculated forecasts. Reopening it keeps tasks unassigned and displays a request to assign resources. Normal plans still require recalculation before saving edited results.
 
 Manual check: load a plan with task resources missing from its resource array; verify they appear. Add an idle resource, reassign tasks, and recalculate; verify it remains. Cancel a deletion, then confirm it; verify the task dropdowns say Unassigned. Save and reopen the draft, add a replacement, reassign the tasks and recalculate. Delete all resources and verify Add resource still works. In calendar mode verify new resources have eight-hour weekdays, custom hours survive, and deleted-resource exceptions are removed.
 
 ## Create a project without importing files
 
-Click **New project**, enter a name, and click **Create project**. In a fresh workspace, **Schedule starts** sets the calendar origin; the calendar uses eight hours per estimated workday. An empty project displays “No tasks yet” instead of a zero-day completion forecast. Adding another project appends it to the existing portfolio without changing its start date, resources, tasks or custom calendars.
+Click **New project**, enter a name, and click **Create project**. In a fresh plan, **Schedule starts** sets the calendar origin; the calendar uses eight hours per estimated workday. An empty project displays “No tasks yet” instead of a zero-day completion forecast. Adding another project appends it to the existing portfolio without changing its start date, resources, tasks or custom calendars.
 
 Open **Resources & calendars** and add the people or resource types you need (40-hour weekdays by default). In **Tasks**, click **Add task**. Choose its project, enter a name, good/P20 and poor/P80 days, resource, and optional comma-separated predecessor IDs from the task table. IDs are generated uniquely across the portfolio and tasks get increasing priorities within the project. New tasks start as planned working effort at 100% allocation; edit those fields afterward as needed. Two zero estimates create a milestone. Predecessors may belong to another project but must already exist.
 
-You can add tasks before assigning resources. Save/reopen preserves the draft; scheduling waits until every task has a resource. Empty workspaces are also saveable. Adding a task or project submits current edits and refreshes the calculation when assignments are complete. Use **Recalculate schedule** after later table edits.
+You can add tasks before assigning resources. Save/reopen preserves the draft; scheduling waits until every task has a resource. Empty plans are also saveable. Adding a task or project submits current edits and refreshes the calculation when assignments are complete. Use **Recalculate schedule** after later table edits.
 
 Manual check: create a blank project, save/reopen it, add an unassigned task, and save/reopen again. Add a resource, assign it, and add a dependent task. Check the resulting timeline and forecasts. Add a second blank project, confirm the first remains unchanged, and add another task sharing the resource. Check Cancel and invalid names, estimates and dependency IDs.
 
-## Workspace names and manual project entry
+## Plan names and manual project entry
 
-Use **Add blank project** beside **Project order** (or **Add project** at the top) to create Release Two manually. The manual form hides the template form and has a distinct **Create blank project** button. **Create from template** remains the CSV-template workflow, with a **Start a blank project instead** shortcut. Adding a blank project keeps existing tasks, resources, calendar and workspace name.
+Use **Add blank project** beside **Project order** (or **Add project** at the top) to create Release Two manually. The manual form hides the template form and has a distinct **Create blank project** button. **Create from template** remains the CSV-template workflow, with a **Start a blank project instead** shortcut. Adding a blank project keeps existing tasks, resources, calendar and plan name.
 
-The editable **Workspace name** defaults to the first project name followed by “workspace”, or “Untitled workspace” when there are no projects. Renaming updates the browser-tab title and saved plan metadata without recalculating. Downloads include the workspace name and a timestamp, with filename-unsafe characters replaced. Reopening restores the name. The browser tab also uses the BufferLogic link-symbol icon.
+The editable **Plan name** defaults to the first project name followed by “plan”, or “Untitled plan” when there are no projects. Renaming updates the browser-tab title and saved plan metadata without recalculating. Downloads include the plan name and a timestamp, with filename-unsafe characters replaced. Reopening restores the name. The browser tab also uses the BufferLogic link-symbol icon.
 
 ## P95 target status and remaining-estimate review
 
@@ -371,15 +371,15 @@ Project cards and the **P95 target status** column in Deadlines use the P95 comp
 
 In Progress, **Estimate review** is blank and disabled for not-started and completed tasks. It applies only to in-progress tasks. Advancing progress still marks active remaining estimates Needs review; completing a task clears its displayed review field.
 
-The timeline explains when no critical chain is calculated because a project is empty, a workspace has unassigned tasks, or work is held/blocked. If a populated, scheduled project unexpectedly loses its critical chain, save that workspace before further edits so the state can be reproduced.
+The timeline explains when no critical chain is calculated because a project is empty, a plan has unassigned tasks, or work is held/blocked. If a populated, scheduled project unexpectedly loses its critical chain, save that plan before further edits so the state can be reproduced.
 
 ## Delete a project
 
-In **Project order**, click **Delete project**. Confirmation names the project and task count and explains that resources are retained. Save a separate workspace copy first if you may need to restore it. Cancelling changes nothing. Confirming removes the project and all its tasks and recalculates the remaining portfolio, preserving current edits, resource calendars, idle resources and the workspace name. Save workspace afterward to keep the deletion.
+In **Project order**, click **Delete project**. Confirmation names the project and task count and explains that resources are retained. Save a separate plan copy first if you may need to restore it. Cancelling changes nothing. Confirming removes the project and all its tasks and recalculates the remaining portfolio, preserving current edits, resource calendars, idle resources and the plan name. Save plan afterward to keep the deletion.
 
 Deletion is blocked when another project's tasks depend on work in the selected project, including held or completed dependent tasks. The error identifies the dependent project and tasks. Edit or remove those dependency references first; deletion does not silently break them. Feeding-task selections and task-order overrides for removed tasks are cleared.
 
-You can delete the last project. Resources remain available, the empty workspace is saveable, and **New project/Add project** lets you start again. Add task is disabled until a project exists.
+You can delete the last project. Resources remain available, the empty plan is saveable, and **New project/Add project** lets you start again. Add task is disabled until a project exists.
 
 Manual check: cancel deletion and verify pending edits remain. Confirm deletion of an independent project and verify all its tasks disappear while shared resources remain. Try deleting a project with cross-project dependents and verify it is blocked. Delete the last project, save/reopen, and create a new project using retained resources.
 
@@ -407,34 +407,34 @@ Choose **Create from template → Use housing template**, name the project House
 
 ## Compare a baseline with a what-if scenario
 
-1. Open a workspace, resolve unassigned tasks and recalculate.
-2. Open **Compare** and click **Set current as baseline**. This captures a detached copy of the calculated plan. **Download baseline** saves that original plan for later use. A captured baseline stays through edits and recalculation and is included in browser recovery. After reloading, choose Restore workspace to recover it. Opening another workspace clears the current baseline; download it separately to keep a portable copy.
-3. Change priorities, estimates, allocations, supporting resources, calendars, holds or other scheduling inputs. Recalculate as usual. Existing comparison results are hidden when the workspace changes.
-4. Return to **Compare** and click **Compare versions**. The current workspace is the scenario; the captured plan is the baseline. Earlier P95 forecasts are shaded green, later ones red. Other projects may be delayed by a change that helps the highest-priority project, so inspect all rows.
-5. Alternatively, choose a saved original workspace JSON in the baseline file picker. This replaces the session baseline. The file is read for comparison without replacing the current workspace.
-6. Save the current workspace to keep a useful scenario. To restore the original, open the downloaded baseline or your original saved workspace. **Clear comparison** removes the baseline selection and report without changing the schedule.
+1. Open a plan, resolve unassigned tasks and recalculate.
+2. Open **Compare** and click **Set current as baseline**. This captures a detached copy of the calculated plan. **Download baseline** saves that original plan for later use. A captured baseline stays through edits and recalculation and is included in browser recovery. After reloading, choose Restore previous plan to recover it. Opening another plan clears the current baseline; download it separately to keep a portable copy.
+3. Change priorities, estimates, allocations, supporting resources, calendars, holds or other scheduling inputs. Recalculate as usual. Existing comparison results are hidden when the plan changes.
+4. Return to **Compare** and click **Compare versions**. The current plan is the scenario; the captured plan is the baseline. Earlier P95 forecasts are shaded green, later ones red. Other projects may be delayed by a change that helps the highest-priority project, so inspect all rows.
+5. Alternatively, choose a saved original plan JSON in the baseline file picker. This replaces the session baseline. The file is read for comparison without replacing the current plan.
+6. Save the current plan to keep a useful scenario. To restore the original, open the downloaded baseline or your original saved plan. **Clear comparison** removes the baseline selection and report without changing the schedule.
 
 The report includes project order, P95 completion and shift, deadline status, changed task timing and primary/supporting assignments, additions/removals, suspension/resumption, and resource/calendar changes. Task rows compare scheduling fields rather than checklist and comment text. Missing/withheld forecasts are labeled unavailable, never zero. Schedule conflicts are reported separately and indicate that an apparently earlier forecast may be infeasible.
 
-Both plans are recalculated using the current engine, rather than trusting stored forecast fields. Compare versions of the same workspace (matching portfolio ID), with the same **Progress as of**, schedule origin and calendar mode. This is a what-if comparison, not a historical progress comparison. Day shifts are elapsed calendar days with calendars and abstract days otherwise. Display preference comes from the current workspace. A newly assigned version label alone is not a schedule change.
+Both plans are recalculated using the current engine, rather than trusting stored forecast fields. Compare versions of the same plan (matching portfolio ID), with the same **Progress as of**, schedule origin and calendar mode. This is a what-if comparison, not a historical progress comparison. Day shifts are elapsed calendar days with calendars and abstract days otherwise. Display preference comes from the current plan. A newly assigned version label alone is not a schedule change.
 
-Manual check: capture a two-project baseline, download it, move the second project up, recalculate and compare. Verify one project's improvement and the other project's delay. Change a supporting assignment and confirm its task row reports Resources. Hold/resume a project and confirm withheld/resumed work is distinguished from removal. Test a saved-file baseline and an incompatible progress date. Confirm neither the original file nor current workspace is modified by comparison. This comparison provides measured outcomes for future scenario evaluation; it does not automatically search or rank solutions.
+Manual check: capture a two-project baseline, download it, move the second project up, recalculate and compare. Verify one project's improvement and the other project's delay. Change a supporting assignment and confirm its task row reports Resources. Hold/resume a project and confirm withheld/resumed work is distinguished from removal. Test a saved-file baseline and an incompatible progress date. Confirm neither the original file nor current plan is modified by comparison. This comparison provides measured outcomes for future scenario evaluation; it does not automatically search or rank solutions.
 
 ### Delete a task and compare the result
 
-Save a workspace copy or capture a Compare baseline first. In Tasks, each row has a **Delete task** button. Cancel the “Are you sure?” prompt to keep the task. Confirm to remove the task, including its checklist, comments and progress. Deletion is blocked if any other task depends on it, including work in another project or on hold; the error names the dependents. Remove or reassign those dependencies explicitly before retrying. Resources and calendars remain available, and an empty project is retained for new tasks. Feeding selections and task order overrides for the deleted task are removed. Successful deletion recalculates the workspace (or leaves a saveable draft when empty or unassigned). Compare retains the captured baseline and reports the task as **Removed**. Save workspace to keep the deletion.
+Save a plan copy or capture a Compare baseline first. In Tasks, each row has a **Delete task** button. Cancel the “Are you sure?” prompt to keep the task. Confirm to remove the task, including its checklist, comments and progress. Deletion is blocked if any other task depends on it, including work in another project or on hold; the error names the dependents. Remove or reassign those dependencies explicitly before retrying. Resources and calendars remain available, and an empty project is retained for new tasks. Feeding selections and task order overrides for the deleted task are removed. Successful deletion recalculates the plan (or leaves a saveable draft when empty or unassigned). Compare retains the captured baseline and reports the task as **Removed**. Save plan to keep the deletion.
 
 ## In-app Help
 
-The header's **Help** button is available before loading a workspace and while
+The header's **Help** button is available before loading a plan and while
 calculations run. Its six topics cover Getting started, Forecasts & deadlines,
 Timeline, Compare, Save & reopen, and Common problems. Opening it or changing
 topics does not edit a plan, recalculate it, clear a baseline or replace files.
-Use Close or Escape to return to the workspace. Keyboard focus stays in the modal
+Use Close or Escape to return to the plan. Keyboard focus stays in the modal
 while it is open and returns to Help when it closes.
 
 Manual checks: open Help on the initial screen, visit all six topics and close it
-using both Close and Escape. Repeat with a loaded workspace, unsaved edits and a
+using both Close and Escape. Repeat with a loaded plan, unsaved edits and a
 captured baseline; verify those are unchanged. Check narrow screens, keyboard
 navigation and scrolling through the longer topics. In particular, Timeline
 explains project highlighting and link filters; Save & reopen explains that the
@@ -443,30 +443,30 @@ hosted demo has no automatic cloud storage.
 
 ## Browser recovery and stale results
 
-After loading a workspace, edits and captured baselines are saved to local browser
-storage automatically. The status above the workspace reports success or storage
-errors. Reopening the same site offers **Restore workspace**, **Discard recovery
+After loading a plan, edits and captured baselines are saved to local browser
+storage automatically. The status above the plan reports success or storage
+errors. Reopening the same site offers **Restore previous plan**, **Discard recovery
 copy**, or **Download recovery copy**. Recovery data downloads are troubleshooting
-snapshots, not normal workspace files; use **Save workspace** and **Download
+snapshots, not normal plan files; use **Save plan** and **Download
 baseline** for portable plans. Selected baseline files must be selected again after
-reload; captured baselines are recovered automatically with the workspace.
+reload; captured baselines are recovered automatically with the plan.
 
 Restore recalculates the last calculated plan with the current engine, then
 reapplies pending edits, including unfinished calendar exceptions. Those edits
 remain stale until recalculated. A restore failure retains the browser copy.
-Discard requires confirmation. **Clear browser recovery** removes the copy and
+Discard requires confirmation. **Remove recovery copy** removes the copy and
 pauses automatic recovery for that tab until **Resume browser recovery** is selected. Other open editing tabs may save a new copy. Clearing browser data, private
 browsing, storage quotas, switching site address, or another device can make
 recovery unavailable. The app keeps working and shows a warning if storage fails.
 A second tab cannot silently overwrite a copy changed by another tab. If the slot
 is cleared, open editing tabs can safely resume writing without reloading; the
 first successful writer owns the copy. Download each tab's work separately. There is one recovery slot per
-browser/site, not a workspace history. Do not rely on it as the only backup.
+browser/site, not a plan history. Do not rely on it as the only backup.
 
-The browser may warn before leaving when a workspace or captured baseline has
+The browser may warn before leaving when a plan or captured baseline has
 not been downloaded. Browser policies can suppress unload prompts, so recovery
 writes occur on edits and when the page becomes hidden too. Opening a different
-workspace or example asks before replacing undownloaded work or a baseline.
+plan or example asks before replacing undownloaded work or a baseline.
 
 Edits show a sticky **Schedule out of date** banner with a **Recalculate schedule**
 button. Previous forecast cards, timeline, calculated schedule, feeding reports,
@@ -478,8 +478,8 @@ that no schedule is available rather than a fabricated forecast.
 Manual checks: capture a baseline, edit a task and reload. Restore and verify the
 edit, baseline, and stale warning; recalculate and confirm the warning clears.
 Repeat with an unfinished calendar exception, an invalid dependency, an unassigned
-draft, a renamed workspace, notes and checklist edits. Check warning behavior when
-replacing a workspace, Discard confirmation, Clear recovery, blocked/full storage,
+draft, a renamed plan, notes and checklist edits. Check warning behavior when
+replacing a plan, Discard confirmation, Clear recovery, blocked/full storage,
 two tabs, and narrow screens. Browser recovery must not change scheduling logic.
 
 ## Estimate errors identify the task
@@ -499,7 +499,7 @@ it and focuses an invalid estimate without hiding it behind the retained task id
 Progress row; their Go to action opens Progress. Correcting the estimates clears
 the highlighting, but the schedule stays out of date until recalculation succeeds.
 Edits and browser recovery are retained. Imported invalid files receive readable
-task errors; they do not replace the current workspace or highlight unrelated rows.
+task errors; they do not replace the current plan or highlight unrelated rows.
 
 Manual check: make a good estimate larger than its poor estimate, switch the
 project filter or tab, then recalculate. Use Go to to find the task, correct either
@@ -514,7 +514,7 @@ milestone is accepted and the task row returns to normal after correction.
   editor for active tasks. Invalid original estimates open it automatically. Go to
   focuses those original fields, while remaining errors navigate to Progress.
   Correcting originals does not reset status, actuals or remaining estimates.
-- **Retired identities:** deleting tasks/projects records their IDs in the workspace.
+- **Retired identities:** deleting tasks/projects records their IDs in the plan.
   Manual additions and template copies skip those IDs after save/open, so Compare
   reports an unrelated replacement as Removed plus Added. Already-reused IDs in
   older files cannot be repaired automatically; keep original baselines as evidence.
@@ -552,4 +552,28 @@ File loads and templates use the [same task schema](CSV_IMPORT_GUIDE.md). Test
 `examples/manufacturing-template.csv` in both modes, including a BOM, missing
 Priority, aliases and dependencies. Explicit Priority values are now honored in
 templates too. Test combined invalid project/calendar files and multiple row errors.
-A failed import must retain the existing workspace, calendars and captured baseline.
+A failed import must retain the existing plan, calendars and captured baseline.
+
+
+### Loading files while recovery is pending
+
+With a recovery copy waiting, Load files, opening another plan, loading an
+example or creating a project must show a visible explanation with Restore,
+Discard and Download recovery actions. It must not silently return, discard the
+copy, or send a load request. Selected project/calendar files remain selected.
+Cancel Discard to retain recovery. After confirmed Discard, click Load files again
+to import the selected files. Restore recovers the old plan without loading
+the selected CSV; replacing it still follows the normal confirmation rules.
+
+## Plan terminology and optional Monte Carlo
+
+The UI now says Plan name, Save plan, Open saved plan and Restore previous plan.
+A plan contains all projects and shared resources/calendars. Existing saved JSON,
+recovery keys and filenames remain compatible. This is not single-project export.
+
+For simulations, follow [MONTE_CARLO.md](MONTE_CARLO.md). Verify that the panel is
+opt-in, analytical cards and deadline status remain unchanged, reports can be
+downloaded, Cancel works, scheduling edits invalidate a report, and date/day display
+reformats it. Other API requests must remain usable while the worker is busy.
+Check old plan files, recovery restore, held work, fixed-commitment failures and
+mobile controls. More paths are modeled; real-world accuracy is not guaranteed.
