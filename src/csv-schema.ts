@@ -14,6 +14,8 @@ const names=new Map(taskColumns.map(name=>[name.toLowerCase(),name]));
 names.set('predecessors','Depends on');
 names.set('low estimate p20 (days)','Good days');
 names.set('high estimate p80 (days)','Poor days');
+for(const name of ['low','low estimate','low estimate (days)','low estimate p10 (days)'])names.set(name,'Good days');
+for(const name of ['high','high estimate','high estimate (days)','high estimate p90 (days)'])names.set(name,'Poor days');
 export function canonicalColumn(value:string):string {const trimmed=value.trim();return names.get(trimmed.toLowerCase())??trimmed;}
 
 /** Reject ambiguous headers before accessing cells; collect all identifiable header errors. */
@@ -39,7 +41,7 @@ export function csvTable(text:string,required:readonly string[],label='Task CSV'
     if(row.length!==header.length){problems.push(`${label} record ${index+2} has the wrong number of fields: expected ${header.length}, received ${row.length}`);return [];}
     return [{row,record:index+2,cell:(name:string)=>{const column=header.indexOf(name);return column<0?'':row[column]!.trim();}}];
   });
-  return {header,records,problems};
+  return {header,rawHeader:raw,records,problems};
 }
 export interface CsvTask extends Task {
   readonly supportingResources?:readonly ResourceAssignment[];
@@ -52,6 +54,11 @@ export interface CsvTask extends Task {
 export interface CsvTaskRecord { readonly record:number;readonly projectId:string;readonly task:CsvTask; }
 export function readTaskCsv(text:string,options:{requireProject?:boolean;template?:boolean}={}) {
   const table=csvTable(text,['Task','Resource','Good days','Poor days',...(options.requireProject?['Project']:[])],options.requireProject?'Portfolio CSV':'Task CSV');
+  const lowHeader=table.rawHeader[table.header.indexOf('Good days')]!.trim().toLowerCase();
+  const highHeader=table.rawHeader[table.header.indexOf('Poor days')]!.trim().toLowerCase();
+  const newLow=['low','low estimate','low estimate (days)','low estimate p10 (days)'].includes(lowHeader);
+  const newHigh=['high','high estimate','high estimate (days)','high estimate p90 (days)'].includes(highHeader);
+  if(newLow!==newHigh)throw new CsvValidationError(['Use a matching pair of Low/High (P10/P90) headers or legacy Good/Poor (P20/P80) headers; do not mix estimate conventions.']);
   const {header,problems}=table,records:CsvTaskRecord[]=[],ordinals=new Map<string,number>();
   const numeric=(raw:string,label:string)=>{
     if(!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(raw)||!Number.isFinite(Number(raw))){problems.push(`${label} must be a finite number`);return NaN;}
@@ -83,7 +90,7 @@ export function readTaskCsv(text:string,options:{requireProject?:boolean;templat
       }
     }catch(error){problems.push(`${label} (${id}): ${(error as Error).message}`);}
     const notes=Object.fromEntries([['Description','description'],['Comments','comments'],['Completion criteria','completionCriteria'],['Lock reason','lockReason']].filter(([column])=>header.includes(column!)).map(([column,field])=>[field,cell(column!)]));
-    records.push({record,projectId,task:{id,name,resource,goodCase,poorCase,priority,dependsOn,...supporting,...notes,
+    records.push({record,projectId,task:{id,name,resource,goodCase,poorCase,...(newLow?{estimateBasis:'p10-p90' as const}:{}),priority,dependsOn,...supporting,...notes,
       ...(header.includes('Checklist')?{checklist:cell('Checklist').split(/\r?\n/).map(text=>text.trim()).filter(Boolean).map(text=>({text,completed:false}))}:{})}});
   }
   if(!records.length)problems.push('CSV has no tasks');
@@ -110,6 +117,6 @@ export function readTaskCsv(text:string,options:{requireProject?:boolean;templat
     const blocked=[...incoming].filter(([,count])=>count>0).map(([id])=>id);
     if(blocked.length)problems.push(`Dependency cycle (or work blocked by it): ${blocked.join(', ')}`);
   }
-  if(problems.length)throw new CsvValidationError(problems);
+  if(problems.length)throw new CsvValidationError(newLow?problems.map(p=>p.replaceAll('Good days','Low estimate').replaceAll('Poor days','High estimate')):problems);
   return {header,records};
 }

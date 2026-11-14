@@ -1,4 +1,4 @@
-ID,Task,Resource,Supporting resources,Depends on,Good days,Poor days,Priority,Project,Description,Comments,Checklist
+ID,Task,Resource,Supporting resources,Depends on,Low estimate (days),High estimate (days),Priority,Project,Description,Comments,Checklist
 1,Site survey & soil test,Surveyor,,none,3,7,1,P1,Survey the site and assess soil conditions for the proposed foundation.,"Draft guidance: Confirm boundaries, access and soil recommendations before design.","Confirm prerequisites and readiness for Site survey & soil test.
 Survey the site and assess soil conditions for the proposed foundation.
 Review results and record acceptance of Site survey & soil test."

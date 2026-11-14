@@ -44,11 +44,11 @@ export function simulatePortfolio(input:PortfolioPlan,options:SimulationOptions=
  if(!tasks.length)throw new Error('Add tasks before simulating');
  if(tasks.length>300||samples*tasks.length>2000000)throw new Error('Simulation is limited to 300 tasks and 2,000,000 task-draws. Use fewer samples or a smaller plan.');
  const baseline=schedulePortfolio(plan);
- if(baseline.conflicts.length)throw new Error('Resolve schedule conflicts before running Monte Carlo');
+ if(baseline.conflicts.length)throw new Error('Resolve schedule conflicts before running risk simulation');
  const normal=randomNormal(seed),policy=feederPolicy(baseline);
  const fits=new Map(tasks.filter(t=>t.status!=='completed'&&!t.locked).map(t=>{
   const estimate=t.status==='active'?t.remaining!:t;
-  return [t.id,estimate.goodCase===0&&estimate.poorCase===0?null:{...fitTaskLognormal(estimate.goodCase,estimate.poorCase),constant:estimate.goodCase===estimate.poorCase?estimate.goodCase:null}] as const;
+  return [t.id,estimate.goodCase===0&&estimate.poorCase===0?null:{...fitTaskLognormal(estimate.goodCase,estimate.poorCase,estimate.estimateBasis??t.estimateBasis),constant:estimate.goodCase===estimate.poorCase?estimate.goodCase:null}] as const;
  }));
  const completions=new Map(plan.projects.map(p=>[p.id,[] as Completion[]])),invalid=new Map(plan.projects.map(p=>[p.id,0])),critical=new Map(plan.projects.map(p=>[p.id,new Map<string,number>()]));
  let resourceViolationSamples=0,commitmentViolationSamples=0;
@@ -77,8 +77,8 @@ export function simulatePortfolio(input:PortfolioPlan,options:SimulationOptions=
    criticality:[...critical.get(project.id)!].map(([taskId,count])=>({taskId,fraction:count/samples})).sort((a,b)=>b.fraction-a.fraction)};
  });
  return {method:'full-plan-resource-constrained-monte-carlo' as const,sourcePlan:plan,samples,seed,projects,resourceViolationSamples,commitmentViolationSamples,
-  interpretation:'Analytical P95 remains the default. These optional empirical quantiles reschedule all paths and shared resources in every draw. Sampling intervals describe Monte Carlo sampling error, not model accuracy or delivery guarantees. P100 is not offered.',
-  assumptions:['Independent lognormal task efforts fitted to P20/P80; active work uses remaining estimates',
+  interpretation:'Planning forecast remains the default. Risk simulation empirical quantiles reschedule all paths and shared resources in every draw. Sampling intervals describe Monte Carlo sampling error, not model accuracy or delivery guarantees. P100 is not offered.',
+  assumptions:['Independent lognormal task efforts fitted to each task’s saved estimate convention: new Low/High uses P10/P90; legacy inputs retain P20/P80; active work uses remaining estimates',
    'Completed actuals and locked commitments remain fixed; results are conditional on those commitments being met',
    'The same project/task priority, dependency, allocation, supporting-resource and daily-calendar rules apply in each draw',
    'Applied feeder release times and protected resource windows are fixed from the analytical baseline; actual overruns may delay downstream work',

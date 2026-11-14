@@ -1,3 +1,8 @@
+> Current estimate convention: new shipped templates use Low estimate / High
+> estimate (P10/P90). Historical Good days/Poor days and P20/P80 headers retain
+> their legacy meaning. See [Estimate meaning and forecasts](ESTIMATES_AND_FORECASTS.md).
+> The aliases below describe historical compatibility, not the new default.
+
 # Templates, notes and resource utilization
 
 This review milestone adds reusable CSV template loading, editable descriptions and

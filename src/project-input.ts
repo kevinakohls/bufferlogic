@@ -28,6 +28,7 @@ export function parseProject(value: unknown, options: {allowUnassignedResource?:
         || !item.dependsOn.every((id: unknown) => typeof id === "string" && id.trim().length > 0)) {
       throw new Error(`${label}.dependsOn must be an array of nonempty strings`);
     }
+    if(item.estimateBasis!==undefined&&item.estimateBasis!=="p10-p90"&&item.estimateBasis!=="p20-p80")throw new Error(`${label}.estimateBasis must be p10-p90 or p20-p80`);
     let status: Task["status"];
     if (item.status !== undefined) {
       if (item.status !== "planned" && item.status !== "active" && item.status !== "completed") {
@@ -42,8 +43,9 @@ export function parseProject(value: unknown, options: {allowUnassignedResource?:
           || (value.estimateStatus !== "current" && value.estimateStatus !== "stale")) {
         throw new Error(`${label}.remaining requires numeric goodCase/poorCase and current/stale estimateStatus`);
       }
+      if(value.estimateBasis!==undefined&&value.estimateBasis!=="p10-p90"&&value.estimateBasis!=="p20-p80")throw new Error(`${label}.remaining.estimateBasis must be p10-p90 or p20-p80`);
       calculateP50(value.goodCase, value.poorCase);
-      remaining = { goodCase: value.goodCase, poorCase: value.poorCase, estimateStatus: value.estimateStatus };
+      remaining = { ...(value.estimateBasis===undefined?{}:{estimateBasis:value.estimateBasis}), goodCase: value.goodCase, poorCase: value.poorCase, estimateStatus: value.estimateStatus };
     }
     let actuals: TaskActuals | undefined;
     if (item.actuals !== undefined) {
@@ -56,6 +58,7 @@ export function parseProject(value: unknown, options: {allowUnassignedResource?:
       actuals = { start: value.start, finish: value.finish };
     }
     return {
+      ...(item.estimateBasis===undefined?{}:{estimateBasis:item.estimateBasis as NonNullable<Task["estimateBasis"]>}),
       id: item.id as string,
       name: item.name as string,
       resource: item.resource as string,

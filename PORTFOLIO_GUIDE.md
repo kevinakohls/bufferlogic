@@ -69,7 +69,7 @@ and `dependsOn` fields, plus:
 - `locked`: optional `{ "start": 7, "finish": 8 }`, both times fixed.
 - Existing progress metadata: `status`, `remaining`, and `actuals`.
 
-Ordinary estimates are task P20/P80 durations at 100% primary-resource allocation. At 50%, the
+Ordinary estimates are Low/High durations (new P10/P90; legacy P20/P80) at 100% primary-resource allocation. At 50%, the
 engine doubles duration and scales distribution moments accordingly. Concurrent
 allocations must total no more than 100%. The engine never interrupts a task or
 changes its allocation while it is running. Dynamic allocations and automatic task
@@ -211,7 +211,7 @@ project; lower-priority successor tasks can then reschedule with their project.
 Omit it or use an empty array for the existing forward schedule. With selections,
 the engine first computes a forward baseline, then derives each eligible feeder's
 latest start from its downstream baseline start and its task P99 working effort.
-P99 uses the same P20/P80 lognormal fit; allocation scales P50 and P99 inversely.
+P99 uses the task’s saved Low/High lognormal convention; allocation scales P50 and P99 inversely.
 The feeding buffer is P99 minus P50. Resource calendars are traversed backward.
 
 Protected placements are internal scheduling constraints, not saved user locks or
@@ -308,7 +308,7 @@ Existing `resource` and `allocationPercent` remain the primary assignment. Optio
 }
 ```
 
-P20/P80 estimates, remaining estimates and primary allocation control working effort. Supporting allocations reserve capacity for that same interval, without independently scaling effort. All required resources must fit simultaneously. Calendar conversion uses the minimum available hours of assigned resources per date, with exceptions overriding weekly hours, so there must be common working capacity. Calendars do not express clock-time shifts. Fixed commitments remain fixed and report capacity/calendar conflicts; active work reserves all assignments. Zero-duration milestones consume no capacity; elapsed waiting with supporting reservations is rejected.
+Low/High estimates (using their saved convention), remaining estimates and primary allocation control working effort. Supporting allocations reserve capacity for that same interval, without independently scaling effort. All required resources must fit simultaneously. Calendar conversion uses the minimum available hours of assigned resources per date, with exceptions overriding weekly hours, so there must be common working capacity. Calendars do not express clock-time shifts. Fixed commitments remain fixed and report capacity/calendar conflicts; active work reserves all assignments. Zero-duration milestones consume no capacity; elapsed waiting with supporting reservations is rejected.
 
 Resource-wait predecessors, critical-chain links, calendar percentile conversion, utilization, resource recommendations and feeding reservations include supporting resources. Utilization charges common working hours times each assignment's allocation; feeding buffers remain reservations rather than productive utilization. Version comparison reports assignment changes even if task dates are unchanged. Missing supporting IDs join the resource list and receive default calendars when applicable. Empty supporting IDs can be saved as drafts but block scheduling, just like an empty primary assignment.
 
@@ -334,3 +334,8 @@ Save/open preserves the arrays, preventing unrelated replacements from becoming
 “Changed” rows in scenario comparison. These fields do not reserve resources or
 change scheduling priorities. Legacy plans without them remain accepted; deletions
 made before these fields existed cannot be reconstructed automatically.
+
+See [Estimate meaning and forecasts](ESTIMATES_AND_FORECASTS.md): optional task
+`estimateBasis` is `p10-p90` or `p20-p80`. Missing metadata means legacy P20/P80.
+Active remaining work inherits its owning task’s basis unless explicitly overridden.
+The application uses P10/P90 for newly created tasks; all fit consumers honor it.

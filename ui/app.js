@@ -41,10 +41,11 @@ function renderResults(){
   const f=project.forecast,card=element('article',undefined,'project-card'),top=element('div',undefined,'card-top');
   const deadline=result.deadlineReport?.projects.find(p=>p.projectId===project.id),target=deadlineTargetState(deadline?.assessments.p95);
   const presentation=forecastState(f,deadline?.assessments.p95);top.append(element('h3',project.name),element('span',presentation.badgeText,presentation.badgeClass));
-  card.append(top,element('div','P95 · Conservative completion forecast','p95-label'),element('p',valueText(f,'p95'),'p95-date'),element('p',`Deterministic schedule: ${valueText(f,'deterministic')}`,'deterministic'));
+  const heading=element('div','Planning forecast','p95-label');heading.title='Fast analytical P95 estimate for tracking progress and testing changes against your commitment. Designed for execution planning; it may differ from full-plan risk simulation.';
+  card.append(top,heading,element('p',valueText(f,'p95'),'p95-date'),element('p',`Working schedule: ${valueText(f,'deterministic')}`,'deterministic'));
   const values=element('div',undefined,'percentiles');
-  for(const key of ['p50','p80','p98','p99']){const item=element('div');item.append(element('div',key.toUpperCase(),'percentile-label'),element('div',valueText(f,key),'percentile-value'));values.append(item);}
-  card.append(values);if(f.withheldReason)card.append(element('p',`${f.unscheduledTaskIds?.length??0} tasks unscheduled. Active work and locked commitments remain reserved. Resume held work and recalculate for a full completion forecast.`,'timeline-note'));if(deadline)card.append(element('p',`Deadline: ${deadlineText(deadline.deadline)} · ${target.text}${deadline.feasible===false?' · Schedule has conflicts':''}`,`deadline-summary ${target.className}`));if(f.staleTaskIds.length)card.append(element('p',`Remaining estimates need review: ${f.staleTaskIds.join(', ')}`,'timeline-note'));cards.append(card);
+  for(const key of ['p50','p80','p98','p99']){const item=element('div');item.append(element('div',({p50:'Median',p80:'Cautious',p98:'Late estimate',p99:'Tail estimate'})[key],'percentile-label'),element('div',valueText(f,key),'percentile-value'));item.title=`${key.toUpperCase()} · model-based completion percentile`;values.append(item);}
+  card.append(values);if(f.withheldReason)card.append(element('p',`${f.unscheduledTaskIds?.length??0} tasks unscheduled. Active work and locked commitments remain reserved. Resume held work and recalculate for a full completion forecast.`,'timeline-note'));if(deadline)card.append(element('p',`Commitment: ${deadlineText(deadline.deadline)} · ${target.text}${deadline.feasible===false?' · Schedule has conflicts':''}`,`deadline-summary ${target.className}`));if(f.staleTaskIds.length)card.append(element('p',`Remaining estimates need review: ${f.staleTaskIds.join(', ')}`,'timeline-note'));cards.append(card);
  }
  $('conflicts-panel').classList.toggle('hidden',!result.conflicts.length);$('conflicts').replaceChildren();
  for(const conflict of result.conflicts)$('conflicts').append(element('p',`${conflict.message} · ${conflict.taskIds.map(taskName).join('; ')}`));
@@ -93,23 +94,30 @@ $('tasks-body').addEventListener('click',event=>{
  (selects[Math.min(focusIndex,selects.length-1)]??editor.querySelector('[data-add-support]')).focus();
  changed();renderResources();
 });
+function estimateMeaning(task,estimates=task){
+ const legacy=(estimates?.estimateBasis??task.estimateBasis??'p20-p80')==='p20-p80';
+ return legacy?'Legacy estimate range: about 1 in 5 similar tasks finish sooner than Low or take longer than High. Saved P20/P80 meaning is preserved.':'About 1 in 10 similar tasks would finish sooner than Low; about 1 in 10 would take longer than High.';
+}
 function renderTasks(){
+ $('convert-estimates').classList.toggle('hidden',!allTasks().some(t=>(t.estimateBasis??'p20-p80')==='p20-p80'||t.remaining?.estimateBasis==='p20-p80'));
+ $('legacy-estimates-note').classList.toggle('hidden',!allTasks().some(t=>(t.estimateBasis??'p20-p80')==='p20-p80'||t.remaining?.estimateBasis==='p20-p80'));
+
  const tbody=$('tasks-body');tbody.replaceChildren();const filter=$('project-filter').value;let count=0;
  for(const task of allTasks()){
   if(filter!=='all'&&task.projectId!==filter)continue;count++;
   const row=element('tr');row.dataset.id=task.id;row.append(element('td',task.id,'task-id'),element('td',plan.projects.find(p=>p.id===task.projectId).name));
   const fields=[['name',input(task.name,`${task.id} task name`,{class:'task-name'})],['resource',select(task.resource,`${task.id} resource`,[['','Unassigned — choose a resource'],...plan.resources.map(r=>[r,resourceName(r)])])],['dependsOn',input(task.dependsOn.join(', '),`${task.id} dependencies`,{class:'dependencies'})]];
   const estimates=task.status==='active'?task.remaining:task;
-  for(const field of ['goodCase','poorCase'])fields.push([field,input(estimates?.[field]??'',`${task.id} ${task.status==='active'?'remaining ':''}${field==='goodCase'?'good estimate (P20)':'poor estimate (P80)'}`,{type:'number',min:0,step:'any'})]);
+  for(const field of ['goodCase','poorCase'])fields.push([field,input(estimates?.[field]??'',`${task.id} ${task.status==='active'?'remaining ':''}${field==='goodCase'?'Low estimate':'High estimate'}`,{type:'number',min:0,step:'any',title:estimateMeaning(task,estimates)})]);
   fields.push(['priority',input(task.priority,`${task.id} priority`,{type:'number',step:'any'})],['allocationPercent',input(task.allocationPercent??100,`${task.id} allocation percent`,{type:'number',min:1,max:100,step:'any'})],['durationMode',select(task.durationMode??'working',`${task.id} duration type`,[['working','Working effort'],['elapsed','Elapsed waiting']])]);
   for(const [field,node] of fields){node.dataset.field=field;row.append(cell(node));if(field==='resource')row.append(cell(supportingEditor(task)));}
-  const identity=row.cells[2];identity.classList.add('task-identity');identity.prepend(element('small',`Task ${task.id}`,'task-identity-label'));
+  const identity=row.cells[2];identity.classList.add('task-identity');identity.prepend(element('small',`Task ${task.id}`,'task-identity-label'));if((task.estimateBasis??'p20-p80')==='p20-p80'){const legacy=element('small','Legacy range','task-identity-label');legacy.title=estimateMeaning(task);identity.append(legacy);}
   if(task.status==='active'){
    const original=element('details',undefined,'original-estimates');original.dataset.originalTask=task.id;
    original.append(element('summary','Original estimates'));
    for(const field of ['goodCase','poorCase']){
-    const title=field==='goodCase'?'good':'poor',label=element('label',`Original ${title} days`);
-    const node=input(task[field],`${task.id} original ${title} estimate`,{type:'number',min:0,step:'any'});node.dataset.originalEstimate=field;
+    const title=field==='goodCase'?'Low':'High',label=element('label',`Original ${title} days`);
+    const node=input(task[field],`${task.id} original ${title} estimate`,{type:'number',min:0,step:'any',title:estimateMeaning(task)});node.dataset.originalEstimate=field;
     label.append(node);original.append(label);
    }
    identity.append(original);
@@ -118,6 +126,12 @@ function renderTasks(){
  }
  $('task-count').textContent=`${count} tasks`;highlightEstimateIssues();
 }
+$('convert-estimates').addEventListener('click',()=>{
+ if(busy||!plan)return;
+ if(!confirm('Use the new estimate meaning for this plan? About 1 in 10 similar tasks finish below Low or above High, instead of the legacy 1 in 5. Entered durations stay unchanged, but forecasts and feeding protection can change. Save a copy first if you need to keep the old interpretation. Continue?'))return;
+ for(const task of allTasks()){task.estimateBasis='p10-p90';if(task.remaining)task.remaining.estimateBasis='p10-p90';}
+ changed();renderTasks();renderProgress();
+});
 $('tasks-body').addEventListener('click',async event=>{
  const button=event.target.closest('button[data-delete-task]');
  if(!button||busy||button.disabled)return;
@@ -268,7 +282,7 @@ function renderProgress(){
  for(const task of allTasks()){
   const status=task.status??'planned',row=element('tr');row.dataset.id=task.id;row.append(element('td',`${task.id} · ${task.name}`),element('td',plan.projects.find(p=>p.id===task.projectId).name));
   const fields=[['status',select(status,`${task.id} progress status`,[['planned','Not started'],['active','In progress'],['completed','Complete']])],['start',progressInput(task.actuals?.start??task.actualStart,`${task.id} actual start`)],['finish',progressInput(task.actuals?.finish,`${task.id} actual finish`)]];
-  for(const field of ['goodCase','poorCase'])fields.push([field,input(task.remaining?.[field]??'',`${task.id} remaining ${field==='goodCase'?'good estimate (P20)':'poor estimate (P80)'}`,{type:'number',min:0,step:'any'})]);
+  for(const field of ['goodCase','poorCase'])fields.push([field,input(task.remaining?.[field]??'',`${task.id} remaining ${field==='goodCase'?'Low estimate':'High estimate'}`,{type:'number',min:0,step:'any',title:estimateMeaning(task,task.remaining)})]);
   fields.push(['review',select(estimateReviewValue(task),`${task.id} estimate review`,status==='active'?[['stale','Needs review'],['current','Reviewed']]:[['','']])]);
   for(const [field,node] of fields){node.dataset.progress=field;node.disabled=field==='start'?status==='planned':field==='finish'?status!=='completed':['goodCase','poorCase','review'].includes(field)?status!=='active':false;row.append(cell(node));}body.append(row);
  }
@@ -280,7 +294,7 @@ $('progress-body').addEventListener('change',event=>{
  if(field==='status'){
   task.status=node.value;
   if(task.status==='planned'){delete task.actuals;delete task.actualStart;delete task.remaining;}
-  else if(task.status==='active'){task.actualStart=task.actuals?.start??task.actualStart??plan.asOf;delete task.actuals;task.remaining??={goodCase:task.goodCase,poorCase:task.poorCase,estimateStatus:'stale'};}
+  else if(task.status==='active'){task.actualStart=task.actuals?.start??task.actualStart??plan.asOf;delete task.actuals;task.remaining??={goodCase:task.goodCase,poorCase:task.poorCase,...(task.estimateBasis?{estimateBasis:task.estimateBasis}:{}),estimateStatus:'stale'};}
   else {task.actualStart=task.actualStart??plan.asOf;task.actuals={start:task.actualStart,finish:plan.asOf};delete task.remaining;}
  }else if(field==='start'){task.actualStart=progressDay(node);if(task.actuals)task.actuals.start=task.actualStart;}
  else if(field==='finish')task.actuals.finish=progressDay(node);
@@ -479,7 +493,7 @@ function renderComparison(value){
   const row=element('tr'),details=[];
   if(task.before&&task.after){
    if(task.before.name!==task.after.name)details.push(`Name: ${task.before.name} → ${task.after.name}`);
-   if(task.changes.includes('Estimates'))details.push(`P20/P80: ${task.before.goodCase}/${task.before.poorCase} → ${task.after.goodCase}/${task.after.poorCase}`+(JSON.stringify(task.before.remaining)!==JSON.stringify(task.after.remaining)?' · remaining estimates changed':''));
+   if(task.changes.includes('Estimates'))details.push(`Low/High: ${task.before.goodCase}/${task.before.poorCase} → ${task.after.goodCase}/${task.after.poorCase}`+(JSON.stringify(task.before.remaining)!==JSON.stringify(task.after.remaining)?' · remaining estimates changed':'')+(task.before.estimateBasis!==task.after.estimateBasis?` · meaning: ${task.before.estimateBasis} → ${task.after.estimateBasis}`:''));
    if(task.changes.includes('Dependencies'))details.push(`Dependencies: ${task.before.dependsOn.join(', ')||'none'} → ${task.after.dependsOn.join(', ')||'none'}`);
    if(task.changes.includes('Deadline'))details.push(`Deadline: ${task.before.deadline===null?'none':deadlineText(task.before.deadline)} → ${task.after.deadline===null?'none':deadlineText(task.after.deadline)}`);
    if(task.changes.includes('Priority'))details.push(`Priority: ${task.before.priority} → ${task.after.priority}`);
@@ -613,7 +627,7 @@ $('restore-recovery').addEventListener('click',async()=>{
   if(capturedBaseline)$('compare-status').textContent=`Baseline recovered: ${capturedBaseline.name}. Compare versions after recalculating pending edits.`;
   if(state.pendingInput){
    const label=state.pendingInput.label??'';
-   const legacyLabel=label.replace(/goodCase$/, 'good estimate (P20)').replace(/poorCase$/, 'poor estimate (P80)');
+   const legacyLabel=label.replace(/goodCase$/, 'Low estimate').replace(/poorCase$/, 'High estimate');
    const field=state.pendingInput.id?$(state.pendingInput.id):document.querySelector(`[aria-label="${CSS.escape(label)}"]`)??document.querySelector(`[aria-label="${CSS.escape(legacyLabel)}"]`);
    if(field){field.value=state.pendingInput.value;field.dispatchEvent(new Event('change',{bubbles:true}));}
   }

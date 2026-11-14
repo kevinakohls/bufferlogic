@@ -26,13 +26,13 @@ export function taskEstimateIssues(input: unknown): TaskEstimateIssue[] {
         const remaining = kind === 'remaining' ? 'remaining ' : '';
         let reason = '';
         if (typeof good !== 'number' || !Number.isFinite(good) || typeof poor !== 'number' || !Number.isFinite(poor)) {
-          reason = `Enter a number for both ${remaining}good and poor estimates.`;
+          reason = `Enter a number for both ${remaining}Low and High estimates.`;
         } else if (good > poor) {
-          reason = `${remaining ? 'Remaining good' : 'Good'} estimate (${good} days) must be no greater than ${remaining}poor estimate (${poor} days). Adjust either estimate, then recalculate.`;
+          reason = `${remaining ? 'Remaining Low' : 'Low'} estimate (${good} days) must be no greater than ${remaining}High estimate (${poor} days). Adjust either estimate, then recalculate.`;
         } else if (!(kind === 'original' && good === 0 && poor === 0) && (good <= 0 || poor <= 0)) {
           reason = kind === 'remaining'
-            ? 'Remaining good and poor estimates must both be greater than zero. Mark finished work Complete in Progress.'
-            : 'Good and poor estimates must both be greater than zero, or both zero for a milestone.';
+            ? 'Remaining Low and High estimates must both be greater than zero. Mark finished work Complete in Progress.'
+            : 'Low and High estimates must both be greater than zero, or both zero for a milestone.';
         }
         if (reason) issues.push({taskId: task.id, taskName: task.name,
           projectId: typeof project.id === 'string' ? project.id : '', kind,

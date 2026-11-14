@@ -1,3 +1,4 @@
+import type {DurationEstimates} from './types.js';
 import {fitTaskLognormal} from './percentiles.js';
 
 // Normal CDF approximation (absolute error < 8e-8); no random draws.
@@ -11,12 +12,12 @@ function normalCdf(z:number){
  * Conditional on the fixed chain: alternate paths/resources are not redispatched.
  */
 export function twoTaskConvolution(options:{
- first:{goodCase:number;poorCase:number};second:{goodCase:number;poorCase:number};
+ first:DurationEstimates;second:DurationEstimates;
  secondReady:(firstEffort:number)=>number;
  secondWork:(time:number)=>number;
  lower:number;initialUpper:number;
 }){
- const a=fitTaskLognormal(options.first.goodCase,options.first.poorCase),b=fitTaskLognormal(options.second.goodCase,options.second.poorCase);
+ const a=fitTaskLognormal(options.first.goodCase,options.first.poorCase,options.first.estimateBasis),b=fitTaskLognormal(options.second.goodCase,options.second.poorCase,options.second.estimateBasis);
  const points:{work:number;weight:number}[]=[];
  const count=2048,step=12/count;
  for(let i=0;i<=count;i++){

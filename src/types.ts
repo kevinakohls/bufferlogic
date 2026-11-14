@@ -1,4 +1,8 @@
+export type EstimateBasis = "p10-p90" | "p20-p80";
+
 export interface DurationEstimates {
+  /** Missing metadata means the legacy P20/P80 convention. */
+  readonly estimateBasis?: EstimateBasis;
   readonly goodCase: number;
   readonly poorCase: number;
 }

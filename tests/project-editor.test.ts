@@ -21,7 +21,7 @@ test('manual task entry generates unique IDs, validates estimates and dependenci
  assert.notEqual(second.projects[0]!.tasks[1]!.id,id);assert.equal(second.projects[0]!.tasks[1]!.priority,2);
  assert.throws(()=>appendTask(first,{...input,projectId:'missing'}),/Choose a project/);
  assert.throws(()=>appendTask(first,{...input,resource:'unknown'}),/existing resource/);
- assert.throws(()=>appendTask(first,{...input,poorCase:.5}),/poorCase|Good|good|Poor|poor/);
+ assert.throws(()=>appendTask(first,{...input,poorCase:.5}),/Low|High/);
  assert.throws(()=>appendTask(first,{...input,dependsOn:['missing']}),/Dependencies/);
  assert.throws(()=>appendTask(first,{...input,dependsOn:[id,id]}),/Dependencies/);
  const assigned={...second,resources:['Developer'],projects:second.projects.map(p=>({...p,tasks:p.tasks.map(t=>({...t,resource:'Developer'}))}))};
