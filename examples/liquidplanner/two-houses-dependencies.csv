@@ -1,0 +1,87 @@
+﻿Project,Task,Task Reference,Predecessor,Predecessor Reference
+House One,H1-002 - Architectural design & drawings,H1-002,H1-001 - Site survey & soil test,H1-001
+House One,H1-003 - Structural engineering,H1-003,H1-002 - Architectural design & drawings,H1-002
+House One,H1-004 - Permit application & approval,H1-004,H1-003 - Structural engineering,H1-003
+House One,H1-005 - Site clearing & grading,H1-005,H1-004 - Permit application & approval,H1-004
+House One,H1-006 - Temporary utilities & erosion control,H1-006,H1-005 - Site clearing & grading,H1-005
+House One,H1-007 - Excavate foundation,H1-007,H1-006 - Temporary utilities & erosion control,H1-006
+House One,H1-008 - Form & pour footings,H1-008,H1-007 - Excavate foundation,H1-007
+House One,H1-009 - Foundation walls,H1-009,H1-008 - Form & pour footings,H1-008
+House One,H1-010 - Waterproofing & foundation drainage,H1-010,H1-009 - Foundation walls,H1-009
+House One,H1-011 - Backfill,H1-011,H1-010 - Waterproofing & foundation drainage,H1-010
+House One,H1-012 - Under-slab plumbing,H1-012,H1-009 - Foundation walls,H1-009
+House One,H1-013 - Pour slab / basement floor,H1-013,H1-011 - Backfill,H1-011
+House One,H1-013 - Pour slab / basement floor,H1-013,H1-012 - Under-slab plumbing,H1-012
+House One,H1-014 - Floor framing & subfloor,H1-014,H1-013 - Pour slab / basement floor,H1-013
+House One,H1-015 - Wall framing,H1-015,H1-014 - Floor framing & subfloor,H1-014
+House One,H1-016 - Roof trusses & sheathing,H1-016,H1-015 - Wall framing,H1-015
+House One,H1-017 - Windows & exterior doors,H1-017,H1-016 - Roof trusses & sheathing,H1-016
+House One,H1-018 - Roofing,H1-018,H1-016 - Roof trusses & sheathing,H1-016
+House One,H1-019 - House wrap & siding,H1-019,H1-017 - Windows & exterior doors,H1-017
+House One,H1-020 - Plumbing rough-in,H1-020,H1-018 - Roofing,H1-018
+House One,H1-021 - Electrical rough-in,H1-021,H1-018 - Roofing,H1-018
+House One,H1-022 - HVAC rough-in,H1-022,H1-018 - Roofing,H1-018
+House One,H1-023 - Rough-in inspections,H1-023,H1-020 - Plumbing rough-in,H1-020
+House One,H1-023 - Rough-in inspections,H1-023,H1-021 - Electrical rough-in,H1-021
+House One,H1-023 - Rough-in inspections,H1-023,H1-022 - HVAC rough-in,H1-022
+House One,H1-024 - Insulation,H1-024,H1-023 - Rough-in inspections,H1-023
+House One,H1-025 - Drywall hang & finish,H1-025,H1-024 - Insulation,H1-024
+House One,H1-026 - Interior prime & paint,H1-026,H1-025 - Drywall hang & finish,H1-025
+House One,H1-027 - Cabinets & countertops,H1-027,H1-026 - Interior prime & paint,H1-026
+House One,H1-028 - Interior trim & doors,H1-028,H1-026 - Interior prime & paint,H1-026
+House One,H1-029 - Flooring,H1-029,H1-028 - Interior trim & doors,H1-028
+House One,H1-030 - Plumbing fixtures & finish,H1-030,H1-027 - Cabinets & countertops,H1-027
+House One,H1-030 - Plumbing fixtures & finish,H1-030,H1-029 - Flooring,H1-029
+House One,H1-031 - Electrical finish,H1-031,H1-027 - Cabinets & countertops,H1-027
+House One,H1-031 - Electrical finish,H1-031,H1-029 - Flooring,H1-029
+House One,H1-032 - HVAC finish & startup,H1-032,H1-029 - Flooring,H1-029
+House One,H1-033 - Driveway & walkways,H1-033,H1-019 - House wrap & siding,H1-019
+House One,H1-034 - Final grading & landscaping,H1-034,H1-033 - Driveway & walkways,H1-033
+House One,H1-035 - Punch list & final cleaning,H1-035,H1-030 - Plumbing fixtures & finish,H1-030
+House One,H1-035 - Punch list & final cleaning,H1-035,H1-031 - Electrical finish,H1-031
+House One,H1-035 - Punch list & final cleaning,H1-035,H1-032 - HVAC finish & startup,H1-032
+House One,H1-035 - Punch list & final cleaning,H1-035,H1-034 - Final grading & landscaping,H1-034
+House One,H1-036 - Final inspection & certificate of occupancy,H1-036,H1-035 - Punch list & final cleaning,H1-035
+House Two,H2-002 - Architectural design & drawings,H2-002,H2-001 - Site survey & soil test,H2-001
+House Two,H2-003 - Structural engineering,H2-003,H2-002 - Architectural design & drawings,H2-002
+House Two,H2-004 - Permit application & approval,H2-004,H2-003 - Structural engineering,H2-003
+House Two,H2-005 - Site clearing & grading,H2-005,H2-004 - Permit application & approval,H2-004
+House Two,H2-006 - Temporary utilities & erosion control,H2-006,H2-005 - Site clearing & grading,H2-005
+House Two,H2-007 - Excavate foundation,H2-007,H2-006 - Temporary utilities & erosion control,H2-006
+House Two,H2-008 - Form & pour footings,H2-008,H2-007 - Excavate foundation,H2-007
+House Two,H2-009 - Foundation walls,H2-009,H2-008 - Form & pour footings,H2-008
+House Two,H2-010 - Waterproofing & foundation drainage,H2-010,H2-009 - Foundation walls,H2-009
+House Two,H2-011 - Backfill,H2-011,H2-010 - Waterproofing & foundation drainage,H2-010
+House Two,H2-012 - Under-slab plumbing,H2-012,H2-009 - Foundation walls,H2-009
+House Two,H2-013 - Pour slab / basement floor,H2-013,H2-011 - Backfill,H2-011
+House Two,H2-013 - Pour slab / basement floor,H2-013,H2-012 - Under-slab plumbing,H2-012
+House Two,H2-014 - Floor framing & subfloor,H2-014,H2-013 - Pour slab / basement floor,H2-013
+House Two,H2-015 - Wall framing,H2-015,H2-014 - Floor framing & subfloor,H2-014
+House Two,H2-016 - Roof trusses & sheathing,H2-016,H2-015 - Wall framing,H2-015
+House Two,H2-017 - Windows & exterior doors,H2-017,H2-016 - Roof trusses & sheathing,H2-016
+House Two,H2-018 - Roofing,H2-018,H2-016 - Roof trusses & sheathing,H2-016
+House Two,H2-019 - House wrap & siding,H2-019,H2-017 - Windows & exterior doors,H2-017
+House Two,H2-020 - Plumbing rough-in,H2-020,H2-018 - Roofing,H2-018
+House Two,H2-021 - Electrical rough-in,H2-021,H2-018 - Roofing,H2-018
+House Two,H2-022 - HVAC rough-in,H2-022,H2-018 - Roofing,H2-018
+House Two,H2-023 - Rough-in inspections,H2-023,H2-020 - Plumbing rough-in,H2-020
+House Two,H2-023 - Rough-in inspections,H2-023,H2-021 - Electrical rough-in,H2-021
+House Two,H2-023 - Rough-in inspections,H2-023,H2-022 - HVAC rough-in,H2-022
+House Two,H2-024 - Insulation,H2-024,H2-023 - Rough-in inspections,H2-023
+House Two,H2-025 - Drywall hang & finish,H2-025,H2-024 - Insulation,H2-024
+House Two,H2-026 - Interior prime & paint,H2-026,H2-025 - Drywall hang & finish,H2-025
+House Two,H2-027 - Cabinets & countertops,H2-027,H2-026 - Interior prime & paint,H2-026
+House Two,H2-028 - Interior trim & doors,H2-028,H2-026 - Interior prime & paint,H2-026
+House Two,H2-029 - Flooring,H2-029,H2-028 - Interior trim & doors,H2-028
+House Two,H2-030 - Plumbing fixtures & finish,H2-030,H2-027 - Cabinets & countertops,H2-027
+House Two,H2-030 - Plumbing fixtures & finish,H2-030,H2-029 - Flooring,H2-029
+House Two,H2-031 - Electrical finish,H2-031,H2-027 - Cabinets & countertops,H2-027
+House Two,H2-031 - Electrical finish,H2-031,H2-029 - Flooring,H2-029
+House Two,H2-032 - HVAC finish & startup,H2-032,H2-029 - Flooring,H2-029
+House Two,H2-033 - Driveway & walkways,H2-033,H2-019 - House wrap & siding,H2-019
+House Two,H2-034 - Final grading & landscaping,H2-034,H2-033 - Driveway & walkways,H2-033
+House Two,H2-035 - Punch list & final cleaning,H2-035,H2-030 - Plumbing fixtures & finish,H2-030
+House Two,H2-035 - Punch list & final cleaning,H2-035,H2-031 - Electrical finish,H2-031
+House Two,H2-035 - Punch list & final cleaning,H2-035,H2-032 - HVAC finish & startup,H2-032
+House Two,H2-035 - Punch list & final cleaning,H2-035,H2-034 - Final grading & landscaping,H2-034
+House Two,H2-036 - Final inspection & certificate of occupancy,H2-036,H2-035 - Punch list & final cleaning,H2-035

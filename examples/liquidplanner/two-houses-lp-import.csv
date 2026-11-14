@@ -1,0 +1,795 @@
+﻿Order,Name,Item Type,Owner,Low Estimate,High Estimate,Reference Field,Description
+1,House One,Project,,,,P1,BufferLogic two-house comparison. Task effort converted at 8 hours/day. Assign matching resources and restore dependency links after import.
+1/1,H1-001 - Site survey & soil test,Task,Surveyor,24 hours,56 hours,H1-001,"Survey the site and assess soil conditions for the proposed foundation.
+
+Resource role: Surveyor
+Predecessors: None
+
+Draft guidance: Confirm boundaries, access and soil recommendations before design.
+
+Checklist:
+Confirm prerequisites and readiness for Site survey & soil test.
+Survey the site and assess soil conditions for the proposed foundation.
+Review results and record acceptance of Site survey & soil test."
+1/2,H1-002 - Architectural design & drawings,Task,Architect,160 hours,320 hours,H1-002,"Prepare architectural plans and drawings for the house.
+
+Resource role: Architect
+Predecessors: H1-001 - Site survey & soil test
+
+Draft guidance: Confirm customer scope and selections; allow for design review and revisions.
+
+Checklist:
+Confirm prerequisites and readiness for Architectural design & drawings.
+Prepare architectural plans and drawings for the house.
+Review results and record acceptance of Architectural design & drawings."
+1/3,H1-003 - Structural engineering,Task,Structural Engineer,56 hours,120 hours,H1-003,"Design structural elements using the architectural plans and soil findings.
+
+Resource role: Structural Engineer
+Predecessors: H1-002 - Architectural design & drawings
+
+Draft guidance: Confirm local design requirements and resolve coordination issues before permitting.
+
+Checklist:
+Confirm prerequisites and readiness for Structural engineering.
+Design structural elements using the architectural plans and soil findings.
+Review results and record acceptance of Structural engineering."
+1/4,H1-004 - Permit application & approval,Task,General Contractor,120 hours,360 hours,H1-004,"Submit the permit package and obtain approval to start construction.
+
+Resource role: General Contractor
+Predecessors: H1-003 - Structural engineering
+
+Draft guidance: Review authority turnaround. This template currently models permit time as working effort assigned to the general contractor; consider separating active preparation from elapsed approval waiting.
+
+Checklist:
+Confirm prerequisites and readiness for Permit application & approval.
+Submit the permit package and obtain approval to start construction.
+Review results and record acceptance of Permit application & approval."
+1/5,H1-005 - Site clearing & grading,Task,Excavation Crew,24 hours,56 hours,H1-005,"Clear the building area and grade the site for construction.
+
+Resource role: Excavation Crew
+Predecessors: H1-004 - Permit application & approval
+
+Draft guidance: Confirm site access, disposal arrangements and weather assumptions.
+
+Checklist:
+Confirm prerequisites and readiness for Site clearing & grading.
+Clear the building area and grade the site for construction.
+Review results and record acceptance of Site clearing & grading."
+1/6,H1-006 - Temporary utilities & erosion control,Task,General Contractor,16 hours,32 hours,H1-006,"Install temporary services and erosion controls for the construction site.
+
+Resource role: General Contractor
+Predecessors: H1-005 - Site clearing & grading
+
+Draft guidance: Confirm utility availability and required site protection before excavation.
+
+Checklist:
+Confirm prerequisites and readiness for Temporary utilities & erosion control.
+Install temporary services and erosion controls for the construction site.
+Review results and record acceptance of Temporary utilities & erosion control."
+1/7,H1-007 - Excavate foundation,Task,Excavation Crew,16 hours,40 hours,H1-007,"Excavate the foundation to the required lines and depths.
+
+Resource role: Excavation Crew
+Predecessors: H1-006 - Temporary utilities & erosion control
+
+Draft guidance: Confirm soil conditions and access; unexpected rock or groundwater may change estimates.
+
+Checklist:
+Confirm prerequisites and readiness for Excavate foundation.
+Excavate the foundation to the required lines and depths.
+Review results and record acceptance of Excavate foundation."
+1/8,H1-008 - Form & pour footings,Task,Concrete Crew,24 hours,48 hours,H1-008,"Form and pour foundation footings.
+
+Resource role: Concrete Crew
+Predecessors: H1-007 - Excavate foundation
+
+Draft guidance: Confirm inspection requirements, concrete delivery and curing assumptions.
+
+Checklist:
+Confirm prerequisites and readiness for Form & pour footings.
+Form and pour foundation footings.
+Review results and record acceptance of Form & pour footings."
+1/9,H1-009 - Foundation walls,Task,Concrete Crew,32 hours,64 hours,H1-009,"Construct the foundation walls.
+
+Resource role: Concrete Crew
+Predecessors: H1-008 - Form & pour footings
+
+Draft guidance: Confirm reinforcement, inspection and curing requirements before follow-on work.
+
+Checklist:
+Confirm prerequisites and readiness for Foundation walls.
+Construct the foundation walls.
+Review results and record acceptance of Foundation walls."
+1/10,H1-010 - Waterproofing & foundation drainage,Task,Waterproofing Crew,16 hours,32 hours,H1-010,"Install foundation waterproofing and drainage.
+
+Resource role: Waterproofing Crew
+Predecessors: H1-009 - Foundation walls
+
+Draft guidance: Confirm drainage routing and inspect protection before backfill.
+
+Checklist:
+Confirm prerequisites and readiness for Waterproofing & foundation drainage.
+Install foundation waterproofing and drainage.
+Review results and record acceptance of Waterproofing & foundation drainage."
+1/11,H1-011 - Backfill,Task,Excavation Crew,8 hours,24 hours,H1-011,"Backfill around the completed foundation.
+
+Resource role: Excavation Crew
+Predecessors: H1-010 - Waterproofing & foundation drainage
+
+Draft guidance: Confirm foundation readiness and protect drainage and waterproofing.
+
+Checklist:
+Confirm prerequisites and readiness for Backfill.
+Backfill around the completed foundation.
+Review results and record acceptance of Backfill."
+1/12,H1-012 - Under-slab plumbing,Task,Plumber,16 hours,32 hours,H1-012,"Install plumbing below the floor slab.
+
+Resource role: Plumber
+Predecessors: H1-009 - Foundation walls
+
+Draft guidance: Confirm fixture locations and required checks before covering the pipework.
+
+Checklist:
+Confirm prerequisites and readiness for Under-slab plumbing.
+Install plumbing below the floor slab.
+Review results and record acceptance of Under-slab plumbing."
+1/13,H1-013 - Pour slab / basement floor,Task,Concrete Crew,16 hours,32 hours,H1-013,"Place and finish the slab or basement floor.
+
+Resource role: Concrete Crew
+Predecessors: H1-011 - Backfill, H1-012 - Under-slab plumbing
+
+Draft guidance: Confirm under-slab services and curing requirements before framing.
+
+Checklist:
+Confirm prerequisites and readiness for Pour slab / basement floor.
+Place and finish the slab or basement floor.
+Review results and record acceptance of Pour slab / basement floor."
+1/14,H1-014 - Floor framing & subfloor,Task,Framing Crew,32 hours,64 hours,H1-014,"Frame the floor system and install the subfloor.
+
+Resource role: Framing Crew
+Predecessors: H1-013 - Pour slab / basement floor
+
+Draft guidance: Confirm material delivery and foundation dimensions before starting.
+
+Checklist:
+Confirm prerequisites and readiness for Floor framing & subfloor.
+Frame the floor system and install the subfloor.
+Review results and record acceptance of Floor framing & subfloor."
+1/15,H1-015 - Wall framing,Task,Framing Crew,56 hours,96 hours,H1-015,"Frame walls and structural openings.
+
+Resource role: Framing Crew
+Predecessors: H1-014 - Floor framing & subfloor
+
+Draft guidance: Confirm approved drawings and coordinate openings with other trades.
+
+Checklist:
+Confirm prerequisites and readiness for Wall framing.
+Frame walls and structural openings.
+Review results and record acceptance of Wall framing."
+1/16,H1-016 - Roof trusses & sheathing,Task,Framing Crew,32 hours,64 hours,H1-016,"Install roof trusses and roof sheathing.
+
+Resource role: Framing Crew
+Predecessors: H1-015 - Wall framing
+
+Draft guidance: Confirm truss delivery, lifting access and weather conditions.
+
+Checklist:
+Confirm prerequisites and readiness for Roof trusses & sheathing.
+Install roof trusses and roof sheathing.
+Review results and record acceptance of Roof trusses & sheathing."
+1/17,H1-017 - Windows & exterior doors,Task,Framing Crew,16 hours,32 hours,H1-017,"Install windows and exterior doors.
+
+Resource role: Framing Crew
+Predecessors: H1-016 - Roof trusses & sheathing
+
+Draft guidance: Confirm dimensions, delivery and weatherproofing details.
+
+Checklist:
+Confirm prerequisites and readiness for Windows & exterior doors.
+Install windows and exterior doors.
+Review results and record acceptance of Windows & exterior doors."
+1/18,H1-018 - Roofing,Task,Roofer,24 hours,56 hours,H1-018,"Install the roof covering and associated weatherproofing.
+
+Resource role: Roofer
+Predecessors: H1-016 - Roof trusses & sheathing
+
+Draft guidance: Confirm roof readiness and suitable weather; review drying-in requirements for interior trades.
+
+Checklist:
+Confirm prerequisites and readiness for Roofing.
+Install the roof covering and associated weatherproofing.
+Review results and record acceptance of Roofing."
+1/19,H1-019 - House wrap & siding,Task,Siding Crew,56 hours,112 hours,H1-019,"Install house wrap and exterior siding.
+
+Resource role: Siding Crew
+Predecessors: H1-017 - Windows & exterior doors
+
+Draft guidance: Confirm flashing details, material availability and access.
+
+Checklist:
+Confirm prerequisites and readiness for House wrap & siding.
+Install house wrap and exterior siding.
+Review results and record acceptance of House wrap & siding."
+1/20,H1-020 - Plumbing rough-in,Task,Plumber,32 hours,56 hours,H1-020,"Install plumbing supply, waste and vent rough-in.
+
+Resource role: Plumber
+Predecessors: H1-018 - Roofing
+
+Draft guidance: Coordinate routes and fixture locations with framing and other trades.
+
+Checklist:
+Confirm prerequisites and readiness for Plumbing rough-in.
+Install plumbing supply, waste and vent rough-in.
+Review results and record acceptance of Plumbing rough-in."
+1/21,H1-021 - Electrical rough-in,Task,Electrician,40 hours,64 hours,H1-021,"Install electrical wiring, boxes and rough-in components.
+
+Resource role: Electrician
+Predecessors: H1-018 - Roofing
+
+Draft guidance: Confirm layout and coordinate routes with plumbing and HVAC.
+
+Checklist:
+Confirm prerequisites and readiness for Electrical rough-in.
+Install electrical wiring, boxes and rough-in components.
+Review results and record acceptance of Electrical rough-in."
+1/22,H1-022 - HVAC rough-in,Task,HVAC Contractor,32 hours,56 hours,H1-022,"Install HVAC ductwork and rough-in components.
+
+Resource role: HVAC Contractor
+Predecessors: H1-018 - Roofing
+
+Draft guidance: Confirm equipment layout and coordinate penetrations with other trades.
+
+Checklist:
+Confirm prerequisites and readiness for HVAC rough-in.
+Install HVAC ductwork and rough-in components.
+Review results and record acceptance of HVAC rough-in."
+1/23,H1-023 - Rough-in inspections,Task,Building Inspector,16 hours,56 hours,H1-023,"Complete inspections of the rough-in work.
+
+Resource role: Building Inspector
+Predecessors: H1-020 - Plumbing rough-in, H1-021 - Electrical rough-in, H1-022 - HVAC rough-in
+
+Draft guidance: Confirm inspector availability and allow for corrections; recorded appointments can be modeled as locked tasks.
+
+Checklist:
+Confirm prerequisites and readiness for Rough-in inspections.
+Complete inspections of the rough-in work.
+Review results and record acceptance of Rough-in inspections."
+1/24,H1-024 - Insulation,Task,Insulation Crew,24 hours,40 hours,H1-024,"Install insulation after rough-in approval.
+
+Resource role: Insulation Crew
+Predecessors: H1-023 - Rough-in inspections
+
+Draft guidance: Confirm approved assemblies and that concealed work is ready to cover.
+
+Checklist:
+Confirm prerequisites and readiness for Insulation.
+Install insulation after rough-in approval.
+Review results and record acceptance of Insulation."
+1/25,H1-025 - Drywall hang & finish,Task,Drywall Crew,80 hours,144 hours,H1-025,"Hang drywall and complete joint finishing.
+
+Resource role: Drywall Crew
+Predecessors: H1-024 - Insulation
+
+Draft guidance: Review drying time between coats; elapsed drying waits may warrant separate tasks.
+
+Checklist:
+Confirm prerequisites and readiness for Drywall hang & finish.
+Hang drywall and complete joint finishing.
+Review results and record acceptance of Drywall hang & finish."
+1/26,H1-026 - Interior prime & paint,Task,Painter,48 hours,80 hours,H1-026,"Prime and paint interior surfaces.
+
+Resource role: Painter
+Predecessors: H1-025 - Drywall hang & finish
+
+Draft guidance: Confirm finishes and allow for preparation, drying and touch-ups.
+
+Checklist:
+Confirm prerequisites and readiness for Interior prime & paint.
+Prime and paint interior surfaces.
+Review results and record acceptance of Interior prime & paint."
+1/27,H1-027 - Cabinets & countertops,Task,Cabinet Installer,40 hours,96 hours,H1-027,"Install cabinets and countertops.
+
+Resource role: Cabinet Installer
+Predecessors: H1-026 - Interior prime & paint
+
+Draft guidance: Confirm measurements, customer selections and supplier lead times.
+
+Checklist:
+Confirm prerequisites and readiness for Cabinets & countertops.
+Install cabinets and countertops.
+Review results and record acceptance of Cabinets & countertops."
+1/28,H1-028 - Interior trim & doors,Task,Finish Carpenter,48 hours,80 hours,H1-028,"Install interior doors and finish trim.
+
+Resource role: Finish Carpenter
+Predecessors: H1-026 - Interior prime & paint
+
+Draft guidance: Confirm finish details and material readiness; coordinate with painting and flooring.
+
+Checklist:
+Confirm prerequisites and readiness for Interior trim & doors.
+Install interior doors and finish trim.
+Review results and record acceptance of Interior trim & doors."
+1/29,H1-029 - Flooring,Task,Flooring Installer,40 hours,72 hours,H1-029,"Install finished flooring.
+
+Resource role: Flooring Installer
+Predecessors: H1-028 - Interior trim & doors
+
+Draft guidance: Confirm substrate readiness and product acclimation requirements.
+
+Checklist:
+Confirm prerequisites and readiness for Flooring.
+Install finished flooring.
+Review results and record acceptance of Flooring."
+1/30,H1-030 - Plumbing fixtures & finish,Task,Plumber,16 hours,32 hours,H1-030,"Install plumbing fixtures and complete final connections.
+
+Resource role: Plumber
+Predecessors: H1-027 - Cabinets & countertops, H1-029 - Flooring
+
+Draft guidance: Confirm fixture delivery and complete functional and leak checks.
+
+Checklist:
+Confirm prerequisites and readiness for Plumbing fixtures & finish.
+Install plumbing fixtures and complete final connections.
+Review results and record acceptance of Plumbing fixtures & finish."
+1/31,H1-031 - Electrical finish,Task,Electrician,16 hours,32 hours,H1-031,"Install electrical fixtures and complete final connections.
+
+Resource role: Electrician
+Predecessors: H1-027 - Cabinets & countertops, H1-029 - Flooring
+
+Draft guidance: Confirm fixture selections and complete required electrical checks.
+
+Checklist:
+Confirm prerequisites and readiness for Electrical finish.
+Install electrical fixtures and complete final connections.
+Review results and record acceptance of Electrical finish."
+1/32,H1-032 - HVAC finish & startup,Task,HVAC Contractor,8 hours,24 hours,H1-032,"Complete HVAC installation and start up the system.
+
+Resource role: HVAC Contractor
+Predecessors: H1-029 - Flooring
+
+Draft guidance: Confirm utilities, controls and commissioning requirements.
+
+Checklist:
+Confirm prerequisites and readiness for HVAC finish & startup.
+Complete HVAC installation and start up the system.
+Review results and record acceptance of HVAC finish & startup."
+1/33,H1-033 - Driveway & walkways,Task,Concrete Crew,16 hours,40 hours,H1-033,"Construct the driveway and walkways.
+
+Resource role: Concrete Crew
+Predecessors: H1-019 - House wrap & siding
+
+Draft guidance: Confirm grading, access and weather; allow for curing before use.
+
+Checklist:
+Confirm prerequisites and readiness for Driveway & walkways.
+Construct the driveway and walkways.
+Review results and record acceptance of Driveway & walkways."
+1/34,H1-034 - Final grading & landscaping,Task,Landscaper,32 hours,72 hours,H1-034,"Complete final grading and landscaping.
+
+Resource role: Landscaper
+Predecessors: H1-033 - Driveway & walkways
+
+Draft guidance: Confirm drainage, planting scope and seasonal weather assumptions.
+
+Checklist:
+Confirm prerequisites and readiness for Final grading & landscaping.
+Complete final grading and landscaping.
+Review results and record acceptance of Final grading & landscaping."
+1/35,H1-035 - Punch list & final cleaning,Task,General Contractor,24 hours,56 hours,H1-035,"Resolve punch-list items and perform final cleaning.
+
+Resource role: General Contractor
+Predecessors: H1-030 - Plumbing fixtures & finish, H1-031 - Electrical finish, H1-032 - HVAC finish & startup, H1-034 - Final grading & landscaping
+
+Draft guidance: Agree acceptance criteria and verify required trade corrections are complete.
+
+Checklist:
+Confirm prerequisites and readiness for Punch list & final cleaning.
+Resolve punch-list items and perform final cleaning.
+Review results and record acceptance of Punch list & final cleaning."
+1/36,H1-036 - Final inspection & certificate of occupancy,Task,Building Inspector,16 hours,56 hours,H1-036,"Complete final inspection and obtain the certificate of occupancy.
+
+Resource role: Building Inspector
+Predecessors: H1-035 - Punch list & final cleaning
+
+Draft guidance: Confirm authority requirements and appointment availability; do not assume occupancy approval until issued.
+
+Checklist:
+Confirm prerequisites and readiness for Final inspection & certificate of occupancy.
+Complete final inspection and obtain the certificate of occupancy.
+Review results and record acceptance of Final inspection & certificate of occupancy."
+2,House Two,Project,,,,P2,BufferLogic two-house comparison. Task effort converted at 8 hours/day. Assign matching resources and restore dependency links after import.
+2/1,H2-001 - Site survey & soil test,Task,Surveyor,24 hours,56 hours,H2-001,"Survey the site and assess soil conditions for the proposed foundation.
+
+Resource role: Surveyor
+Predecessors: None
+
+Draft guidance: Confirm boundaries, access and soil recommendations before design.
+
+Checklist:
+Confirm prerequisites and readiness for Site survey & soil test.
+Survey the site and assess soil conditions for the proposed foundation.
+Review results and record acceptance of Site survey & soil test."
+2/2,H2-002 - Architectural design & drawings,Task,Architect,160 hours,320 hours,H2-002,"Prepare architectural plans and drawings for the house.
+
+Resource role: Architect
+Predecessors: H2-001 - Site survey & soil test
+
+Draft guidance: Confirm customer scope and selections; allow for design review and revisions.
+
+Checklist:
+Confirm prerequisites and readiness for Architectural design & drawings.
+Prepare architectural plans and drawings for the house.
+Review results and record acceptance of Architectural design & drawings."
+2/3,H2-003 - Structural engineering,Task,Structural Engineer,56 hours,120 hours,H2-003,"Design structural elements using the architectural plans and soil findings.
+
+Resource role: Structural Engineer
+Predecessors: H2-002 - Architectural design & drawings
+
+Draft guidance: Confirm local design requirements and resolve coordination issues before permitting.
+
+Checklist:
+Confirm prerequisites and readiness for Structural engineering.
+Design structural elements using the architectural plans and soil findings.
+Review results and record acceptance of Structural engineering."
+2/4,H2-004 - Permit application & approval,Task,General Contractor,120 hours,360 hours,H2-004,"Submit the permit package and obtain approval to start construction.
+
+Resource role: General Contractor
+Predecessors: H2-003 - Structural engineering
+
+Draft guidance: Review authority turnaround. This template currently models permit time as working effort assigned to the general contractor; consider separating active preparation from elapsed approval waiting.
+
+Checklist:
+Confirm prerequisites and readiness for Permit application & approval.
+Submit the permit package and obtain approval to start construction.
+Review results and record acceptance of Permit application & approval."
+2/5,H2-005 - Site clearing & grading,Task,Excavation Crew,24 hours,56 hours,H2-005,"Clear the building area and grade the site for construction.
+
+Resource role: Excavation Crew
+Predecessors: H2-004 - Permit application & approval
+
+Draft guidance: Confirm site access, disposal arrangements and weather assumptions.
+
+Checklist:
+Confirm prerequisites and readiness for Site clearing & grading.
+Clear the building area and grade the site for construction.
+Review results and record acceptance of Site clearing & grading."
+2/6,H2-006 - Temporary utilities & erosion control,Task,General Contractor,16 hours,32 hours,H2-006,"Install temporary services and erosion controls for the construction site.
+
+Resource role: General Contractor
+Predecessors: H2-005 - Site clearing & grading
+
+Draft guidance: Confirm utility availability and required site protection before excavation.
+
+Checklist:
+Confirm prerequisites and readiness for Temporary utilities & erosion control.
+Install temporary services and erosion controls for the construction site.
+Review results and record acceptance of Temporary utilities & erosion control."
+2/7,H2-007 - Excavate foundation,Task,Excavation Crew,16 hours,40 hours,H2-007,"Excavate the foundation to the required lines and depths.
+
+Resource role: Excavation Crew
+Predecessors: H2-006 - Temporary utilities & erosion control
+
+Draft guidance: Confirm soil conditions and access; unexpected rock or groundwater may change estimates.
+
+Checklist:
+Confirm prerequisites and readiness for Excavate foundation.
+Excavate the foundation to the required lines and depths.
+Review results and record acceptance of Excavate foundation."
+2/8,H2-008 - Form & pour footings,Task,Concrete Crew,24 hours,48 hours,H2-008,"Form and pour foundation footings.
+
+Resource role: Concrete Crew
+Predecessors: H2-007 - Excavate foundation
+
+Draft guidance: Confirm inspection requirements, concrete delivery and curing assumptions.
+
+Checklist:
+Confirm prerequisites and readiness for Form & pour footings.
+Form and pour foundation footings.
+Review results and record acceptance of Form & pour footings."
+2/9,H2-009 - Foundation walls,Task,Concrete Crew,32 hours,64 hours,H2-009,"Construct the foundation walls.
+
+Resource role: Concrete Crew
+Predecessors: H2-008 - Form & pour footings
+
+Draft guidance: Confirm reinforcement, inspection and curing requirements before follow-on work.
+
+Checklist:
+Confirm prerequisites and readiness for Foundation walls.
+Construct the foundation walls.
+Review results and record acceptance of Foundation walls."
+2/10,H2-010 - Waterproofing & foundation drainage,Task,Waterproofing Crew,16 hours,32 hours,H2-010,"Install foundation waterproofing and drainage.
+
+Resource role: Waterproofing Crew
+Predecessors: H2-009 - Foundation walls
+
+Draft guidance: Confirm drainage routing and inspect protection before backfill.
+
+Checklist:
+Confirm prerequisites and readiness for Waterproofing & foundation drainage.
+Install foundation waterproofing and drainage.
+Review results and record acceptance of Waterproofing & foundation drainage."
+2/11,H2-011 - Backfill,Task,Excavation Crew,8 hours,24 hours,H2-011,"Backfill around the completed foundation.
+
+Resource role: Excavation Crew
+Predecessors: H2-010 - Waterproofing & foundation drainage
+
+Draft guidance: Confirm foundation readiness and protect drainage and waterproofing.
+
+Checklist:
+Confirm prerequisites and readiness for Backfill.
+Backfill around the completed foundation.
+Review results and record acceptance of Backfill."
+2/12,H2-012 - Under-slab plumbing,Task,Plumber,16 hours,32 hours,H2-012,"Install plumbing below the floor slab.
+
+Resource role: Plumber
+Predecessors: H2-009 - Foundation walls
+
+Draft guidance: Confirm fixture locations and required checks before covering the pipework.
+
+Checklist:
+Confirm prerequisites and readiness for Under-slab plumbing.
+Install plumbing below the floor slab.
+Review results and record acceptance of Under-slab plumbing."
+2/13,H2-013 - Pour slab / basement floor,Task,Concrete Crew,16 hours,32 hours,H2-013,"Place and finish the slab or basement floor.
+
+Resource role: Concrete Crew
+Predecessors: H2-011 - Backfill, H2-012 - Under-slab plumbing
+
+Draft guidance: Confirm under-slab services and curing requirements before framing.
+
+Checklist:
+Confirm prerequisites and readiness for Pour slab / basement floor.
+Place and finish the slab or basement floor.
+Review results and record acceptance of Pour slab / basement floor."
+2/14,H2-014 - Floor framing & subfloor,Task,Framing Crew,32 hours,64 hours,H2-014,"Frame the floor system and install the subfloor.
+
+Resource role: Framing Crew
+Predecessors: H2-013 - Pour slab / basement floor
+
+Draft guidance: Confirm material delivery and foundation dimensions before starting.
+
+Checklist:
+Confirm prerequisites and readiness for Floor framing & subfloor.
+Frame the floor system and install the subfloor.
+Review results and record acceptance of Floor framing & subfloor."
+2/15,H2-015 - Wall framing,Task,Framing Crew,56 hours,96 hours,H2-015,"Frame walls and structural openings.
+
+Resource role: Framing Crew
+Predecessors: H2-014 - Floor framing & subfloor
+
+Draft guidance: Confirm approved drawings and coordinate openings with other trades.
+
+Checklist:
+Confirm prerequisites and readiness for Wall framing.
+Frame walls and structural openings.
+Review results and record acceptance of Wall framing."
+2/16,H2-016 - Roof trusses & sheathing,Task,Framing Crew,32 hours,64 hours,H2-016,"Install roof trusses and roof sheathing.
+
+Resource role: Framing Crew
+Predecessors: H2-015 - Wall framing
+
+Draft guidance: Confirm truss delivery, lifting access and weather conditions.
+
+Checklist:
+Confirm prerequisites and readiness for Roof trusses & sheathing.
+Install roof trusses and roof sheathing.
+Review results and record acceptance of Roof trusses & sheathing."
+2/17,H2-017 - Windows & exterior doors,Task,Framing Crew,16 hours,32 hours,H2-017,"Install windows and exterior doors.
+
+Resource role: Framing Crew
+Predecessors: H2-016 - Roof trusses & sheathing
+
+Draft guidance: Confirm dimensions, delivery and weatherproofing details.
+
+Checklist:
+Confirm prerequisites and readiness for Windows & exterior doors.
+Install windows and exterior doors.
+Review results and record acceptance of Windows & exterior doors."
+2/18,H2-018 - Roofing,Task,Roofer,24 hours,56 hours,H2-018,"Install the roof covering and associated weatherproofing.
+
+Resource role: Roofer
+Predecessors: H2-016 - Roof trusses & sheathing
+
+Draft guidance: Confirm roof readiness and suitable weather; review drying-in requirements for interior trades.
+
+Checklist:
+Confirm prerequisites and readiness for Roofing.
+Install the roof covering and associated weatherproofing.
+Review results and record acceptance of Roofing."
+2/19,H2-019 - House wrap & siding,Task,Siding Crew,56 hours,112 hours,H2-019,"Install house wrap and exterior siding.
+
+Resource role: Siding Crew
+Predecessors: H2-017 - Windows & exterior doors
+
+Draft guidance: Confirm flashing details, material availability and access.
+
+Checklist:
+Confirm prerequisites and readiness for House wrap & siding.
+Install house wrap and exterior siding.
+Review results and record acceptance of House wrap & siding."
+2/20,H2-020 - Plumbing rough-in,Task,Plumber,32 hours,56 hours,H2-020,"Install plumbing supply, waste and vent rough-in.
+
+Resource role: Plumber
+Predecessors: H2-018 - Roofing
+
+Draft guidance: Coordinate routes and fixture locations with framing and other trades.
+
+Checklist:
+Confirm prerequisites and readiness for Plumbing rough-in.
+Install plumbing supply, waste and vent rough-in.
+Review results and record acceptance of Plumbing rough-in."
+2/21,H2-021 - Electrical rough-in,Task,Electrician,40 hours,64 hours,H2-021,"Install electrical wiring, boxes and rough-in components.
+
+Resource role: Electrician
+Predecessors: H2-018 - Roofing
+
+Draft guidance: Confirm layout and coordinate routes with plumbing and HVAC.
+
+Checklist:
+Confirm prerequisites and readiness for Electrical rough-in.
+Install electrical wiring, boxes and rough-in components.
+Review results and record acceptance of Electrical rough-in."
+2/22,H2-022 - HVAC rough-in,Task,HVAC Contractor,32 hours,56 hours,H2-022,"Install HVAC ductwork and rough-in components.
+
+Resource role: HVAC Contractor
+Predecessors: H2-018 - Roofing
+
+Draft guidance: Confirm equipment layout and coordinate penetrations with other trades.
+
+Checklist:
+Confirm prerequisites and readiness for HVAC rough-in.
+Install HVAC ductwork and rough-in components.
+Review results and record acceptance of HVAC rough-in."
+2/23,H2-023 - Rough-in inspections,Task,Building Inspector,16 hours,56 hours,H2-023,"Complete inspections of the rough-in work.
+
+Resource role: Building Inspector
+Predecessors: H2-020 - Plumbing rough-in, H2-021 - Electrical rough-in, H2-022 - HVAC rough-in
+
+Draft guidance: Confirm inspector availability and allow for corrections; recorded appointments can be modeled as locked tasks.
+
+Checklist:
+Confirm prerequisites and readiness for Rough-in inspections.
+Complete inspections of the rough-in work.
+Review results and record acceptance of Rough-in inspections."
+2/24,H2-024 - Insulation,Task,Insulation Crew,24 hours,40 hours,H2-024,"Install insulation after rough-in approval.
+
+Resource role: Insulation Crew
+Predecessors: H2-023 - Rough-in inspections
+
+Draft guidance: Confirm approved assemblies and that concealed work is ready to cover.
+
+Checklist:
+Confirm prerequisites and readiness for Insulation.
+Install insulation after rough-in approval.
+Review results and record acceptance of Insulation."
+2/25,H2-025 - Drywall hang & finish,Task,Drywall Crew,80 hours,144 hours,H2-025,"Hang drywall and complete joint finishing.
+
+Resource role: Drywall Crew
+Predecessors: H2-024 - Insulation
+
+Draft guidance: Review drying time between coats; elapsed drying waits may warrant separate tasks.
+
+Checklist:
+Confirm prerequisites and readiness for Drywall hang & finish.
+Hang drywall and complete joint finishing.
+Review results and record acceptance of Drywall hang & finish."
+2/26,H2-026 - Interior prime & paint,Task,Painter,48 hours,80 hours,H2-026,"Prime and paint interior surfaces.
+
+Resource role: Painter
+Predecessors: H2-025 - Drywall hang & finish
+
+Draft guidance: Confirm finishes and allow for preparation, drying and touch-ups.
+
+Checklist:
+Confirm prerequisites and readiness for Interior prime & paint.
+Prime and paint interior surfaces.
+Review results and record acceptance of Interior prime & paint."
+2/27,H2-027 - Cabinets & countertops,Task,Cabinet Installer,40 hours,96 hours,H2-027,"Install cabinets and countertops.
+
+Resource role: Cabinet Installer
+Predecessors: H2-026 - Interior prime & paint
+
+Draft guidance: Confirm measurements, customer selections and supplier lead times.
+
+Checklist:
+Confirm prerequisites and readiness for Cabinets & countertops.
+Install cabinets and countertops.
+Review results and record acceptance of Cabinets & countertops."
+2/28,H2-028 - Interior trim & doors,Task,Finish Carpenter,48 hours,80 hours,H2-028,"Install interior doors and finish trim.
+
+Resource role: Finish Carpenter
+Predecessors: H2-026 - Interior prime & paint
+
+Draft guidance: Confirm finish details and material readiness; coordinate with painting and flooring.
+
+Checklist:
+Confirm prerequisites and readiness for Interior trim & doors.
+Install interior doors and finish trim.
+Review results and record acceptance of Interior trim & doors."
+2/29,H2-029 - Flooring,Task,Flooring Installer,40 hours,72 hours,H2-029,"Install finished flooring.
+
+Resource role: Flooring Installer
+Predecessors: H2-028 - Interior trim & doors
+
+Draft guidance: Confirm substrate readiness and product acclimation requirements.
+
+Checklist:
+Confirm prerequisites and readiness for Flooring.
+Install finished flooring.
+Review results and record acceptance of Flooring."
+2/30,H2-030 - Plumbing fixtures & finish,Task,Plumber,16 hours,32 hours,H2-030,"Install plumbing fixtures and complete final connections.
+
+Resource role: Plumber
+Predecessors: H2-027 - Cabinets & countertops, H2-029 - Flooring
+
+Draft guidance: Confirm fixture delivery and complete functional and leak checks.
+
+Checklist:
+Confirm prerequisites and readiness for Plumbing fixtures & finish.
+Install plumbing fixtures and complete final connections.
+Review results and record acceptance of Plumbing fixtures & finish."
+2/31,H2-031 - Electrical finish,Task,Electrician,16 hours,32 hours,H2-031,"Install electrical fixtures and complete final connections.
+
+Resource role: Electrician
+Predecessors: H2-027 - Cabinets & countertops, H2-029 - Flooring
+
+Draft guidance: Confirm fixture selections and complete required electrical checks.
+
+Checklist:
+Confirm prerequisites and readiness for Electrical finish.
+Install electrical fixtures and complete final connections.
+Review results and record acceptance of Electrical finish."
+2/32,H2-032 - HVAC finish & startup,Task,HVAC Contractor,8 hours,24 hours,H2-032,"Complete HVAC installation and start up the system.
+
+Resource role: HVAC Contractor
+Predecessors: H2-029 - Flooring
+
+Draft guidance: Confirm utilities, controls and commissioning requirements.
+
+Checklist:
+Confirm prerequisites and readiness for HVAC finish & startup.
+Complete HVAC installation and start up the system.
+Review results and record acceptance of HVAC finish & startup."
+2/33,H2-033 - Driveway & walkways,Task,Concrete Crew,16 hours,40 hours,H2-033,"Construct the driveway and walkways.
+
+Resource role: Concrete Crew
+Predecessors: H2-019 - House wrap & siding
+
+Draft guidance: Confirm grading, access and weather; allow for curing before use.
+
+Checklist:
+Confirm prerequisites and readiness for Driveway & walkways.
+Construct the driveway and walkways.
+Review results and record acceptance of Driveway & walkways."
+2/34,H2-034 - Final grading & landscaping,Task,Landscaper,32 hours,72 hours,H2-034,"Complete final grading and landscaping.
+
+Resource role: Landscaper
+Predecessors: H2-033 - Driveway & walkways
+
+Draft guidance: Confirm drainage, planting scope and seasonal weather assumptions.
+
+Checklist:
+Confirm prerequisites and readiness for Final grading & landscaping.
+Complete final grading and landscaping.
+Review results and record acceptance of Final grading & landscaping."
+2/35,H2-035 - Punch list & final cleaning,Task,General Contractor,24 hours,56 hours,H2-035,"Resolve punch-list items and perform final cleaning.
+
+Resource role: General Contractor
+Predecessors: H2-030 - Plumbing fixtures & finish, H2-031 - Electrical finish, H2-032 - HVAC finish & startup, H2-034 - Final grading & landscaping
+
+Draft guidance: Agree acceptance criteria and verify required trade corrections are complete.
+
+Checklist:
+Confirm prerequisites and readiness for Punch list & final cleaning.
+Resolve punch-list items and perform final cleaning.
+Review results and record acceptance of Punch list & final cleaning."
+2/36,H2-036 - Final inspection & certificate of occupancy,Task,Building Inspector,16 hours,56 hours,H2-036,"Complete final inspection and obtain the certificate of occupancy.
+
+Resource role: Building Inspector
+Predecessors: H2-035 - Punch list & final cleaning
+
+Draft guidance: Confirm authority requirements and appointment availability; do not assume occupancy approval until issued.
+
+Checklist:
+Confirm prerequisites and readiness for Final inspection & certificate of occupancy.
+Complete final inspection and obtain the certificate of occupancy.
+Review results and record acceptance of Final inspection & certificate of occupancy."
