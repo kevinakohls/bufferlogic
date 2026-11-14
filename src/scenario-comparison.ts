@@ -37,7 +37,7 @@ export function compareScenarios(baselineInput:unknown,scenarioInput:unknown){
   };
   const taskView=(task:PortfolioTask|undefined,entry:PortfolioResult['tasks'][number]|undefined)=>task?{
     name:task.name,projectId:task.projectId,resource:task.resource,allocationPercent:task.allocationPercent??100,
-    supportingResources:[...(task.supportingResources??[])].sort((a,b)=>a.resource<b.resource?-1:a.resource>b.resource?1:0),dependsOn:[...task.dependsOn].sort(),goodCase:task.goodCase,poorCase:task.poorCase,
+    supportingResources:[...(task.supportingResources??[])].sort((a,b)=>a.resource<b.resource?-1:a.resource>b.resource?1:0),dependsOn:[...task.dependsOn].sort(),goodCase:task.goodCase,poorCase:task.poorCase,estimateBasis:task.estimateBasis??'p20-p80',
     deadline:task.deadline??null,priority:task.priority,status:task.status??'planned',durationMode:task.durationMode??'working',remaining:task.remaining??null,
     locked:task.locked??null,start:entry?.start??null,finish:entry?.finish??null,startDate:entry?.startDate??null,finishDate:entry?.finishDate??null,
   }:null;
@@ -58,7 +58,7 @@ export function compareScenarios(baselineInput:unknown,scenarioInput:unknown){
       ...(before.start!==after.start||before.finish!==after.finish?['Timing']:[]),
       ...(before.resource!==after.resource||before.allocationPercent!==after.allocationPercent||!same(before.supportingResources,after.supportingResources)?['Resources']:[]),
       ...(!same(before.dependsOn,after.dependsOn)?['Dependencies']:[]),
-      ...(before.goodCase!==after.goodCase||before.poorCase!==after.poorCase||!same(before.remaining,after.remaining)?['Estimates']:[]),
+      ...(before.goodCase!==after.goodCase||before.poorCase!==after.poorCase||before.estimateBasis!==after.estimateBasis||!same(before.remaining,after.remaining)?['Estimates']:[]),
       ...(before.deadline!==after.deadline?['Deadline']:[]),...(before.priority!==after.priority?['Priority']:[]),...(before.status!==after.status?['Progress']:[]),
       ...(before.durationMode!==after.durationMode||!same(before.locked,after.locked)?['Scheduling settings']:[]),
       ...(before.name!==after.name||before.projectId!==after.projectId?['Task details']:[]),

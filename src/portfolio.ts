@@ -447,7 +447,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
       if (e.locked || e.status === 'completed') { anchor = e.finish; mean = 0; variance = 0; fixedEffort = 0; continue; }
       const estimates = t.status === 'active' ? t.remaining! : t;
       if (estimates.goodCase === 0) continue;
-      const moments = fitTaskLognormal(estimates.goodCase, estimates.poorCase), fraction = t.durationMode === 'elapsed' ? 1 : e.allocationPercent / 100;
+      const moments = fitTaskLognormal(estimates.goodCase, estimates.poorCase,estimates.estimateBasis??t.estimateBasis), fraction = t.durationMode === 'elapsed' ? 1 : e.allocationPercent / 100;
       if(estimates.goodCase===estimates.poorCase)fixedEffort+=moments.mean/fraction;
       else {mean += moments.mean/fraction; variance += moments.variance/(fraction*fraction);}
     }
@@ -467,7 +467,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
     const quantile = (z:number) => {
       if(exactFinalId){
         const t=byId.get(exactFinalId)!, e=entries.get(exactFinalId)!;
-        const estimates=t.status==='active'?t.remaining!:t, moments=fitTaskLognormal(estimates.goodCase,estimates.poorCase);
+        const estimates=t.status==='active'?t.remaining!:t, moments=fitTaskLognormal(estimates.goodCase,estimates.poorCase,estimates.estimateBasis??t.estimateBasis);
         const fraction=t.durationMode==='elapsed'?1:e.allocationPercent/100;
         return taskFinish(t,e.start,Math.exp(moments.mu+moments.sigma*z)/fraction);
       }
@@ -484,7 +484,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
         const gap=Math.max(0,e.start-baselineReady);
         finish+=gap;
         if (estimates.goodCase>0) {
-          const moments=fitTaskLognormal(estimates.goodCase,estimates.poorCase);
+          const moments=fitTaskLognormal(estimates.goodCase,estimates.poorCase,estimates.estimateBasis??t.estimateBasis);
           const fraction=t.durationMode==='elapsed'?1:e.allocationPercent/100;
           const taskEffort=estimates.goodCase===estimates.poorCase ? moments.mean/fraction : mean===0?0:effort*(moments.mean/fraction)/mean;
           finish=taskFinish(t,finish,taskEffort);
@@ -509,7 +509,7 @@ export function schedulePortfolio(input: PortfolioPlan, previous?: PortfolioResu
       const secondWork=(time:number)=>secondCalendar
         ?secondCalendar.effortBetween(second.resource,firstEntry.start,time)*fraction(second)
         :(time-firstEntry.start)*fraction(second);
-      const inverse=twoTaskConvolution({first:firstEstimate,second:secondEstimate,lower:firstEntry.start,initialUpper:completionPercentiles.p99,
+      const inverse=twoTaskConvolution({first:{...firstEstimate,...((firstEstimate.estimateBasis??first.estimateBasis)?{estimateBasis:firstEstimate.estimateBasis??first.estimateBasis}:{})},second:{...secondEstimate,...((secondEstimate.estimateBasis??second.estimateBasis)?{estimateBasis:secondEstimate.estimateBasis??second.estimateBasis}:{})},lower:firstEntry.start,initialUpper:completionPercentiles.p99,
         secondWork,secondReady:(effort:number)=>{
           let finish=taskFinish(first,firstEntry.start,effort/fraction(first)),prior=firstEntry.finish;
           for(const id of [...between,second.id]){

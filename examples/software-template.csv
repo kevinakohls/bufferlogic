@@ -1,4 +1,4 @@
-ID,Task,Resource,Predecessors,Low Estimate P20 (days),High Estimate P80 (days),Description,Comments,Checklist
+ID,Task,Resource,Predecessors,Low estimate (days),High estimate (days),Description,Comments,Checklist
 1,Stakeholder interviews & requirements gathering,Product Manager,,5,10,"Gather stakeholder needs, business goals, current problems, and the initial scope for the software project.",Draft guidance: identify decision makers and capture unresolved questions; confirm stakeholder availability before relying on these estimates.,"Confirm prerequisites and readiness for Stakeholder interviews & requirements gathering.
 Gather stakeholder needs, business goals, current problems, and the initial scope for the software project.
 Review results and record acceptance of Stakeholder interviews & requirements gathering."

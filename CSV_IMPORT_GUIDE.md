@@ -16,8 +16,8 @@ columns are ignored; duplicate or ambiguous headings are rejected.
 | --- | --- |
 | Task | Required heading and nonempty task name. |
 | Resource | Required heading. A blank assignment makes an unassigned draft in the app; assign it before scheduling. |
-| Good days | Required numeric estimate, no greater than Poor days. Alias: Low Estimate P20 (days). |
-| Poor days | Required numeric estimate. Alias: High Estimate P80 (days). |
+| Low estimate | Required numeric estimate, no greater than High estimate. Optional `(days)` suffix; explicit Low Estimate P10 (days) is also supported. |
+| High estimate | Required numeric estimate. Optional `(days)` suffix; explicit High Estimate P90 (days) is also supported. |
 | ID | Optional heading. If present, every ID must be nonempty. If absent, source IDs are generated as 1, 2, 3… across nonblank data records. |
 | Depends on | Optional; alias: Predecessors. Blank or none means no predecessors. Multiple IDs need a quoted comma-separated cell. |
 | Priority | Optional. Supplied finite numbers are honored in loads and templates. Missing/blank values default to row order within each project. Lower numbers are preferred among eligible tasks. |
@@ -38,7 +38,7 @@ without Priority or Project. It can be used with either Load files or Create fro
 template. A minimal canonical example is:
 
 ```csv
-ID,Task,Resource,Depends on,Good days,Poor days
+ID,Task,Resource,Depends on,Low estimate,High estimate
 1,Prepare,Mechanical,,5,7
 2,Build,Electrical,1,2,3
 ```
@@ -80,3 +80,11 @@ When both project and calendar files are submitted, errors from both are collect
 Failed file loads and template imports preserve the existing plan and captured
 baseline; no partial project or calendar is installed. The app displays the errors
 and confirms that the existing plan was kept. Correct the files and retry.
+
+## Estimate meaning and compatibility
+
+Low/High headers mean P10/P90: about 1 in 10 similar tasks finish below Low
+and 1 in 10 above High. Legacy Good days/Poor days and explicit P20/P80 headers
+keep their P20/P80 meaning. Use matching pairs; mixed conventions are rejected.
+Loaded and templated tasks preserve their convention in saved JSON. See
+[Estimate meaning and forecasts](ESTIMATES_AND_FORECASTS.md) for migration.

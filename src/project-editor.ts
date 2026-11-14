@@ -33,7 +33,7 @@ export function appendTask(input: PortfolioPlan, task: NewTask): PortfolioPlan {
   if (!project) throw new Error('Choose a project for the task');
   if (typeof task.name !== 'string' || !task.name.trim()) throw new Error('Give the task a name');
   if (!Number.isFinite(task.goodCase) || !Number.isFinite(task.poorCase) || task.goodCase < 0 || task.poorCase < task.goodCase
-      || (task.goodCase === 0 && task.poorCase !== 0)) throw new Error('Good and poor estimates must be positive with poor days at least good days, or both zero for a milestone');
+      || (task.goodCase === 0 && task.poorCase !== 0)) throw new Error('Low and High estimates must be positive with High at least Low, or both zero for a milestone');
   if (task.resource !== '' && !plan.resources.includes(task.resource)) throw new Error('Choose an existing resource or leave the task unassigned');
   const ids = new Set(plan.projects.flatMap(project => project.tasks.map(task => task.id)));
   if (!Array.isArray(task.dependsOn) || new Set(task.dependsOn).size !== task.dependsOn.length
@@ -45,7 +45,7 @@ export function appendTask(input: PortfolioPlan, task: NewTask): PortfolioPlan {
   const priority = Math.max(0, ...project.tasks.map(task => task.priority)) + 1;
   return parsePortfolio({...plan, approvalStatus: 'draft', versionId: `${plan.versionId}-task`,
     projects: plan.projects.map(p => p.id !== project.id ? p : {...p, tasks: [...p.tasks, {
-      ...task, id, name: task.name.trim(), priority, status: 'planned', allocationPercent: 100, durationMode: 'working',
+      ...task, estimateBasis:'p10-p90', id, name: task.name.trim(), priority, status: 'planned', allocationPercent: 100, durationMode: 'working',
     }]})});
 }
 

@@ -577,3 +577,23 @@ downloaded, Cancel works, scheduling edits invalidate a report, and date/day dis
 reformats it. Other API requests must remain usable while the worker is busy.
 Check old plan files, recovery restore, held work, fixed-commitment failures and
 mobile controls. More paths are modeled; real-world accuracy is not guaranteed.
+
+## Low/High estimates and forecast labels
+
+1. Create a new project, add a resource and a task with Low=3, High=9. Check
+   the 1-in-10 hints. Save/reopen; task JSON must carry `estimateBasis: "p10-p90"`.
+2. Open an older saved plan: its convention and forecasts must remain unchanged.
+   Tasks must show the legacy explanation (1 in 5). Editing a legacy range must
+   retain its meaning. Save/reopen and check again, including active remaining work.
+3. Save a backup, then select Use new estimates. Cancel first and verify nothing
+   changes. Confirm on retry: numbers stay unchanged, results become stale,
+   simulations clear, and both original/remaining ranges use P10/P90 after recalculation.
+4. Load CSVs with new Low/High headers and legacy P20/P80 headers, as files and
+   templates. Check their saved metadata. Mixed-convention header pairs must fail
+   without replacing the open plan. Shipped templates and the in-app example use new inputs.
+5. Check Working schedule / Planning forecast / Risk simulation labels, percentile
+   tooltips, and Help. Planning forecast remains P95 and determines target status;
+   simulated values are separate. Run risk simulation and confirm it does not
+   alter the working schedule, planning forecast, or deadline commitment.
+6. Change only estimate meaning in a comparison: it must appear as an Estimates
+   change even though entered numbers and deterministic medians are unchanged.

@@ -71,7 +71,7 @@ function remainingTasks(snapshot: ProgressSnapshot): Task[] {
     const active = activeResources.get(task.resource);
     // Explicitly reserve active resources without silently reordering planned work.
     if (active && active.id !== task.id && !dependsOn.includes(active.id)) dependsOn.push(active.id);
-    return { ...task, goodCase: estimates.goodCase, poorCase: estimates.poorCase, dependsOn };
+    return { ...task, ...((estimates.estimateBasis??task.estimateBasis)?{estimateBasis:estimates.estimateBasis??task.estimateBasis}:{}), goodCase: estimates.goodCase, poorCase: estimates.poorCase, dependsOn };
   });
 }
 

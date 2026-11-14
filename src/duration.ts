@@ -1,6 +1,6 @@
 import type { DurationEstimates, RemainingEstimate } from "./types.js";
 
-/** P20 and P80 are symmetric lognormal quantiles, so P50 is their geometric mean. */
+/** Symmetric lognormal input quantiles (P10/P90 or legacy P20/P80) share this median. */
 export function calculateP50(goodCase: number, poorCase: number): number {
   if (!Number.isFinite(goodCase) || !Number.isFinite(poorCase)
       || goodCase <= 0 || poorCase <= 0) {

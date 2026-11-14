@@ -21,7 +21,7 @@ browser state; there are no accounts or automatic cloud saves.
    critical-chain task to change. Choose **All dependencies and waits** to see links.
 3. Open **Compare → Set current as baseline**. Choose **Download baseline** if you
    want to keep this original plan.
-4. In **Tasks**, increase that task's **Poor days · P80** estimate, leaving its
+4. In **Tasks**, increase that task's **High estimate** estimate, leaving its
    good estimate unchanged. Click **Recalculate schedule**.
 5. Open **Compare → Compare versions**. Inspect the before/after task timings and
    each project's P95 delivery shift. The timeline shows the revised task schedule;
@@ -105,7 +105,7 @@ installation, tests and startup commands. Local startup does not update Cloud Ru
 ## Documentation
 
 - [Development](DEVELOPMENT.md): local setup, CLI commands, GitLab review and updates.
-- [Monte Carlo guide](MONTE_CARLO.md): optional simulations, assumptions and independent validation.
+- [Risk simulation guide](MONTE_CARLO.md): optional simulations, assumptions and independent validation.
 - [CSV import guide](CSV_IMPORT_GUIDE.md): task/template columns, aliases and calendar validation.
 - [UI review guide](UI_REVIEW_GUIDE.md): editing, recovery and manual checks.
 - [Reviewer guide](REVIEWER_GUIDE.md): command-line examples and expected behavior.
@@ -118,3 +118,8 @@ installation, tests and startup commands. Local startup does not update Cloud Ru
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+Task Low/High inputs now use the “1 in 10” convention (P10/P90). Older plans
+retain their saved estimate meaning. See [Estimate meaning and forecasts](ESTIMATES_AND_FORECASTS.md)
+for compatibility, deliberate migration, and the Working schedule / Planning forecast /
+Risk simulation labels. Project P95 remains the planning target.

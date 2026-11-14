@@ -58,7 +58,7 @@ export function createReviewServer(options: ReviewServerOptions = {}) {
       if(request.method==='GET'&&path==='/api/housing-template'){json({csvText:await readFile(new URL('examples/housing-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/software-template'){json({csvText:await readFile(new URL('examples/software-template.csv',root),'utf8')});return;}
       if(request.method==='GET'&&path==='/api/example'){
-        json({projectText:await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8'),calendarText:await readFile(new URL('examples/house-resource-calendars.csv',root),'utf8')});return;
+        json({projectText:(await readFile(new URL('examples/house_build_tasks2.csv',root),'utf8')).replace('Good days,Poor days','Low estimate (days),High estimate (days)'),calendarText:await readFile(new URL('examples/house-resource-calendars.csv',root),'utf8')});return;
       }
       if(request.method==='POST'&&path==='/api/simulate'){
         if(simulationBusy){json({error:'A simulation is already running. Try again after it finishes or cancel it.'},409);return;}

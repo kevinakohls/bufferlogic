@@ -1,3 +1,4 @@
+import type {EstimateBasis} from "./types.js";
 import { calculateP50 } from "./duration.js";
 import { scheduleProject } from "./scheduler.js";
 import type { Task } from "./types.js";
@@ -8,11 +9,13 @@ const normalQuantiles = {
   p98: 2.0537489106318225, p99: 2.3263478740408408,
 };
 
-/** Lognormal parameters and moments fitted to task P20/P80 estimates. */
-export function fitTaskLognormal(goodCase: number, poorCase: number) {
+/** Lognormal fit using explicit input meaning; unversioned tasks retain P20/P80. */
+export function fitTaskLognormal(goodCase: number, poorCase: number, estimateBasis:EstimateBasis = "p20-p80") {
+  if(estimateBasis!=="p10-p90"&&estimateBasis!=="p20-p80")throw new Error("Invalid estimate basis");
+  const inputZ=estimateBasis==="p10-p90"?1.2815515655446004:z80;
   calculateP50(goodCase, poorCase);
   const mu = (Math.log(goodCase) + Math.log(poorCase)) / 2;
-  const sigma = (Math.log(poorCase) - Math.log(goodCase)) / (2 * z80);
+  const sigma = (Math.log(poorCase) - Math.log(goodCase)) / (2 * inputZ);
   const sigmaSquared = sigma * sigma;
   const mean = sigma === 0 ? goodCase : Math.exp(mu + sigmaSquared / 2);
   const variance = sigma === 0 ? 0 : Math.expm1(sigmaSquared) * mean * mean;
@@ -31,7 +34,7 @@ export function estimateProjectPercentiles(tasks: readonly Task[]) {
   let deterministicShift = 0;
   for (const id of baseline.criticalChain) {
     const task = byId.get(id)!;
-    const moments = fitTaskLognormal(task.goodCase, task.poorCase);
+    const moments = fitTaskLognormal(task.goodCase, task.poorCase,task.estimateBasis);
     if(task.goodCase===task.poorCase)deterministicShift+=moments.mean;
     else mean += moments.mean;
     variance += moments.variance;

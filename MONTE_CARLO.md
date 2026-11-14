@@ -1,3 +1,8 @@
+> UI name: **Risk simulation**. New task inputs use P10/P90; older saved tasks
+> without metadata retain P20/P80. Both simulation and analytical forecasts use
+> the saved convention. See [Estimate meaning and forecasts](ESTIMATES_AND_FORECASTS.md).
+> Numerical benchmarks below use their explicitly described legacy P20/P80 inputs.
+
 # Optional full-plan Monte Carlo forecasting
 
 A **plan** contains projects, shared resources, calendars and schedules. Save plan,

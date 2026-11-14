@@ -218,7 +218,7 @@ export function scheduleFeedingPortfolio(
         "Select independent feeders; feeding-chain aggregation is not supported";
       continue;
     }
-    const moments = fitTaskLognormal(task.goodCase, task.poorCase),
+    const moments = fitTaskLognormal(task.goodCase, task.poorCase,task.estimateBasis),
       fraction = (task.allocationPercent ?? 100) / 100;
     change.p50Effort = Math.exp(moments.mu) / fraction;
     change.p99Effort =
@@ -298,7 +298,7 @@ export function scheduleFeedingPortfolio(
       ? "Cross-project feeder delayed to protect higher-priority delivery; its owning project may finish later"
       : "Delayed while protecting downstream start with task P99 effort";
     if (change.bufferEffort < 1e-9)
-      change.reason += "; P20 equals P80, so P99 minus P50 is zero";
+      change.reason += "; Low equals High, so P99 minus P50 is zero";
   }
   let result: PortfolioResult;
   if (starts.size) {
